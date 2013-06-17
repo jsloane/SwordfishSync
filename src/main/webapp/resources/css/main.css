@@ -1,0 +1,19 @@
+
+.table {
+    display: table;
+}
+.table-header-group {
+	display: table-header-group;
+}
+.table-row {
+    display: table-row;
+}
+.table-cell {
+    display: table-cell;
+    padding: 4px;
+}
+
+form textarea {
+	width: 500px;
+	height: 400px;
+}
