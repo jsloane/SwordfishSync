@@ -119,7 +119,7 @@ public class MediaManager {
 	}
 
 	private static boolean checkAndRemove(FeedProvider feedProvider, TorrentInfo torrent, List<TorrentInfo> torrentsFromFeed) {
-		boolean saveTorrent = true;
+		boolean saveTorrent = false;
 		if (!feedProvider.isFeedCurrent()) { // || !feedProvider.getKeepTorrentHistory()...
 			return saveTorrent;
 		}
@@ -135,10 +135,10 @@ public class MediaManager {
 			if (!torrentInFeed && completedInterval > feedProvider.getFeedInfo().getDeleteInterval()) {
 				Log.log(Level.INFO, "[DEBUG] Deleting torrent \"" + torrent.getName() + "\" from db, dateCompleted: "
 						+ torrent.getDateCompleted() + ", " + completedInterval + " days ago");
-				saveTorrent = false;
 				feedProvider.removeTorrent(torrent);
 			}
 		} else {
+			saveTorrent = true;
 			torrent.setDateCompleted(new Date());
 		}
 		return saveTorrent;
@@ -358,81 +358,15 @@ public class MediaManager {
 	
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
 	private static void debugMethod(FeedProvider feedProvider, List<TorrentInfo> torrents) {
-
-		/*try {
-			List<TorrentStatus> torrentStatuses = torrentClient.getTorrents(
-				new int[] {154},
-				new TorrentStatus.TorrentField[] {
-					TorrentStatus.TorrentField.id,
-					TorrentStatus.TorrentField.activityDate,
-					TorrentStatus.TorrentField.status,
-					TorrentStatus.TorrentField.hashString,
-					TorrentStatus.TorrentField.files,
-					TorrentStatus.TorrentField.downloadDir
-				}
-			);
-			for (TorrentStatus torrentStatus : torrentStatuses) {
-					System.out.println(torrentStatus.getField(TorrentField.hashString));
-			}
-		} catch (JSONException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
 		
-		/*if (feedProvider.getName().equalsIgnoreCase("ShowRssTV")) {
-			System.out.println("[DEBUG] SLEEPING");
-			try {
-			    Thread.sleep(20000);
-			} catch(InterruptedException ex) {
-			    Thread.currentThread().interrupt();
-			}
-			System.out.println("[DEBUG] WOKEN UP");
-		}*/
-		int t = 0;
-		//System.out.println("[DEBUG] checkFilterMatch 720p: " + feedProvider.checkFilterMatch("Game.of.Thrones.S03E08.720p.HDTV.x264-EVOLVE"));
+		/*int t = 0;
 		for (TorrentInfo torrent : torrents) {
-			//System.out.println("[DEBUG] checkFilterMatch: " + feedProvider.checkFilterMatch(torrent.getName()) + " for " + torrent.getName());
-		
-			//torrent.setStatus("TESTING123");
-			//torrent.setDateCompleted(new Date());
-			//feedProvider.saveTorrent(torrent);
-			//if (torrent.getName().contains("Game.of.Thrones.S03E08")) {
-				//MediaInfo mediaInfo = new MediaInfo(feedProvider, torrent);
-				//System.out.println(mediaInfo);
-				//System.out.println("[DEBUG] checkFilterMatch: " + feedProvider.checkFilterMatch(torrent.getName()));
-				//System.out.println(torrent);
-				//checkAndAdd(feedProvider, torrent);
-				//checkAndComplete(feedProvider, torrent);
-				//feedProvider.saveTorrent(torrent);
-			//}
 			t++;
 			if (t == 2) {
-				/*try {
-					notifyNew(feedProvider, torrent, mediaInfo);
-					feedProvider.saveTorrent(torrent);
-				} catch (MessagingException | MailException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}*/
-			}
-			
-			//if (feedProvider.getActive() && (!feedProvider.getEnableFilter() || feedProvider.checkFilterMatch(torrent))) {
-			//	System.out.println("[DEBUG] ADDING/NOTIFYING torrent: " + torrent.getName());
-			//}
-			
-			if (t == 1) {
 				//break;
 			}
-		}
+		}*/
 		
 		Log.log(Level.INFO, "[MYMEDIA] MediaManager.debug: "+ debug + ", skipping torrent checks.");
 		

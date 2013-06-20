@@ -1,6 +1,7 @@
 package mymedia.services.model;
 
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -214,7 +215,10 @@ public class FeedProvider {
         XmlReader reader = null;
         SyndFeed feed = null;
         try {
-            reader = new XmlReader(new URL(feedInfo.getUrl()));
+        	URLConnection urlConnection = new URL(feedInfo.getUrl()).openConnection();
+        	urlConnection.setConnectTimeout(10000);
+        	urlConnection.setReadTimeout(30000);
+            reader = new XmlReader(urlConnection);
 			SyndFeedInput in = new SyndFeedInput();
 			in.setPreserveWireFeed(true);
             feed = in.build(reader);
