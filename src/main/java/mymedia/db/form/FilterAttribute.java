@@ -41,15 +41,15 @@ public class FilterAttribute {
         if (obj == null || obj.getClass() != this.getClass()) {
             return false;
         }
-
+        
         FilterAttribute filterAttribute = (FilterAttribute) obj;
         return (
-	        		filterType != null &&
-	        		filterType.equals(filterAttribute.getFilterType())
-        		) && (
-                	filterRegex != null &&
-                	filterRegex .equals(filterAttribute.getFilterRegex())
-                );
+        		filterType != null &&
+        		filterType.equals(filterAttribute.getFilterType())
+    		) && (
+            	filterRegex != null &&
+            	filterRegex.equals(filterAttribute.getFilterRegex())
+            );
     }
     
     @Override

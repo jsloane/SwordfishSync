@@ -5,10 +5,12 @@ import java.util.List;
 import mymedia.db.form.FeedInfo;
 
 import org.hibernate.SessionFactory;
+import org.hibernate.criterion.CriteriaSpecification;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
+//import javax.persistence.EntityManager;
 
 @Repository
 public class FeedInfoDAOImpl implements FeedInfoDAO {
@@ -28,7 +30,7 @@ public class FeedInfoDAOImpl implements FeedInfoDAO {
 				existingFeedInfo = feedInfoFromDb;
 			}
 		}
-		
+
 		if (existingFeedInfo == null) {
 			saveFeedInfo(feedInfo);
 		} else {
@@ -40,6 +42,7 @@ public class FeedInfoDAOImpl implements FeedInfoDAO {
 	
 	public void saveFeedInfo(FeedInfo feedInfo) {
 	    sessionFactory.getCurrentSession().saveOrUpdate(feedInfo);
+	    //sessionFactory.getCurrentSession().merge(feedInfo);
 	}
 	
 	public void removeFeedInfo(FeedInfo feedInfo) {
@@ -48,6 +51,7 @@ public class FeedInfoDAOImpl implements FeedInfoDAO {
 	
 	public List<FeedInfo> getFeedInfos() {
         return sessionFactory.getCurrentSession().createCriteria(FeedInfo.class)
+        		.setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY)
         		.list();
 	}
 	
@@ -57,8 +61,16 @@ public class FeedInfoDAOImpl implements FeedInfoDAO {
 	}
 	
 	public List<FeedInfo> getMissingFeedInfos(Integer[] gotIds) {
-		return (List<FeedInfo>) sessionFactory.getCurrentSession().createCriteria(FeedInfo.class)
-				.add(Restrictions.not(Restrictions.in("id", gotIds))).list();
+		if (gotIds.length > 0) {
+			return (List<FeedInfo>) sessionFactory.getCurrentSession().createCriteria(FeedInfo.class)
+					.add(
+						Restrictions.not(
+							Restrictions.in("id", gotIds)
+						)
+					).setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY)
+					.list();
+		}
+		return getFeedInfos();
 	}
 	
 }

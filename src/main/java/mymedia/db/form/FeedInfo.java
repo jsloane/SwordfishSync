@@ -1,6 +1,7 @@
 package mymedia.db.form;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,14 +16,22 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.persistence.Version;
 
 import org.hibernate.annotations.IndexColumn;
+
+import com.thoughtworks.xstream.annotations.XStreamOmitField;
 
 @Entity
 @Table(name="feed")
 public class FeedInfo {
 
+    @XStreamOmitField
 	@Id
 	@Column(name="id")
 	@GeneratedValue
@@ -74,22 +83,31 @@ public class FeedInfo {
 	private Boolean removeAddFilterOnMatch = false;
 	
 	@Column(name="enable_filter")
-	private Boolean enableFilter = false;
+	private Boolean filterEnabled = false;
 
 	@Column(name="filter_action")
-	private String filterAction = "ignore";
+	private String filterAction = "ignore"; // add/ignore
 
 	@Column(name="filter_precedence")
-	private String filterPrecedence = "ignore";
+	private String filterPrecedence = "ignore"; // add/ignore
 	
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name="feed_filter", joinColumns=@JoinColumn(name="feed_id"))
     private Set<FilterAttribute> filterAttributes = new HashSet<FilterAttribute>();
 	
-    @OneToMany(cascade={CascadeType.ALL}, fetch = FetchType.EAGER)
+	@Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "created")
+	private Date created = new Date();
+	
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "updated")
+	private Date updated = new Date();
+	
+    @XStreamOmitField
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name="feed_id")
     @IndexColumn(name="idx")
-    private List<TorrentInfo> feedTorrents = new ArrayList<TorrentInfo>();
+    private List<TorrentInfo> feedTorrents = new ArrayList<TorrentInfo>(); // this is the list stored in the DB
 	
    	public Integer getId() {
    		return id;
@@ -145,14 +163,20 @@ public class FeedInfo {
 	public boolean getRemoveAddFilterOnMatch() {
 		return removeAddFilterOnMatch;
 	}
-	public boolean getEnableFilter() {
-		return enableFilter;
+	public boolean getFilterEnabled() {
+		return filterEnabled;
 	}
 	public String getFilterAction() {
 		return filterAction;
 	}
 	public String getFilterPrecedence() {
 		return filterPrecedence;
+	}
+	public Date getCreated() {
+		return created;
+	}
+	public Date getUpdated() {
+		return updated;
 	}
    	
    	public void setId(Integer id) {
@@ -209,14 +233,20 @@ public class FeedInfo {
 	public void setRemoveAddFilterOnMatch(boolean removeAddFilterOnMatch) {
 		this.removeAddFilterOnMatch = removeAddFilterOnMatch;
 	}
-	public void setEnableFilter(boolean enableFilter) {
-		this.enableFilter = enableFilter;
+	public void setFilterEnabled(boolean filterEnabled) {
+		this.filterEnabled = filterEnabled;
 	}
 	public void setFilterAction(String filterAction) {
 		this.filterAction = filterAction;
 	}
 	public void setFilterPrecedence(String filterPrecedence) {
 		this.filterPrecedence = filterPrecedence;
+	}
+	public void setCreated(Date created) {
+		this.created = created;
+	}
+	public void setUpdated(Date updated) {
+		this.updated = updated;
 	}
    	
    	public String toString() {

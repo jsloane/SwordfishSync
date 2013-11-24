@@ -10,10 +10,24 @@
 }
 .table-cell {
     display: table-cell;
-    padding: 4px;
+    padding: 0.25em;
 }
 
-form textarea {
-	width: 500px;
-	height: 400px;
+form div.filter-textareas {
+    padding: 1em;
+    height: 400px;
 }
+form div.filter-textarea {
+	width: 49%;
+}
+form div.filter-textarea textarea {
+    width: 100%;
+    height: 100%;
+}
+.float-left {
+    float: left;
+}
+.float-right {
+    float: right;
+}
+	

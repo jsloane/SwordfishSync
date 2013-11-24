@@ -17,3 +17,9 @@ manual dependencies:
 transmission client (in source) http://benow.ca/projects/Transmission%20Java%20Client/
 thetvdbapi 1.6-SNAPSHOT
 themoviedbapi 3.5-SNAPSHOT
+
+
+
+###
+Note: need SQL script to create mymedia user and schema
+

@@ -30,7 +30,7 @@ import ca.benow.transmission.TransmissionClient;
 
 public class MyMediaLifecycle implements Lifecycle {
 	
-	private final static Logger Log = Logger.getLogger(MyMediaLifecycle.class.getName());
+	private final static Logger log = Logger.getLogger(MyMediaLifecycle.class.getName());
     
     @Autowired
     private FeedInfoService feedInfoService;
@@ -75,7 +75,7 @@ public class MyMediaLifecycle implements Lifecycle {
 				}
 	    	}
 	    	
-			Log.log(Level.INFO, "[DEBUG] MyMediaLifecycle.start: " + config.getString("mymedia.title") + ", running on " + hostName);
+			log.log(Level.INFO, "[DEBUG] MyMediaLifecycle.start: " + config.getString("mymedia.title") + ", running on " + hostName);
 			
 			syncInterval = Long.parseLong(config.getString("mymedia.syncInterval"));
 			
@@ -101,13 +101,13 @@ public class MyMediaLifecycle implements Lifecycle {
 			MediaManager.feedProviders = getFeedProviders(config);
 			MediaManager.torrentClient = transmissionClient;
 			
-			Log.log(Level.INFO, "[DEBUG] MyMediaLifecycle.start scheduling sync task: " + syncInterval + " minute intervals");
+			log.log(Level.INFO, "[DEBUG] MyMediaLifecycle.start scheduling sync task: " + syncInterval + " minute intervals");
 			scheduler.scheduleAtFixedRate(new SyncTask(), 0, syncInterval, TimeUnit.MINUTES);
 		} catch (IOException | ConfigurationException e) {
 			// need an error handler to email severe errors (not rss feed connection errors)
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			Log.log(Level.SEVERE, "[DEBUG] STARTUP FAILED, JOB NOT SCHEDULED ################");
+			log.log(Level.SEVERE, "[DEBUG] STARTUP FAILED, JOB NOT SCHEDULED ################");
 		}
 	}
 	
@@ -125,8 +125,10 @@ public class MyMediaLifecycle implements Lifecycle {
     	if (feedCount > 0) {
             for (int i = 1; i <= feedCount; i++) {
         		if (config.containsKey("feed." + i + ".url")) {
-	    			Log.log(Level.INFO, "[DEBUG] MyMediaLifecycle.start reading in feed: " + i);
+	    			log.log(Level.INFO, "[DEBUG] MyMediaLifecycle.start reading in feed: " + i);
+	    			// this may overwrite other feed settings, if there are other feeds in the DB with this URL
 	            	FeedProvider readFeedProvider = new FeedProvider(config.getString("feed." + i + ".url"));
+	            	readFeedProvider.setFromPropertiesFile(true);
         			if (config.containsKey("feed." + i + ".isActive")) {
         				readFeedProvider.getFeedInfo().setActive(Boolean.parseBoolean(config.getString("feed." + i + ".isActive")));
         			}
@@ -162,7 +164,7 @@ public class MyMediaLifecycle implements Lifecycle {
         				readFeedProvider.getFeedInfo().setDetermineSubDirectory(config.getBoolean("feed." + i + ".determineSubDirectory"));
         			}
         			if (config.containsKey("feed." + i + ".filter")) {
-        				readFeedProvider.getFeedInfo().setEnableFilter(Boolean.parseBoolean(config.getString("feed." + i + ".filter")));
+        				readFeedProvider.getFeedInfo().setFilterEnabled(Boolean.parseBoolean(config.getString("feed." + i + ".filter")));
         			}
         			if (config.containsKey("feed." + i + ".filter.action")) {
         				readFeedProvider.getFeedInfo().setFilterAction(config.getString("feed." + i + ".filter.action"));
@@ -197,6 +199,7 @@ public class MyMediaLifecycle implements Lifecycle {
         			// activityDateInterval
         			// seedRatio
         			// etc
+        			
         			readFeedProvider.saveFeedInfo();
         			
         			feedProviders.add(readFeedProvider);
@@ -207,10 +210,16 @@ public class MyMediaLifecycle implements Lifecycle {
     	
     	// get other feeds from db that are not in properties file
     	Integer[] gotIdsArray = (Integer[]) gotIds.toArray(new Integer[gotIds.size()]);
+    	/*System.out.println("[DEBUG] gotIdsArray: " + gotIdsArray);
+    	for (Integer i : gotIdsArray) {
+        	System.out.println("[DEBUG] feed id from properties file: " + i);
+    	}*/
     	List<FeedInfo> feedInfos = MediaManager.feedInfoService.getMissingFeedInfos(gotIdsArray);
+    	//System.out.println("[DEBUG] feedInfos size: " + feedInfos.size());
     	for (FeedInfo feedInfo : feedInfos) {
     		feedProviders.add(new FeedProvider(feedInfo));
     	}
+    	//System.out.println("[DEBUG] feedProviders size: " + feedProviders.size());
     	
 		return feedProviders;
 	}

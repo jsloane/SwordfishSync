@@ -9,18 +9,12 @@
         <br/><br/>
         <a href="${pageContext.request.contextPath}/">Index</a>
         <a href="${pageContext.request.contextPath}/feeds">Feeds</a>
+        <br/>
+        <a href="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}/edit">Edit</a>
+        <a href="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}/export">Export</a>
+        <a href="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}/delete">Delete</a>
         <br/><br/>
         
-        <div>
-	        <!-- <a href="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}/edit">
-	            Edit feed
-	        </a> -->
-	        <br/>
-	        <a href="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}/edit/filter">
-	            Edit filter
-	        </a>
-        </div>
-        <br/>
         
         
         <div class="table" id="feed">
@@ -42,6 +36,30 @@
             </div>
             <div class="table-row">
                 <div class="table-cell">
+                    initilised:
+                </div>
+                <div class="table-cell">
+                    ${feed.feedInfo.initilised}
+                </div>
+            </div>
+            <div class="table-row">
+                <div class="table-cell">
+                    Date created:
+                </div>
+                <div class="table-cell">
+                    ${feed.feedInfo.created}
+                </div>
+            </div>
+            <div class="table-row">
+                <div class="table-cell">
+                    Date updated:
+                </div>
+                <div class="table-cell">
+                    ${feed.feedInfo.updated}
+                </div>
+            </div>
+            <div class="table-row">
+                <div class="table-cell">
                     Download directory:
                 </div>
                 <div class="table-cell">
@@ -53,7 +71,32 @@
                     Torrent upload limit:
                 </div>
                 <div class="table-cell">
-                    ${feed.feedInfo.uploadLimit} (if 0 not set)
+                	<c:choose>
+						<c:when test="${feed.feedInfo.uploadLimit > 0}">
+							${feed.feedInfo.uploadLimit} KB/s
+						</c:when>
+						<c:otherwise>
+							Not set
+						</c:otherwise>
+					</c:choose>
+                </div>
+            </div>
+            <div class="table-row">
+                <div class="table-cell">
+                    Filter:
+                </div>
+                <div class="table-cell">
+                	<c:choose>
+						<c:when test="${feed.feedInfo.filterEnabled}">
+                            Enabled
+						</c:when>
+						<c:otherwise>
+							Disabled
+						</c:otherwise>
+					</c:choose>
+                    <a href="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}/edit/filter">
+                        Edit filter
+                    </a>
                 </div>
             </div>
         </div>
@@ -65,6 +108,7 @@
         Torrents:
             <div class="table" id="torrent-list">
                 <div class="table-row">
+                    <div class="table-cell"></div>
                     <div class="table-cell">
                         name
                     </div>
@@ -86,6 +130,11 @@
                 </div>
                 <c:forEach items="${feed.feedInfo.feedTorrents}" var="torrent">
                     <div class="table-row">
+                        <div class="table-cell">
+	                        <c:if test="${torrent.status == torrentNotAdded || torrent.status == torrentNotifiedNotAdded || torrent.status == torrentSkipped}">
+                                <a href="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}/torrent/${torrent.id}/download">Download</a>
+	                        </c:if>
+                        </div>
                         <div class="table-cell">
                             ${torrent.name}
                         </div>

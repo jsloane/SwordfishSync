@@ -23,7 +23,7 @@ public class TorrentInfo {
 	public static final String STATUS_NOT_ADDED = "not_added"; // 
 	public static final String STATUS_NOTIFIED_NOT_ADDED = "notified_not_added"; // 
 	public static final String STATUS_IN_PROGRESS = "in_progress"; // downloading
-	public static final String STATUS_NOTIFY_COMPLETED = "notify_completed"; // 
+	public static final String STATUS_NOTIFY_COMPLETED = "notify_completed"; // finished and removed from torrent client and notification to be sent
 	public static final String STATUS_COMPLETED = "completed"; // finished and removed from torrent client
 	public static final String STATUS_SKIPPED = "skipped"; // finished and removed from torrent client
 

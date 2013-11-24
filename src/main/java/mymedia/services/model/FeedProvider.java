@@ -34,8 +34,9 @@ public class FeedProvider {
 	private long lastFetched = 0; // when the feed was last fetched (in minutes?)
 	private FeedInfo feedInfo;
 	private boolean isFeedCurrent = false; // use this to check if an exception occurred (connection timeout, etc) when checking completed torrents to remove
+	private boolean fromPropertiesFile = false; // use this to disable editing of feed details in web
 	private List<TorrentInfo> torrentsFromFeed;
-	
+
 	public FeedProvider() {
 		this.feedInfo = new FeedInfo();
 	}
@@ -45,9 +46,15 @@ public class FeedProvider {
 	public FeedProvider(FeedInfo feedInfo) {
 		this.feedInfo = feedInfo;
 	}
-	
+
 	public boolean isFeedCurrent() {
 		return isFeedCurrent;
+	}
+	public boolean getFromPropertiesFile() {
+		return fromPropertiesFile;
+	}
+	public void setFromPropertiesFile(boolean fromPropertiesFile) {
+		this.fromPropertiesFile = fromPropertiesFile;
 	}
 	public int getTtl() {
 		return ttl;
@@ -64,7 +71,7 @@ public class FeedProvider {
 	public void saveTorrent(TorrentInfo torrentInfo) {
 		TorrentInfo existingTorrentInfo = null;
 		for (TorrentInfo torrentRecord : feedInfo.getFeedTorrents()) {
-			if (torrentRecord.getUrl().equalsIgnoreCase(torrentInfo.getUrl())) {
+			if (torrentRecord != null && torrentRecord.getUrl() != null && torrentRecord.getUrl().equalsIgnoreCase(torrentInfo.getUrl())) { // should override and use equals method
 				existingTorrentInfo = torrentRecord;
 			}
 		}

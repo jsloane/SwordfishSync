@@ -105,8 +105,11 @@ public class MediaInfo {
 		*/
 		
 		
+		// need to check tv shows 1x01, 01x01
+		//System.out.println("[DEBUG] #### MediaInfo TV show check 1x01");
 		
-		//System.out.println("[DEBUG] #### MediaInfo TV show check");
+		
+		//System.out.println("[DEBUG] #### MediaInfo TV show check s01e01");
 		// TV show regex
 		Pattern pTv = Pattern.compile("(.*?)[.\\s][sS](\\d{2})[eE](\\d{2}).*");
 		Matcher mTv = pTv.matcher(torrentInfo.getName());
@@ -128,7 +131,7 @@ public class MediaInfo {
 			year = mMovieHd.group(2);
 			quality = mMovieHd.group(3);
 			type = TYPE_MOVIE;
-			hd = true; // determine if high definition; use the sub directory "Movies (HD)"...
+			hd = true; // determine if high definition; use the sub directory "Movies (HD)"... to be implemented
 			processMovie();
 			return;
 		}
