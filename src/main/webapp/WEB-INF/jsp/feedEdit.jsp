@@ -1,91 +1,108 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<%@ taglib prefix="mmt" tagdir="/WEB-INF/tags" %>
 <html>
     <head>
         <title>MyMedia</title>
-        <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/main.css"/>">
+        <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/main.css"/>"></link>
     </head>
     <body>
-        ${message}
-        <br/><br/>
-        <a href="${pageContext.request.contextPath}/">Index</a>
-        <a href="${pageContext.request.contextPath}/feeds">Feeds</a>
-        <c:choose>
-            <c:when test="${!newFeed}">
-                <a href="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}">Return to feed</a>
-            </c:when>
-        </c:choose>
-        <br/>
-        
-        
-        <c:choose>
-            <c:when test="${newFeed}">
-                <h3>Adding feed</h3>
-		        <form:form method="post" enctype="multipart/form-data" modelAttribute="uploadedFile" action="${pageContext.request.contextPath}/feeds/add/upload"> 
-		            <label for="file">File:</label>
-		            <input type="file" name="file" />
-		            <input type="submit" value="Upload" />
-		        </form:form>
-            </c:when>
-            <c:otherwise>
-                <h3>Editing feed: ${feed.feedInfo.name}</h3>
-            </c:otherwise>
-        </c:choose>
-        
-        <c:choose>
-		    <c:when test="${feed.fromPropertiesFile}">
-			     Feed set in properties file, unable to edit. Should still list fields, just disabled.
-			     set class {formDisabled} in controller, put in form, all inputs disabled, and remove this choose
-		    </c:when>
-		    <c:otherwise>
-			
-        <%--<form:form method="POST" modelAttribute="feedInfo" action="?">
-        
-            <form:input path="name" value="${feedInfo.name}" />
-            
-            <input type="submit" value="Submit">
-        </form:form> --%>
-            
-                * required field
-		        <form method="post" action="?">
-		            <label for="feed_name">Name:</label>
-		            <input type="text" name="feed_name" id="feed_name" value="${feed.feedInfo.name}" />*
-		            <br/><br/>
-		            <label for="feed_url">URL:</label>
-		            <input type="text" name="feed_url" id="feed_url" value="${feed.feedInfo.url}" />*
-		            <br/><br/>
-		            <label for="feed_initialPopulate">initialPopulate (treat existing RSS entries as new when adding feed):</label>
-		            <input type="checkbox" name="feed_initialPopulate" id="feed_initialPopulate" ${checkedInitialPopulate} />
-		            <br/><br/>
-		            <label for="feed_syncInterval">syncInterval:</label>
-		            <input type="text" name="feed_syncInterval" id="feed_syncInterval" value="${feed.feedInfo.syncInterval}" />
-		            <br/><br/>
-		            <label for="feed_deleteInterval">deleteInterval:</label>
-		            <input type="text" name="feed_deleteInterval" id="feed_deleteInterval" value="${feed.feedInfo.deleteInterval}" />
-		            <br/><br/>
-		            <label for="feed_downloadDirectory">downloadDirectory:</label>
-		            <input type="text" name="feed_downloadDirectory" id="feed_downloadDirectory" value="${feed.feedInfo.downloadDirectory}" />
-		            <br/><br/>
-		            <label for="feed_uploadLimit">uploadLimit:</label>
-		            <input type="text" name="feed_uploadLimit" id="feed_uploadLimit" value="${feed.feedInfo.uploadLimit}" />
-		            <br/><br/>
-		            <label for="feed_notifyEmail">notifyEmail:</label>
-		            <input type="text" name="feed_notifyEmail" id="feed_notifyEmail" value="${feed.feedInfo.notifyEmail}" />
-		            <br/><br/>
-                    <label for="feed_removeTorrentOnComplete">removeTorrentOnComplete:</label>
-                    <input type="checkbox" name="feed_removeTorrentOnComplete" id="feed_removeTorrentOnComplete" ${checkedRemoveTorrentOnComplete}" />
-                    <br/><br/>
-                    <label for="feed_extractRars">extractRars:</label>
-                    <input type="checkbox" name="feed_extractRars" id="feed_extractRars" ${checkedExtractRars}" />
-                    <br/><br/>
-                    <label for="feed_determineSubDirectory">determineSubDirectory:</label>
-                    <input type="checkbox" name="feed_determineSubDirectory" id="feed_determineSubDirectory" ${checkedDetermineSubDirectory}" />
-                    <br/><br/>
-		            
-		            <button type="submit">Submit</button>
-		            
-		        </form>
-            </c:otherwise>
-        </c:choose>
+        <div id="header">
+            <mmt:header title="${title}" />
+        </div>
+        <div id="page-wrapper">
+            <div id="menu">
+                <mmt:navMenu pageid="feeds" />
+            </div>
+            <div id="page">
+		        <c:choose>
+		            <c:when test="${!newFeed}">
+		            </c:when>
+		        </c:choose>
+		        
+		        
+		        <c:choose>
+		            <c:when test="${newFeed}">
+		                <h3 class="feed-name">Add feed</h3>
+		                Options:
+		                <mmt:buttonLink url="${pageContext.request.contextPath}/feeds" text="Return to List" />
+		                <h4>Import feed from file</h4>
+				        <form:form method="post" enctype="multipart/form-data" modelAttribute="uploadedFile" action="${pageContext.request.contextPath}/feeds/add/upload"> 
+				            <label for="file">File:</label>
+				            <input type="file" name="file" />
+				            <input type="submit" value="Import" />
+				        </form:form>
+				        <br/><hr/>
+                        <h4>Enter new feed details</h4>
+		            </c:when>
+		            <c:otherwise>
+		                <h3 class="feed-name">Editing feed: ${feed.feedInfo.name}</h3>
+                        Options:
+                        <mmt:buttonLink url="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}" text="Return to Feed" />
+                        <br/><br/>
+		            </c:otherwise>
+		        </c:choose>
+		        
+		        <c:choose>
+				    <c:when test="${feed.fromPropertiesFile}">
+					     Feed set in properties file, unable to edit. Should still list fields, just disabled.
+					     set class {formDisabled} in controller, put in form, all inputs disabled, and remove this choose
+				    </c:when>
+				    <c:otherwise>
+			            * required field
+				        <form method="post" action="?">
+					        <div class="table">
+			                    <mmt:tableInput fieldType="checkbox" fieldName="feed_active" fieldLabel="Enabled:" fieldChecked="${checkedActive}"/>
+			                    <mmt:tableInput fieldType="text" fieldName="feed_name" fieldLabel="Name:" fieldRequired="${true}" fieldValue="${feed.feedInfo.name}"/>
+			                    <mmt:tableInput fieldType="text" fieldName="feed_url" fieldLabel="URL:" fieldRequired="${true}" fieldValue="${feed.feedInfo.url}"/>
+			                    <mmt:tableInput fieldType="select" fieldName="feed_action" fieldLabel="Action:" fieldRequired="${true}"
+			                        fieldValue="${feed.feedInfo.action}"
+			                        fieldValues="${actionOptions}"/>
+			                    <c:if test="${!feed.feedInfo.initilised}">
+				                    <mmt:tableInput fieldType="checkbox" fieldName="feed_initialPopulate" fieldLabel="Treat existing feed entries as new when initilising feed:"
+				                        fieldChecked="${checkedInitialPopulate}"/>
+			                    </c:if>
+			                    <mmt:tableInput fieldType="text" fieldName="feed_syncInterval" fieldLabel="Sync Interval (minutes):" fieldValue="${feed.feedInfo.syncInterval}"/>
+			                    <mmt:tableInput fieldType="text" fieldName="feed_deleteInterval" fieldLabel="Delete Interval (days):" fieldValue="${feed.feedInfo.deleteInterval}"/>
+			                    <mmt:tableInput fieldType="text" fieldName="feed_downloadDirectory" fieldLabel="Download Directory:" fieldValue="${feed.feedInfo.downloadDirectory}"/>
+                                <mmt:tableInput fieldType="checkbox" fieldName="feed_determineSubDirectory" fieldLabel="Determine Sub Directory:" fieldChecked="${checkedDetermineSubDirectory}"/>
+                                <mmt:tableInput fieldType="checkbox" fieldName="feed_removeTorrentOnComplete" fieldLabel="Remove Torrent On Complete:" fieldChecked="${checkedRemoveTorrentOnComplete}"/>
+                                <mmt:tableInput fieldType="checkbox" fieldName="feed_extractRars" fieldLabel="Extract Rars:" fieldChecked="${checkedExtractRars}"/>
+			                    <mmt:tableInput fieldType="text" fieldName="feed_uploadLimit" fieldLabel="Torrent Upload Limit (KB/s):" fieldValue="${feed.feedInfo.uploadLimit}"/>
+			                    <mmt:tableInput fieldType="text" fieldName="feed_notifyEmail" fieldLabel="Notify Email:" fieldValue="${feed.feedInfo.notifyEmail}"/>
+			                    <mmt:tableInput fieldType="text" fieldName="feed_detailsUrlValueFromRegex"
+			                        fieldLabel="detailsUrlValueFromRegex:"
+			                        fieldHelp="<br/>eg: http://localhost/(\d+)/.*"
+			                        fieldValue="${feed.feedInfo.detailsUrlValueFromRegex}"
+			                        fieldClass="long"
+			                    />
+			                    <mmt:tableInput fieldType="text" fieldName="feed_detailsUrlFormat"
+			                        fieldLabel="detailsUrlFormat:"
+			                        fieldHelp="<br/>eg: http://localhost/details?id={regex-value}"
+			                        fieldValue="${feed.feedInfo.detailsUrlFormat}"
+			                        fieldClass="long"
+			                    />
+					        </div>
+				            <br/>
+						    
+                            <button type="submit">Submit</button>
+                            <c:choose>
+			                    <c:when test="${newFeed}">
+                                    <mmt:buttonLink url="${pageContext.request.contextPath}/feeds" text="Cancel" />
+			                    </c:when>
+			                    <c:otherwise>
+                                    <mmt:buttonLink url="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}" text="Cancel" />
+			                    </c:otherwise>
+		                    </c:choose>
+				            
+				        </form>
+		            </c:otherwise>
+		        </c:choose>
+            </div>
+        </div>
     </body>
 </html>

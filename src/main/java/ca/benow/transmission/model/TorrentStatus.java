@@ -12,7 +12,7 @@ public class TorrentStatus extends JSONAccessor {
   };
 
   public static StatusField parseStatus(int value, int rpcVersion) throws JSONException {
-    if (rpcVersion < 14) {
+    if (rpcVersion > 0 && rpcVersion< 14) {
       switch (value) {
       case STATUS_13_FINISHED:
         return StatusField.finished;
@@ -284,9 +284,12 @@ public class TorrentStatus extends JSONAccessor {
 
   private int rpcVersion = 0;
 
-  public TorrentStatus(JSONObject jsonObject, int rpcVersion) {
+  public TorrentStatus(JSONObject jsonObject, int rpcVersion) throws JSONException {
     super(jsonObject);
     this.rpcVersion = rpcVersion;
+    if (this.obj.has(getFieldName(TorrentField.status))) {
+      this.obj.put("statusTitle", getStatus()); // add status title field to json object
+    }
   }
 
   public JSONObject getJSONObject() {
@@ -306,7 +309,11 @@ public class TorrentStatus extends JSONAccessor {
   }
 
   public double getPercentDone() throws JSONException {
-    return (Double) getField(TorrentField.percentDone);
+    Object percentDone = getField(TorrentField.percentDone);
+    if (percentDone instanceof Integer) { // 100% is returned as an integer (1)
+      return (Integer) percentDone;
+    }
+	return (Double) percentDone;
   }
 
   public StatusField getStatus() throws JSONException {

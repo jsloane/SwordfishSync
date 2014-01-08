@@ -5,14 +5,17 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.omertron.thetvdbapi.TheTVDBApi;
 import com.omertron.thetvdbapi.model.Episode;
 import com.omertron.thetvdbapi.model.Series;
-
 import com.omertron.themoviedbapi.*;
 import com.omertron.themoviedbapi.model.MovieDb;
 //import com.omertron.themoviedbapi.TheMovieDbApi;
 //import com.omertron.themoviedbapi.MovieDbException;
+
+
 
 import mymedia.db.form.TorrentInfo;
 
@@ -31,6 +34,7 @@ public class MediaInfo {
 	public static String tmdbApiNotice;
 	
 	private TorrentInfo torrentInfo;
+	private boolean fetchDetails;
 	
 	private String type = TYPE_DEFAULT; // tv/movie/default used for email type
 	public String subDirectory = ""; // store directory under the download directory
@@ -40,7 +44,7 @@ public class MediaInfo {
 	public String posterUrl = "";
 	public String backdropUrl = "";
 	public String extraInfo = "";
-	public String url = "";
+	public String url = ""; // this variable is used in the notification email (and torrent listing?)
 	public String notice = "";
 	
 	// tv
@@ -55,18 +59,27 @@ public class MediaInfo {
 	public String quality = "";
 	public boolean hd = false;
 	
-	
-	public MediaInfo(TorrentInfo torrentInfo) {
+	public MediaInfo(FeedProvider feedProvider, TorrentInfo torrentInfo) {
+		this(feedProvider, torrentInfo, true);
+	}
+
+	public MediaInfo(FeedProvider feedProvider, TorrentInfo torrentInfo, boolean fetchDetails) {
 		this.torrentInfo = torrentInfo;
-		url = torrentInfo.getUrl();
+		this.fetchDetails = fetchDetails;
+		url = feedProvider.getTorrentDetailsUrl(torrentInfo);
 		
 		// default values
 		name = torrentInfo.getName();
 		subDirectory = name + "/";
 		
+		processMedia(feedProvider, torrentInfo);
+	}
+	
+	public void processMedia(FeedProvider feedProvider, TorrentInfo torrentInfo) {
+		
 		// determine if torrent is tv/movie/other
 		
-		
+		// make regex customisable (app settings), ability to add regex checks to categories
 		/*
 		String[] tests = {
 
@@ -109,11 +122,15 @@ public class MediaInfo {
 		//System.out.println("[DEBUG] #### MediaInfo TV show check 1x01");
 		
 		
-		//System.out.println("[DEBUG] #### MediaInfo TV show check s01e01");
-		// TV show regex
+		//System.out.println("[DEBUG] #### MediaInfo TV show check S##E##");
+		// TV show regex S##E##
 		Pattern pTv = Pattern.compile("(.*?)[.\\s][sS](\\d{2})[eE](\\d{2}).*");
 		Matcher mTv = pTv.matcher(torrentInfo.getName());
 		if (mTv.matches()) {
+			/*System.out.println("[DEBUG] #### MediaInfo TV show matched S##E##");
+			System.out.println("[DEBUG] #### mTvx.group(1) name: " + mTv.group(1));
+			System.out.println("[DEBUG] #### mTvx.group(2) seasonNumber: " + mTv.group(2));
+			System.out.println("[DEBUG] #### mTvx.group(3) episodeNumber: " + mTv.group(3));*/
 			name = mTv.group(1).replace(".", " ");
 			seasonNumber = mTv.group(2);
 			episodeNumber = mTv.group(3);
@@ -121,6 +138,31 @@ public class MediaInfo {
 			processTvShow();
 			return;
 		}
+		
+		//System.out.println("[DEBUG] #### MediaInfo TV show check ##x###");
+		// TV show regex ##x###
+		Pattern pTvx = Pattern.compile("(.*?)(\\d+)x(\\d+).*");
+		Matcher mTvx = pTvx.matcher(torrentInfo.getName());
+		if (mTvx.matches()) {
+			/*System.out.println("[DEBUG] #### MediaInfo TV show matched ##x###");
+			System.out.println("[DEBUG] #### mTvx.group(1) name: " + mTvx.group(1));
+			System.out.println("[DEBUG] #### mTvx.group(2) seasonNumber: " + mTvx.group(2));
+			System.out.println("[DEBUG] #### mTvx.group(3) episodeNumber: " + mTvx.group(3));*/
+			name = mTvx.group(1).replace(".", " ");
+			seasonNumber = mTvx.group(2);
+			episodeNumber = mTvx.group(3);
+			type = TYPE_TV;
+			processTvShow();
+			return;
+		}
+		
+		//System.out.println("[DEBUG] #### HDTV check");
+		// might be a non standard tv show format
+		if (torrentInfo.getName().toLowerCase().contains("hdtv")) {
+			processTvShow();
+			return;
+		}
+		
 		
 		//System.out.println("[DEBUG] #### MediaInfo HD movie check");
 		// HD movie regex
@@ -149,53 +191,45 @@ public class MediaInfo {
 			return;
 		}
 		
-		//System.out.println("[DEBUG] #### HDTV check");
-		// might be a non standard tv show format
-		if (torrentInfo.getName().toLowerCase().contains("hdtv")) {
-			processTvShow();
-			return;
-		}
-		
 		//System.out.println("[DEBUG] #### no type matched ##############");
 	}
 	
 	private void processMovie() {
-		if (tmdbApiKey != null && !tmdbApiKey.isEmpty()
-				&& name != null && !name.trim().isEmpty()
-				&& year != null && !year.trim().isEmpty()
-				) {
+		if (StringUtils.isNotBlank(tmdbApiKey) && StringUtils.isNotBlank(name) && StringUtils.isNotBlank(year)) {
 			notice = tmdbApiNotice;
 			
 			determineMovieSubDirectory();
-			
-			try {
-				TheMovieDbApi tmdb = new TheMovieDbApi(tmdbApiKey);
-				
-				//String imdbId = "";
-				int movieId;
-				
-				List<MovieDb> searchResults = tmdb.searchMovie(name, Integer.parseInt(year), null, true, 0);
-				
-				for (MovieDb searchResult : searchResults) {
-					// some image width sizes: w185, w342, w1280
-					if (searchResult.getBackdropPath() != null && !searchResult.getBackdropPath().isEmpty()) {
-						backdropUrl = "http://cf2.imgobject.com/t/p/w342/" + searchResult.getBackdropPath();
+
+			if (fetchDetails) {
+				try {
+					TheMovieDbApi tmdb = new TheMovieDbApi(tmdbApiKey);
+					
+					//String imdbId = "";
+					int movieId;
+					
+					List<MovieDb> searchResults = tmdb.searchMovie(name, Integer.parseInt(year), null, true, 0);
+					
+					for (MovieDb searchResult : searchResults) {
+						// some image width sizes: w185, w342, w1280
+						if (searchResult.getBackdropPath() != null && !searchResult.getBackdropPath().isEmpty()) {
+							backdropUrl = "http://cf2.imgobject.com/t/p/w342/" + searchResult.getBackdropPath();
+						}
+						if (searchResult.getPosterPath() != null && !searchResult.getPosterPath().isEmpty()) {
+							posterUrl = "http://cf2.imgobject.com/t/p/w342/" + searchResult.getPosterPath();
+						}
+			        	if (backdropUrl.equalsIgnoreCase(posterUrl)) {
+			        		posterUrl = "";
+			        	}
+						//imdbId = searchResult.getImdbID();
+						movieId = searchResult.getId();
+						MovieDb movieInfo = tmdb.getMovieInfo(movieId, null);
+						extraInfo = movieInfo.getOverview();
+						break; // need to handle multiple results, only using the first one...
 					}
-					if (searchResult.getPosterPath() != null && !searchResult.getPosterPath().isEmpty()) {
-						posterUrl = "http://cf2.imgobject.com/t/p/w342/" + searchResult.getPosterPath();
-					}
-		        	if (backdropUrl.equalsIgnoreCase(posterUrl)) {
-		        		posterUrl = "";
-		        	}
-					//imdbId = searchResult.getImdbID();
-					movieId = searchResult.getId();
-					MovieDb movieInfo = tmdb.getMovieInfo(movieId, null);
-					extraInfo = movieInfo.getOverview();
-					break; // need to handle multiple results, only using the first one...
-				}
-			} catch (MovieDbException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				} catch (MovieDbException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}	
 			}
 		}
 	}
@@ -215,14 +249,14 @@ public class MediaInfo {
 						break;
 				}
 			}
-			if (!(name != null && !name.trim().isEmpty())) {
+			if (StringUtils.isBlank(name)) {
 				name = torrentInfo.getName();
 				fetchTvdb = false;
 			} else {
 				determineTvSubDirectory();
 			}
 			
-			if (fetchTvdb) {
+			if (fetchDetails && fetchTvdb) {
 				try {
 					TheTVDBApi tvDB = new TheTVDBApi(tvdbApiKey);
 					
@@ -233,22 +267,20 @@ public class MediaInfo {
 						showId = series.getId();
 						break; // need to handle multiple results, only using the first one...
 					}
-					
-					if (showId != null && !showId.isEmpty()
-							&& seasonNumber != null && !seasonNumber.isEmpty()
-							&& episodeNumber != null && !episodeNumber.isEmpty()) {
+
+					if (StringUtils.isNotBlank(showId) && StringUtils.isNotBlank(seasonNumber) && StringUtils.isNotBlank(episodeNumber)) {
 						Episode episode = tvDB.getEpisode(showId, Integer.parseInt(seasonNumber), Integer.parseInt(episodeNumber), "en");
 						if (episode != null) {
-							if (episode.getFilename() != null && !episode.getFilename().isEmpty()) {
+							if (StringUtils.isNotBlank(episode.getFilename())) {
 								backdropUrl = episode.getFilename();
 					        	if (backdropUrl.equalsIgnoreCase(posterUrl)) {
 					        		posterUrl = "";
 					        	}
 							}
-							if (episode.getEpisodeName() != null) {
+							if (StringUtils.isNotBlank(episode.getEpisodeName())) {
 								episodeTitle = episode.getEpisodeName();
 							}
-							if (episode.getOverview() != null) {
+							if (StringUtils.isNotBlank(episode.getOverview())) {
 								episodeDescription = episode.getOverview();
 							}
 						}
@@ -264,7 +296,7 @@ public class MediaInfo {
 	private void determineTvSubDirectory() {
 		String seasonDirectoryPrefix = "Season"; // should be a property - seasonDirectoryPrefix
 		subDirectory = name + "/";
-		if (!seasonNumber.isEmpty()) {
+		if (StringUtils.isNotBlank(seasonNumber)) {
 			if (seasonNumber.length() == 1) {
 				subDirectory = subDirectory + seasonDirectoryPrefix + " 0" + seasonNumber + "/";
 			} else {

@@ -11,7 +11,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jdom.Element;
 
 import mymedia.db.form.FeedInfo;
@@ -31,9 +35,11 @@ public class FeedProvider {
 	private final static Logger Log = Logger.getLogger(MyMediaLifecycle.class.getName());
 	
 	private int ttl = 0; // ttl is in minutes (from rss spec?)
-	private long lastFetched = 0; // when the feed was last fetched (in minutes?)
+	private long lastFetched = 0; // when the feed was last fetched (in minutes)
+	private Date lastUpdated;
 	private FeedInfo feedInfo;
 	private boolean isFeedCurrent = false; // use this to check if an exception occurred (connection timeout, etc) when checking completed torrents to remove
+	private String statusMessage = "";
 	private boolean fromPropertiesFile = false; // use this to disable editing of feed details in web
 	private List<TorrentInfo> torrentsFromFeed;
 
@@ -50,6 +56,9 @@ public class FeedProvider {
 	public boolean isFeedCurrent() {
 		return isFeedCurrent;
 	}
+	public String getStatusMessage() {
+		return statusMessage;
+	}
 	public boolean getFromPropertiesFile() {
 		return fromPropertiesFile;
 	}
@@ -61,6 +70,15 @@ public class FeedProvider {
 	}
 	public long getLastFetched() {
 		return lastFetched;
+	}
+	public Date getDateFetched() {
+		if (lastFetched != 0) {
+			return new Date(lastFetched);
+		}
+		return null;
+	}
+	public Date getDateUpdated() {
+		return lastUpdated;
 	}
 	
 	public void saveFeedInfo() {
@@ -114,6 +132,11 @@ public class FeedProvider {
 		MediaManager.torrentInfoService.removeTorrentInfo(torrent);
 	}
 	
+	public void removeFeedInfo() {
+		MediaManager.feedInfoService.removeFeedInfo(feedInfo);
+		MediaManager.feedProviders.remove(this);
+	}
+	
 	private void initDb(String url) {
 		FeedInfo feedInfo = new FeedInfo();
 		feedInfo.setUrl(url);
@@ -143,6 +166,7 @@ public class FeedProvider {
 		//LOG.log(Level.INFO, "[DEBUG] getTorrents refreshFeed: "+refreshFeed);
 		if (refreshFeed) {
 			isFeedCurrent = false;
+			statusMessage = "";
 			try {
 				refreshFeed();
 				if (!feedInfo.getInitilised()) {
@@ -150,8 +174,10 @@ public class FeedProvider {
 					saveFeedInfo();
 				}
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
+				if (statusMessage.isEmpty()) {
+					statusMessage = e.toString();
+				}
 			}
 			Log.log(Level.INFO, "[DEBUG] Fetched feed: " + feedInfo.getName() + ", "
 					+ "current: " + isFeedCurrent
@@ -201,7 +227,7 @@ public class FeedProvider {
         	
         	String torrentStatus = TorrentInfo.STATUS_NOT_ADDED;
         	if (!feedInfo.getInitilised() && !feedInfo.getInitialPopulate()) {
-        		torrentStatus = TorrentInfo.STATUS_SKIPPED; // skip existing feed entries
+        		torrentStatus = TorrentInfo.STATUS_SKIPPED; // skip existing feed entries when adding feed
         	}
         	
         	TorrentInfo newTorrent = new TorrentInfo(
@@ -215,6 +241,7 @@ public class FeedProvider {
         	recordTorrentFromFeed(newTorrent);
         	torrentsFromFeed.add(newTorrent);
 			isFeedCurrent = true;
+			lastUpdated = new Date();
         }
 	}
 
@@ -230,20 +257,55 @@ public class FeedProvider {
 			in.setPreserveWireFeed(true);
             feed = in.build(reader);
         } catch (Exception ex) {
-			// TODO Auto-generated catch block
         	ex.printStackTrace();
+			statusMessage = ex.toString();
         } finally {
 	        if (reader != null) {
 	        	try {
 	        		reader.close();
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 	        }
 	    }
 		return feed;
 	}
+	
+	public List<TorrentInfo> getTorrentsInprogress() {
+		return getTorrentsForStatus(new String[] {TorrentInfo.STATUS_IN_PROGRESS, TorrentInfo.STATUS_NOTIFY_COMPLETED});
+	}
+	
+	public List<TorrentInfo> getTorrentsForStatus(String[] status) {
+		List<TorrentInfo> torrentsForStatus = new ArrayList<TorrentInfo>();
+		
+		for (TorrentInfo torrentInfo : feedInfo.getFeedTorrents()) {
+			for (String torrentStatus : status) {
+				if (torrentStatus.equals(torrentInfo.getStatus())) {
+					torrentsForStatus.add(torrentInfo);
+				}
+			}
+		}
+		
+		return torrentsForStatus;
+	}
+    
+    public String getTorrentDetailsUrl(TorrentInfo torrentInfo) {
+    	if (torrentInfo == null) {
+    		return null;
+    	}
+		String url = torrentInfo.getUrl();
+
+		// check if feed has custom notification link url defined
+		if (!StringUtils.isBlank(getFeedInfo().getDetailsUrlValueFromRegex()) && !StringUtils.isBlank(getFeedInfo().getDetailsUrlFormat())) {
+			Pattern pUrl = Pattern.compile(getFeedInfo().getDetailsUrlValueFromRegex());
+			Matcher mUrl = pUrl.matcher(torrentInfo.getUrl());
+			if (mUrl.matches()) {
+				url = getFeedInfo().getDetailsUrlFormat().replace("{regex-value}", mUrl.group(1));
+			}
+		}
+		
+		return url;
+    }
 	
 	public boolean checkFilterMatch(String value) {
 		/*if (!enableFilter) {

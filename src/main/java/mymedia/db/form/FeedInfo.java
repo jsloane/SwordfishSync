@@ -30,13 +30,13 @@ import com.thoughtworks.xstream.annotations.XStreamOmitField;
 @Entity
 @Table(name="feed")
 public class FeedInfo {
-
+	
     @XStreamOmitField
 	@Id
 	@Column(name="id")
 	@GeneratedValue
 	private Integer id; // Long id;?
-
+    
 	@Column(name="url", length=1024/*, unique=true - errors on hibernate table creation */)
 	private String url;
 	
@@ -45,22 +45,22 @@ public class FeedInfo {
 	
 	@Column(name="initial_populate")
 	private Boolean initialPopulate = false; // don't add all existing torrents when feed first added, by default
-
+	
 	@Column(name="name")
 	private String name;
 	
 	@Column(name="active")
-	private Boolean active = true;
+	private Boolean active = false; // default to disabled feed
 	
 	@Column(name="extract_rars")
 	private Boolean extractRars = false;
 	
 	@Column(name="determine_sub_directory")
 	private Boolean determineSubDirectory = false;
-
+	
 	@Column(name="download_directory")
 	private String downloadDirectory;
-
+	
 	@Column(name="sync_interval")
 	private Integer syncInterval = 0; // sync interval in minutes, overrides the ttl
 	
@@ -76,6 +76,12 @@ public class FeedInfo {
 	@Column(name="notify_email")
 	private String notifyEmail; // notify download compelete, and new torrents waiting to download
 	
+	@Column(name="details_url_value_from_regex")
+	private String detailsUrlValueFromRegex; // eg http://localhost/(.*)/file.torrent
+	
+	@Column(name="details_url_format")
+	private String detailsUrlFormat; // eg http://localhost/details?id={regex-value}
+	
 	@Column(name="remove_torrent_on_complete")
 	private Boolean removeTorrentOnComplete = false;
 	
@@ -84,10 +90,10 @@ public class FeedInfo {
 	
 	@Column(name="enable_filter")
 	private Boolean filterEnabled = false;
-
+	
 	@Column(name="filter_action")
 	private String filterAction = "ignore"; // add/ignore
-
+	
 	@Column(name="filter_precedence")
 	private String filterPrecedence = "ignore"; // add/ignore
 	
@@ -156,6 +162,12 @@ public class FeedInfo {
 	}
 	public String getNotifyEmail() {
 		return notifyEmail;
+	}
+	public String getDetailsUrlValueFromRegex() {
+		return detailsUrlValueFromRegex;
+	}
+	public String getDetailsUrlFormat() {
+		return detailsUrlFormat;
 	}
 	public boolean getRemoveTorrentOnComplete() {
 		return removeTorrentOnComplete;
@@ -226,6 +238,12 @@ public class FeedInfo {
 	}
 	public void setNotifyEmail(String notifyEmail) {
 		this.notifyEmail = notifyEmail;
+	}
+	public void setDetailsUrlValueFromRegex(String detailsUrlValueFromRegex) {
+		this.detailsUrlValueFromRegex = detailsUrlValueFromRegex;
+	}
+	public void setDetailsUrlFormat(String detailsUrlFormat) {
+		this.detailsUrlFormat = detailsUrlFormat;
 	}
 	public void setRemoveTorrentOnComplete(boolean removeTorrentOnComplete) {
 		this.removeTorrentOnComplete = removeTorrentOnComplete;

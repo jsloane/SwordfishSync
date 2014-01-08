@@ -1,5 +1,6 @@
 package mymedia.db.form;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,6 +16,13 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
+import org.json.JSONException;
+
+import mymedia.services.MediaManager;
+import mymedia.services.model.FeedProvider;
+import mymedia.services.model.MediaInfo;
+import ca.benow.transmission.model.TorrentStatus;
 
 @Entity
 @Table(name="torrent")
@@ -68,7 +76,10 @@ public class TorrentInfo {
 		this.properties = properties;
 		this.status = status;
 	}
-
+	
+   	public Integer getId() {
+   		return id;
+   	}
    	public String getName() {
    		return name;
    	}
@@ -93,7 +104,10 @@ public class TorrentInfo {
    	public Map<String, String> getProperties() {
    		return properties;
    	}
-
+   	
+   	public void setId(Integer id) {
+   		this.id = id;
+   	}
    	public void setName(String name) {
    		this.name = name;
    	}
@@ -119,11 +133,27 @@ public class TorrentInfo {
    		this.properties = properties;
    	}
    	
-   	public Integer getId() {
-   		return id;
+   	public TorrentStatus getClientFieldsForTorrent() throws IOException, JSONException {
+   		try {
+   	   		return MediaManager.getTorrentStatus(this);
+   		} catch (Exception ex) {
+   			ex.printStackTrace();
+   		}
+   		return null;
    	}
-   	public void setId(Integer id) {
-   		this.id = id;
+   	public String getDownloadDirectoryLocation() {
+   		FeedProvider feedProvider = getFeedProvider();
+   		return MediaManager.constructDownloadDirectory(feedProvider, new MediaInfo(feedProvider, this, false));
+   	}
+   	public FeedProvider getFeedProvider() {
+   		FeedProvider feedProvider = null;
+    	for (FeedProvider feed : MediaManager.feedProviders) {
+   			if (feed.getFeedInfo().getFeedTorrents().contains(this)) {
+    			feedProvider = feed;
+    			break;
+   			}
+    	}
+   		return feedProvider;
    	}
    	
    	public String toString() {

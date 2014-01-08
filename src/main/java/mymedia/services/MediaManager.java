@@ -2,6 +2,8 @@ package mymedia.services;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -14,6 +16,7 @@ import java.util.logging.Logger;
 import javax.mail.MessagingException;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,6 +24,8 @@ import org.json.JSONTokener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 
+import com.github.junrar.Archive;
+import com.github.junrar.exception.RarException;
 import com.github.junrar.extract.ExtractArchive;
 
 import ca.benow.transmission.AddTorrentParameters;
@@ -31,7 +36,6 @@ import ca.benow.transmission.model.AddedTorrentInfo;
 import ca.benow.transmission.model.TorrentStatus;
 import ca.benow.transmission.model.TorrentStatus.StatusField;
 import ca.benow.transmission.model.TorrentStatus.TorrentField;
-
 import mymedia.db.form.FilterAttribute;
 import mymedia.db.form.TorrentInfo;
 import mymedia.db.service.FeedInfoService;
@@ -62,14 +66,14 @@ public class MediaManager {
 	}
 	
 	public static void syncTorrentFeed(FeedProvider feedProvider) {
-		List<TorrentInfo> torrents = new ArrayList<TorrentInfo>(feedProvider.getTorrents()); // create a copy of the torrent list, as it'll be modified during the loop
-		List<TorrentInfo> torrentsFromFeed = feedProvider.getTorrentsFromFeed();
-
 		// for debug stuff
 		if (debug) {
-			debugMethod(feedProvider, torrents);
+			debugMethod(feedProvider);
 			return;
 		}
+		
+		List<TorrentInfo> torrents = new ArrayList<TorrentInfo>(feedProvider.getTorrents()); // create a copy of the torrent list, as it'll be modified during the loop
+		List<TorrentInfo> torrentsFromFeed = feedProvider.getTorrentsFromFeed();
 
 		int t = 0;
 		for (TorrentInfo torrent : torrents) {
@@ -83,7 +87,7 @@ public class MediaManager {
 						checkAndComplete(feedProvider, torrent);
 						break;
 					 case TorrentInfo.STATUS_NOTIFY_COMPLETED: // retry sending notification that download has completed, should already be done but just in case
-						notifyComplete(feedProvider, torrent, new MediaInfo(torrent));
+						notifyComplete(feedProvider, torrent, new MediaInfo(feedProvider, torrent));
 						break;
 					case TorrentInfo.STATUS_NOTIFIED_NOT_ADDED: // notification has been sent for this torrent, no longer need the record
 						saveTorrent = checkAndRemove(feedProvider, torrent, torrentsFromFeed);
@@ -110,7 +114,7 @@ public class MediaManager {
 					addTorrent(feedProvider, torrentInfo);
 				} else if (feedProvider.getFeedInfo().getAction().equalsIgnoreCase("notify")) {
 					// if notify only
-					notifyNew(feedProvider, torrentInfo, new MediaInfo(torrentInfo));
+					notifyNew(feedProvider, torrentInfo, new MediaInfo(feedProvider, torrentInfo));
 				}
 			} else {
 				// not interested in this torrent, set to skipped
@@ -135,14 +139,14 @@ public class MediaManager {
 			}
 			
 			long completedInterval = TimeUnit.MILLISECONDS.toDays(new Date().getTime() - torrent.getDateCompleted().getTime());
-			if (!torrentInFeed && completedInterval > feedProvider.getFeedInfo().getDeleteInterval()) {
+			if (!torrentInFeed && completedInterval > feedProvider.getFeedInfo().getDeleteInterval() && feedProvider.getFeedInfo().getDeleteInterval() > 0) {
 				log.log(Level.INFO, "[DEBUG] Deleting torrent \"" + torrent.getName() + "\" from db, dateCompleted: "
 						+ torrent.getDateCompleted() + ", " + completedInterval + " days ago");
 				feedProvider.removeTorrent(torrent);
 			}
 		} else {
 			saveTorrent = true;
-			torrent.setDateCompleted(new Date());
+			torrent.setDateCompleted(new Date()); // remove next pass
 		}
 		return saveTorrent;
 	}
@@ -182,11 +186,13 @@ public class MediaManager {
 			if (torrentStatus != null && (torrentStatus.getStatus() == StatusField.seeding || torrentStatus.getStatus() == StatusField.seedWait)) {
 				log.log(Level.INFO, "[DEBUG] MediaManager.checkAndComplete Torrent download completed for: " + torrentInfo);
 				
-				MediaInfo mediaInfo = new MediaInfo(torrentInfo);
+				MediaInfo mediaInfo = new MediaInfo(feedProvider, torrentInfo);
 				
-				if (feedProvider.getFeedInfo().getDownloadDirectory() != null && !feedProvider.getFeedInfo().getDownloadDirectory().isEmpty()) {
-					String downloadDir = constructDownloadDirectory(feedProvider, mediaInfo);
-					//baseDir = "M:/Video/TestDir/"; // TESTING
+				String downloadDir = constructAndCreateDownloadDirectory(feedProvider, mediaInfo);
+				//downloadDir = "M:/Video/TestDir/"; // TESTING
+
+				//if (feedProvider.getFeedInfo().getDownloadDirectory() != null && !feedProvider.getFeedInfo().getDownloadDirectory().isEmpty()) {
+				if (downloadDir != null && !downloadDir.isEmpty()) {
 					String torrentDownloadDir = torrentStatus.getField(TorrentField.downloadDir).toString();
 					//torrentDownloadDir = "M:/torrents/torrentdownloads"; // TESTING
 					if (!torrentDownloadDir.endsWith("/")) {
@@ -199,7 +205,8 @@ public class MediaManager {
 					// check if the torrent is a rar to extract
 					boolean unrared = false;
 					if (feedProvider.getFeedInfo().getExtractRars()) {
-						for (int i = 0; i < fileArray.length(); i++) {
+						for (int i = 0; i < fileArray.length(); i++) { // && !unrared ?
+							// need a way to avoid extracting the same rar, if multipart rar files all end with .rar
 							JSONObject obj = new JSONObject(fileArray.get(i).toString());
 							String filename = obj.getString("name");
 							if (filename.endsWith(".rar")) {
@@ -219,16 +226,28 @@ public class MediaManager {
 							// just move torrent files using transmission
 							log.log(Level.INFO, "[DEBUG] MediaManager.checkAndComplete moving torrent to: " + downloadDir);
 							torrentClient.moveTorrents(new Object[] {torrentStatus.getId()}, downloadDir, true);
+							// need to set group writable on any folders that are moved
 						} else {
 							// copy torrent files to downloadDir
 							log.log(Level.INFO, "[DEBUG] MediaManager.checkAndComplete copying torrent files to: " + downloadDir);
 							
 							System.out.println("[DEBUG] COPYING FILES...");
+							System.out.println("[DEBUG] downloadDir: " + downloadDir);
+							System.out.println("[DEBUG] torrentDownloadDir: " + torrentDownloadDir);
 							for (int i = 0; i < fileArray.length(); i++) {
 								JSONObject obj = new JSONObject(fileArray.get(i).toString());
 								String filename = obj.getString("name");
-								// should be creating a hard link if supported by OS, but not possible across file systems
+								System.out.println("[DEBUG] filename: " + filename);
+								/*
+								 * eg
+								 * torrentDownloadDir: /data/?
+								 * filename: /?
+								 * downloadDir: /data/virtual/TV 
+								 */
+								// should be creating a hard link if supported by OS, but not possible across file systems (eg pooled file system; mhddfs)
 								FileUtils.copyFileToDirectory(new File(torrentDownloadDir + filename), new File(downloadDir)); // overwrites existing files
+								//Files.copy(in, target, options); OR Files.setPosixFilePermissions(Paths.get(downloadDir + filename?), perms);
+								// http://www.journaldev.com/855/how-to-set-file-permissions-in-java-easily-using-java-7-posixfilepermission
 							}
 							System.out.println("[DEBUG] ...DONE");
 						}
@@ -251,23 +270,57 @@ public class MediaManager {
 				
 				notifyComplete(feedProvider, torrentInfo, mediaInfo);
 			}
-		} catch (IOException | JSONException e) {
+		} catch (IOException | JSONException | RarException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			
+			
+			
+			// this is an error that needs to be reported to the user
+			
+			
+			//notifyError // manual cleanup may be required
 		}
 	}
 	
+	private static String constructAndCreateDownloadDirectory(FeedProvider feedProvider, MediaInfo mediaInfo) throws IOException {
+		String baseDir = constructDownloadDirectory(feedProvider, mediaInfo);
+		
+		// create destinationDir if it doesn't exist
+		File saveDir = new File(baseDir);
+		if(!saveDir.exists()) {
+			System.out.println("[DEBUG] baseDir does not exist, creating it: " + baseDir);
+			boolean createdDir  = saveDir.mkdirs();
+			if (!createdDir) {
+				throw new IOException("Unable to create directory: " + saveDir);
+			} else {
+				System.out.println("[DEBUG] setting writable permissions on created baseDir: " + saveDir);
+				saveDir.setWritable(true, false); // note: this sets the directory writable for everyone
+			}
+		}
+		
+		return baseDir;
+	}
+	
 	public static String constructDownloadDirectory(FeedProvider feedProvider, MediaInfo mediaInfo) {
+		String baseDir = null;
 		
-		// need to check if media is HD, and use HD directory...
+		// default download directory
+		if (StringUtils.isNotBlank(feedProvider.getFeedInfo().getDownloadDirectory())) {
+			baseDir = feedProvider.getFeedInfo().getDownloadDirectory();
+		}
+		// HD download directory if HD media - not implemented
+		/*if (mediaInfo.hd && feedProvider.getFeedInfo().getDownloadDirectoryHd() != null && !feedProvider.getFeedInfo().getDownloadDirectoryHd().isEmpty()) {
+			baseDir = feedProvider.getFeedInfo().getDownloadDirectoryHd();
+		}*/
 		
-		String baseDir = feedProvider.getFeedInfo().getDownloadDirectory();
-		if (!baseDir.endsWith("/")) {
+		if (baseDir != null && !baseDir.endsWith("/")) {
 			baseDir += "/";
 		}
-		if (feedProvider.getFeedInfo().getDetermineSubDirectory()) {
+		if (baseDir != null && feedProvider.getFeedInfo().getDetermineSubDirectory()) {
 			baseDir = baseDir + mediaInfo.subDirectory;
 		}
+		
 		return baseDir;
 	}
 	
@@ -284,9 +337,6 @@ public class MediaManager {
 			}
 		}
 		// other notify methods
-		else {
-			
-		}
 		feedProvider.saveTorrent(torrentInfo);
 	}
 	
@@ -308,28 +358,31 @@ public class MediaManager {
 		}
 	}
 	
-	private static TorrentStatus getTorrentStatus(TorrentInfo torrent) throws IOException, JSONException {
+	public static TorrentStatus getTorrentStatus(TorrentInfo torrent) throws IOException, JSONException {
 		TorrentStatus foundTorrentStatus = null;
-		List<TorrentStatus> torrentStatuses = torrentClient.getAllTorrents( // can't rely on torrent id if torrent removed/added from another client, or if ids change, so get all torrents...
-		//System.out.println("torrent.getClientTorrentId(): " + torrent.getClientTorrentId());
+		
+		// can't rely on torrent id if torrent removed/added from another client, or if transmission restarts, ids change, so get all torrents...
+		List<TorrentStatus> torrentStatuses = torrentClient.getAllTorrents(
 		//List<TorrentStatus> torrentStatuses = torrentClient.getTorrents(
-		//	new int[] {torrent.getClientTorrentId()},
+		//	new int[] {torrent.getClientTorrentId()}, // unreliable, ids can be inconsistent and change on transmission restart
 			new TorrentStatus.TorrentField[] {
 				TorrentStatus.TorrentField.id,
 				TorrentStatus.TorrentField.activityDate,
 				TorrentStatus.TorrentField.status,
 				TorrentStatus.TorrentField.hashString,
 				TorrentStatus.TorrentField.files,
+				TorrentStatus.TorrentField.percentDone,
 				TorrentStatus.TorrentField.downloadDir
 			}
 		);
 		//System.out.println("[DEBUG] torrentStatuses: " + torrentStatuses);
 		
 		for (TorrentStatus torrentStatus : torrentStatuses) {
-			if (torrentStatus != null && torrent.getHashString().equals(torrentStatus.getField(TorrentStatus.TorrentField.hashString))) {
+			if (torrentStatus != null && StringUtils.isNotBlank(torrent.getHashString()) && torrent.getHashString().equals(torrentStatus.getField(TorrentStatus.TorrentField.hashString))) {
 				foundTorrentStatus = torrentStatus;
 			}
 		}
+		
 		return foundTorrentStatus;
 	}
 	
@@ -341,41 +394,56 @@ public class MediaManager {
 		);
 	}
 	
-	public static void extractRar(String filename, String destinationDir) throws IOException {
+	public static void extractRar(String filename, String destinationDir) throws RarException, IOException {
 		// SPAWN NEW THREAD? maybe not if deleting torrent...
 		System.out.println("[DEBUG] extractRar filename: " + filename);
 		System.out.println("[DEBUG] extractRar destinationDir: " + destinationDir);
 		
-		// create destinationDir if it doesn't exist
-		File saveDir = new File(destinationDir);
-		if(!saveDir.exists()) {
-			boolean createdDir  = saveDir.mkdirs();
-			if (!createdDir) {
-				throw new IOException("Unable to create directory: " + saveDir);
-			}
-		}
-		
-		System.out.println("[DEBUG] EXTRACTING...");
 		final File rar = new File(filename);
 		final File destinationFolder = new File(destinationDir);
+		
+		// check if multi part, and only extract the first file
+		Archive downloadedArchive = new Archive(rar);
+		System.out.println("[DEBUG] Checking RAR header...");
+		downloadedArchive.getMainHeader().print();
+		if (downloadedArchive.getMainHeader().isMultiVolume() && !downloadedArchive.getMainHeader().isFirstVolume()) {
+			downloadedArchive.close();
+			return;
+		}
+		downloadedArchive.close();
+
+		System.out.println("[DEBUG] EXTRACTING...");
 		ExtractArchive extractArchive = new ExtractArchive();
 		extractArchive.extractArchive(rar, destinationFolder);
+		
+		// group write permission on created directory // need to test this - don't think this is needed
+		/*File savedDir = new File(destinationDir + filename); // strip ".rar" from filename?
+		if (savedDir.exists() && savedDir.isDirectory()) {
+			System.out.println("[DEBUG] setting writable permissions savedDir: " + savedDir);
+			savedDir.setWritable(true, false); // note: this sets the directory writable for everyone
+		}*/
+		
 		System.out.println("[DEBUG] ...DONE");
 	}
 	
 	
 	
-	private static void debugMethod(FeedProvider feedProvider, List<TorrentInfo> torrents) {
+	private static void debugMethod(FeedProvider feedProvider) {
+		log.log(Level.INFO, "[MYMEDIA] MediaManager.debug: "+ debug + ", skipping torrent checks.");
 		
-		/*int t = 0;
+		if (feedProvider.getFeedInfo().getId() != 15) {
+			return;
+		}
+		
+		List<TorrentInfo> torrents = new ArrayList<TorrentInfo>(feedProvider.getTorrents());
+		
+		int t = 0;
 		for (TorrentInfo torrent : torrents) {
 			t++;
 			if (t == 2) {
 				//break;
 			}
-		}*/
-		
-		log.log(Level.INFO, "[MYMEDIA] MediaManager.debug: "+ debug + ", skipping torrent checks.");
+		}
 		
 	}
 }

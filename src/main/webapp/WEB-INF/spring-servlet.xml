@@ -32,7 +32,7 @@
         class="org.springframework.web.servlet.view.InternalResourceViewResolver">
         <property name="viewClass"
             value="org.springframework.web.servlet.view.JstlView" />
-        <property name="prefix" value="/WEB-INF/jsp/" />
+        <property name="prefix" value="/WEB-INF/" />
         <property name="suffix" value=".jsp" />
     </bean>
     
@@ -50,9 +50,9 @@
     
     <bean id="dataSourceMyMedia"
         class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close"
-        p:driverClassName="${jdbc.mymedia.driverClassName}"
-        p:url="${jdbc.mymedia.databaseurl}" p:username="${jdbc.mymedia.username}"
-        p:password="${jdbc.mymedia.password}" />
+        p:driverClassName="${jdbc.driverClassName}"
+        p:url="${jdbc.databaseurl}" p:username="${jdbc.username}"
+        p:password="${jdbc.password}" />
     <bean id="sessionFactoryMyMedia"
         class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
         <property name="dataSource" ref="dataSourceMyMedia" />
@@ -64,10 +64,10 @@
         </property>
         <property name="hibernateProperties">
             <props>
-                <prop key="hibernate.dialect">${jdbc.mymedia.dialect}</prop>
-                <prop key="hibernate.show_sql">${jdbc.mymedia.show_sql}</prop>
-                <prop key="hibernate.format_sql">${jdbc.mymedia.format_sql}</prop>
-                <prop key="hibernate.hbm2ddl.auto">${jdbc.mymedia.autoddl}</prop>
+                <prop key="hibernate.dialect">${jdbc.hibernate.dialect}</prop>
+                <prop key="hibernate.show_sql">${jdbc.hibernate.show_sql}</prop>
+                <prop key="hibernate.format_sql">${jdbc.hibernate.format_sql}</prop>
+                <prop key="hibernate.hbm2ddl.auto">${jdbc.hibernate.hbm2ddl.auto}</prop>
                 <!-- <prop key="hibernate.connection.autocommit">true</prop> -->
             </props>
         </property>
