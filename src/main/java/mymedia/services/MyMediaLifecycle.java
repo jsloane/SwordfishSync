@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -15,6 +16,7 @@ import mymedia.db.form.FeedInfo;
 import mymedia.db.form.FilterAttribute;
 import mymedia.db.service.FeedInfoService;
 import mymedia.db.service.TorrentInfoService;
+import mymedia.model.xsd.Settings;
 import mymedia.services.model.FeedProvider;
 import mymedia.services.model.MediaInfo;
 import mymedia.services.tasks.SyncTask;
@@ -41,8 +43,9 @@ public class MyMediaLifecycle implements Lifecycle {
     
     @Autowired
     private ApplicationContext applicationContext;
-    
+
 	public final static String propertiesFile = "/mymedia.properties";
+	public final static String settingsFile = "/settings.xml";
 	private volatile boolean isRunning = false;
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private long syncInterval = 30; // default 30min
@@ -54,6 +57,44 @@ public class MyMediaLifecycle implements Lifecycle {
 		 * ps -u tomcat7
 		 * kill -QUIT process_id
 		 */
+		
+		
+		/**
+		 * 
+"pool-7-thread-1" prio=10 tid=0x00007f6e6c625000 nid=0xb6c runnable [0x00007f6e7b0c2000]
+   java.lang.Thread.State: RUNNABLE
+	at java.net.SocketInputStream.socketRead0(Native Method)
+	at java.net.SocketInputStream.read(SocketInputStream.java:152)
+	at java.net.SocketInputStream.read(SocketInputStream.java:122)
+	at sun.security.ssl.InputRecord.readFully(InputRecord.java:442)
+	at sun.security.ssl.InputRecord.read(InputRecord.java:480)
+	at sun.security.ssl.SSLSocketImpl.readRecord(SSLSocketImpl.java:927)
+	- locked <0x00000000f17f8e08> (a java.lang.Object)
+	at sun.security.ssl.SSLSocketImpl.performInitialHandshake(SSLSocketImpl.java:1312)
+	- locked <0x00000000f17f8db8> (a java.lang.Object)
+	at sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:1339)
+	at sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:1323)
+	at sun.net.www.protocol.https.HttpsClient.afterConnect(HttpsClient.java:563)
+	at sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(AbstractDelegateHttpsURLConnection.java:185)
+	at sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1300)
+	- locked <0x00000000f17f8990> (a sun.net.www.protocol.https.DelegateHttpsURLConnection)
+	at sun.net.www.protocol.https.HttpsURLConnectionImpl.getInputStream(HttpsURLConnectionImpl.java:254)
+	- locked <0x00000000f17f8910> (a sun.net.www.protocol.https.HttpsURLConnectionImpl)
+	at mymedia.services.model.FeedProvider.getFeedXml(FeedProvider.java:261)
+	at mymedia.services.model.FeedProvider.refreshFeed(FeedProvider.java:204)
+	at mymedia.services.model.FeedProvider.getTorrents(FeedProvider.java:173)
+	at mymedia.services.MediaManager.syncTorrentFeed(MediaManager.java:75)
+	at mymedia.services.MediaManager.syncTorrents(MediaManager.java:63)
+	at mymedia.services.tasks.SyncTask.run(SyncTask.java:10)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:471)
+	at java.util.concurrent.FutureTask.runAndReset(FutureTask.java:304)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$301(ScheduledThreadPoolExecutor.java:178)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:293)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+	at java.lang.Thread.run(Thread.java:744)
+		 */
+		
 	}
 
 	public void start() {
@@ -107,7 +148,7 @@ public class MyMediaLifecycle implements Lifecycle {
 			MediaManager.feedProviders = getFeedProviders(config);
 			
 			log.log(Level.INFO, "[DEBUG] MyMediaLifecycle.start scheduling sync task: " + syncInterval + " minute intervals");
-			scheduler.scheduleAtFixedRate(new SyncTask(), 0/*1*/, syncInterval, TimeUnit.MINUTES); // one minute before process starts
+			scheduler.scheduleAtFixedRate(new SyncTask(), 0, syncInterval, TimeUnit.MINUTES);
 		} catch (IOException | ConfigurationException | CannotCreateTransactionException e) {
 			// need an error handler to email severe errors? (not rss feed connection errors)
 			// TODO Auto-generated catch block
@@ -126,94 +167,6 @@ public class MyMediaLifecycle implements Lifecycle {
     	// properties file is a baseline that overrides database records
 		List<FeedProvider> feedProviders = new ArrayList<FeedProvider>();
     	List<Integer> gotIds = new ArrayList<Integer>();
-    	if (config.containsKey("feed.count")) {
-    		int feedCount = Integer.parseInt(config.getString("feed.count"));
-	    	if (feedCount > 0) {
-	            for (int i = 1; i <= feedCount; i++) {
-	        		if (config.containsKey("feed." + i + ".url")) {
-		    			log.log(Level.INFO, "[DEBUG] MyMediaLifecycle.start reading in feed: " + i);
-		    			// this may overwrite other feed settings, if there are other feeds in the DB with this URL. Can't prevent this because we don't know feed ID.
-		            	FeedProvider readFeedProvider = new FeedProvider(config.getString("feed." + i + ".url"));
-		            	readFeedProvider.setFromPropertiesFile(true);
-	        			if (config.containsKey("feed." + i + ".isActive")) {
-	        				readFeedProvider.getFeedInfo().setActive(Boolean.parseBoolean(config.getString("feed." + i + ".isActive")));
-	        			}
-	        			
-	        			if (config.containsKey("feed." + i + ".initialPopulate")) {
-	        				readFeedProvider.getFeedInfo().setInitialPopulate(config.getBoolean("feed." + i + ".initialPopulate"));
-	        			}
-	        			if (config.containsKey("feed." + i + ".action")) {
-	        				readFeedProvider.getFeedInfo().setAction(config.getString("feed." + i + ".action"));
-	        			}
-	        			if (config.containsKey("feed." + i + ".name")) {
-	        				readFeedProvider.getFeedInfo().setName(config.getString("feed." + i + ".name"));
-	        			}
-	        			if (config.containsKey("feed." + i + ".syncInterval")) {
-	        				readFeedProvider.getFeedInfo().setSyncInterval(Integer.parseInt(config.getString("feed." + i + ".syncInterval")));
-	        			}
-	        			if (config.containsKey("feed." + i + ".downloadDirectory")) {
-	        				readFeedProvider.getFeedInfo().setDownloadDirectory(config.getString("feed." + i + ".downloadDirectory"));
-	        			}
-	        			if (config.containsKey("feed." + i + ".uploadLimit")) {
-	        				readFeedProvider.getFeedInfo().setUploadLimit(Integer.parseInt(config.getString("feed." + i + ".uploadLimit")));
-	        			}
-	        			if (config.containsKey("feed." + i + ".deleteInterval")) {
-	        				readFeedProvider.getFeedInfo().setDeleteInterval(Integer.parseInt(config.getString("feed." + i + ".deleteInterval")));
-	        			}
-	        			if (config.containsKey("feed." + i + ".notifyEmail")) {
-	        				readFeedProvider.getFeedInfo().setNotifyEmail(config.getString("feed." + i + ".notifyEmail"));
-	        			}
-	        			if (config.containsKey("feed." + i + ".extractRars")) {
-	        				readFeedProvider.getFeedInfo().setExtractRars(config.getBoolean("feed." + i + ".extractRars"));
-	        			}
-	        			if (config.containsKey("feed." + i + ".determineSubDirectory")) {
-	        				readFeedProvider.getFeedInfo().setDetermineSubDirectory(config.getBoolean("feed." + i + ".determineSubDirectory"));
-	        			}
-	        			if (config.containsKey("feed." + i + ".filter")) {
-	        				readFeedProvider.getFeedInfo().setFilterEnabled(Boolean.parseBoolean(config.getString("feed." + i + ".filter")));
-	        			}
-	        			if (config.containsKey("feed." + i + ".filter.action")) {
-	        				readFeedProvider.getFeedInfo().setFilterAction(config.getString("feed." + i + ".filter.action"));
-	        			}
-	        			if (config.containsKey("feed." + i + ".filter.add")) {
-	            			Set<FilterAttribute> filterAttributes = readFeedProvider.getFeedInfo().getFilterAttributes();
-	        		    	for (String regex : config.getStringArray("feed." + i + ".filter.add")) {
-	                			filterAttributes.add(
-	                				new FilterAttribute("add", regex.trim())
-	                			);
-	        		    	}
-	            			readFeedProvider.getFeedInfo().setFilterAttributes(filterAttributes);
-	        			}
-	        			if (config.containsKey("feed." + i + ".filter.ignore")) {
-	            			Set<FilterAttribute> filterAttributes = readFeedProvider.getFeedInfo().getFilterAttributes();
-	        		    	for (String regex : config.getStringArray("feed." + i + ".filter.ignore")) {
-	                			filterAttributes.add(
-	                				new FilterAttribute("ignore", regex.trim())
-	                			);
-	        		    	}
-	            			readFeedProvider.getFeedInfo().setFilterAttributes(filterAttributes);
-	        			}
-	        			if (config.containsKey("feed." + i + ".filter.precedence")) {
-	        				readFeedProvider.getFeedInfo().setFilterPrecedence(config.getString("feed." + i + ".filter.precedence"));
-	        			}
-	        			if (config.containsKey("feed." + i + ".filter.removeAddFilterOnMatch")) {
-	        				readFeedProvider.getFeedInfo().setRemoveAddFilterOnMatch(config.getBoolean("feed." + i + ".filter.removeAddFilterOnMatch"));
-	        			}
-	        			if (config.containsKey("feed." + i + ".removeTorrentOnComplete")) {
-	        				readFeedProvider.getFeedInfo().setRemoveTorrentOnComplete(config.getBoolean("feed." + i + ".removeTorrentOnComplete"));
-	        			}
-	        			// activityDateInterval
-	        			// seedRatio
-	        			// etc
-	        			
-	        			readFeedProvider.saveFeedInfo();
-	        			
-	        			feedProviders.add(readFeedProvider);
-	        			gotIds.add(readFeedProvider.getFeedInfo().getId());
-	        		}
-	            }
-	    	}
-    	}
     	
     	// get other feeds from db that are not in properties file
     	Integer[] gotIdsArray = (Integer[]) gotIds.toArray(new Integer[gotIds.size()]);

@@ -189,7 +189,11 @@ public class IndexController {
     			foundTorrentInfo.getStatus().equals(TorrentInfo.STATUS_NOTIFIED_NOT_ADDED) ||
     			foundTorrentInfo.getStatus().equals(TorrentInfo.STATUS_SKIPPED)
     		)) {
-    		MediaManager.addTorrent(foundFeedProvider, foundTorrentInfo);
+    		//try {
+    			MediaManager.addTorrent(foundFeedProvider, foundTorrentInfo);
+    		//} catch (Exception e) {
+    			
+    		//}
     	}
     	
         return "redirect:/feeds/" + feedId;

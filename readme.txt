@@ -1,7 +1,7 @@
 
 Requirements to run:
 Java 1.7
-Tomcat 1.7
+Tomcat 7
 MySql 5.5
 
 Requirements to compile:
@@ -21,5 +21,3 @@ themoviedbapi 3.5-SNAPSHOT
 
 
 ###
-Note: need SQL script to create mymedia user and schema
-

@@ -32,7 +32,7 @@ import com.sun.syndication.io.XmlReader;
 
 public class FeedProvider {
 
-	private final static Logger Log = Logger.getLogger(MyMediaLifecycle.class.getName());
+	private final static Logger log = Logger.getLogger(MyMediaLifecycle.class.getName());
 	
 	private int ttl = 0; // ttl is in minutes (from rss spec?)
 	private long lastFetched = 0; // when the feed was last fetched (in minutes)
@@ -115,6 +115,7 @@ public class FeedProvider {
 					existingTorrent = true;
 				}
 			} catch (Exception ex) {
+				System.out.println("TEST - recordTorrentFromFeed");
 				ex.printStackTrace();
 			}
 		}
@@ -127,9 +128,12 @@ public class FeedProvider {
 	}
 	public void removeTorrent(TorrentInfo torrent) {
 		feedInfo.getFeedTorrents().remove(torrent);
-		Log.log(Level.INFO, "[DEBUG] FeedProvider.removeTorrent() torrent: " + torrent);
+		log.log(Level.INFO, "[DEBUG] FeedProvider.removeTorrent() torrent: " + torrent);
+		//Log.log(Level.INFO, "[DEBUG] FeedProvider.removeTorrent() MediaManager.feedInfoService.saveFeedInfo");
 		MediaManager.feedInfoService.saveFeedInfo(feedInfo);
+		//Log.log(Level.INFO, "[DEBUG] FeedProvider.removeTorrent() MediaManager.torrentInfoService.removeTorrentInfo(torrent)");
 		MediaManager.torrentInfoService.removeTorrentInfo(torrent);
+		//Log.log(Level.INFO, "[DEBUG] FeedProvider.removeTorrent() done.");
 	}
 	
 	public void removeFeedInfo() {
@@ -174,12 +178,13 @@ public class FeedProvider {
 					saveFeedInfo();
 				}
 			} catch (Exception e) {
+				System.out.println("TEST - getTorrents");
 				e.printStackTrace();
 				if (statusMessage.isEmpty()) {
 					statusMessage = e.toString();
 				}
 			}
-			Log.log(Level.INFO, "[DEBUG] Fetched feed: " + feedInfo.getName() + ", "
+			log.log(Level.INFO, "[DEBUG] Fetched feed: " + feedInfo.getName() + ", "
 					+ "current: " + isFeedCurrent
 					+ ", ttl: " + ttl);
 		}
@@ -250,13 +255,20 @@ public class FeedProvider {
         SyndFeed feed = null;
         try {
         	URLConnection urlConnection = new URL(feedInfo.getUrl()).openConnection();
-        	urlConnection.setConnectTimeout(10000);
-        	urlConnection.setReadTimeout(30000);
-            reader = new XmlReader(urlConnection);
+        	urlConnection.setConnectTimeout(60000);
+        	urlConnection.setReadTimeout(60000);
+        	urlConnection.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0"); // set user agent as browser
+        	
+    		log.log(Level.INFO, "[DEBUG] FeedProvider.getFeedXml() urlConnection: " + urlConnection);
+    		
+    		// sometimes the connection still times out without throwing an exception...
+    		reader = new XmlReader(urlConnection);
 			SyndFeedInput in = new SyndFeedInput();
 			in.setPreserveWireFeed(true);
             feed = in.build(reader);
+    		log.log(Level.INFO, "[DEBUG] FeedProvider.getFeedXml() DONE.");
         } catch (Exception ex) {
+			System.out.println("TEST - getFeedXml 1");
         	ex.printStackTrace();
 			statusMessage = ex.toString();
         } finally {
@@ -264,6 +276,7 @@ public class FeedProvider {
 	        	try {
 	        		reader.close();
 				} catch (Exception e) {
+					System.out.println("TEST - getFeedXml 2");
 					e.printStackTrace();
 				}
 	        }
@@ -388,6 +401,10 @@ public class FeedProvider {
     	
 		return match;
 	}
+    
+    public boolean shouldAddTorrent(TorrentInfo torrentInfo) {
+    	return !this.getFeedInfo().getFilterEnabled() || this.checkFilterMatch(torrentInfo.getName());
+    }
 	
 	public String toString() {
         return "FeedProvider: ttl [" + ttl + "], lastFetched [" + lastFetched + "], feedInfo [" + feedInfo + "]";

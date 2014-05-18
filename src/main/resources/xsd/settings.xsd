@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+<xs:element name="settings">
+    <xs:complexType>
+        <xs:sequence>
+            <xs:element name="application">
+			    <xs:complexType>
+			        <xs:sequence>
+                        <xs:element type="xs:string" name="title" default="SwordfishSync" />
+                        <xs:element type="xs:integer" name="syncInterval" default="15" />
+                        <xs:element type="xs:string" name="tvdbApiKey" />
+                        <xs:element type="xs:string" name="tvdbApiNotice" default="thetvdb dot com" />
+                        <xs:element type="xs:string" name="tmdbApiKey" />
+                        <xs:element type="xs:string" name="tmdbApiNotice" default="This product uses the TMDb API but is not endorsed or certified by TMDb." />
+                        <xs:element type="xs:string" name="debugOnHost" />
+			        </xs:sequence>
+			    </xs:complexType>
+            </xs:element>
+            
+            <xs:element name="torrentClient">
+                <!-- <xs:attribut type="xs:string"e name="type" default="Transmission" /> -->
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element type="xs:string" name="host" default="127.0.0.1" />
+                        
+                        
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            
+            
+            
+			<xs:element name="to" type="xs:string"/>
+			<xs:element name="from" type="xs:string"/>
+			<xs:element name="heading" type="xs:string"/>
+			<xs:element name="body" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:element>
+
+</xs:schema>
+
+
+<!-- 
+http://www.w3schools.com/schema/
+xs:string
+xs:decimal
+xs:integer
+xs:boolean
+xs:date
+xs:time
+ -->
+
+

@@ -17,6 +17,7 @@ import com.omertron.themoviedbapi.model.MovieDb;
 
 
 
+
 import mymedia.db.form.TorrentInfo;
 
 public class MediaInfo {
@@ -286,6 +287,7 @@ public class MediaInfo {
 						}
 					}
 				} catch (Exception e) {
+					System.out.println("TEST - MediaInfo.processTvShow()");
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}

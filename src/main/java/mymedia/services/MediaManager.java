@@ -9,7 +9,9 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,6 +64,7 @@ public class MediaManager {
 		for (FeedProvider feedProvider : feedProviders) {
 			syncTorrentFeed(feedProvider);
 		}
+		System.out.println("[DEBUG] FINISHED MediaManager.syncTorrents()");
 		//isSyncingFeeds = false;
 	}
 	
@@ -108,10 +111,14 @@ public class MediaManager {
 
 	private static boolean checkAndAdd(FeedProvider feedProvider, TorrentInfo torrentInfo) {
 		if (feedProvider.getFeedInfo().getActive()) {
-			if (!feedProvider.getFeedInfo().getFilterEnabled() || feedProvider.checkFilterMatch(torrentInfo.getName())) {
+			if (feedProvider.shouldAddTorrent(torrentInfo)) {
 				if (feedProvider.getFeedInfo().getAction().equalsIgnoreCase("download")) {
 					// if download
-					addTorrent(feedProvider, torrentInfo);
+					//try {
+						addTorrent(feedProvider, torrentInfo);
+					//} catch (Exception e) {
+						
+					//}
 				} else if (feedProvider.getFeedInfo().getAction().equalsIgnoreCase("notify")) {
 					// if notify only
 					notifyNew(feedProvider, torrentInfo, new MediaInfo(feedProvider, torrentInfo));
@@ -171,6 +178,7 @@ public class MediaManager {
 				torrentClient.setTorrents(setTorrentParameters);
 			}
 		} catch (Exception e) {
+			System.out.println("TEST - MediaManager.addTorrent");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -431,7 +439,17 @@ public class MediaManager {
 	private static void debugMethod(FeedProvider feedProvider) {
 		log.log(Level.INFO, "[MYMEDIA] MediaManager.debug: "+ debug + ", skipping torrent checks.");
 		
-		if (feedProvider.getFeedInfo().getId() != 15) {
+		/*try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
+
+		if (!feedProvider.getFeedInfo().getActive()) {
+			return;
+		}
+		if (feedProvider.getFeedInfo().getId() != 17) {
 			return;
 		}
 		
