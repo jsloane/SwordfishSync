@@ -6,7 +6,7 @@
 <%@ taglib prefix="mmt" tagdir="/WEB-INF/tags" %>
 <html>
 	<head>
-	    <title>MyMedia</title>
+	    <title>${title} - Client Torrents</title>
 	    <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/main.css"/>"></link>
         <script src="<c:url value="/resources/javascript/jquery-1.9.1.js"/>"></script>
         <script src="<c:url value="/resources/javascript/jquery.tmpl.js"/>"></script>

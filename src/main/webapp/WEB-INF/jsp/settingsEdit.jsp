@@ -9,7 +9,7 @@
 <%@ taglib prefix="mmt" tagdir="/WEB-INF/tags" %>
 <html>
     <head>
-        <title>MyMedia</title>
+        <title>${title} - Edit Settings</title>
         <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/main.css"/>"></link>
     </head>
     <body>

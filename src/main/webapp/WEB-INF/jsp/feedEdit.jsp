@@ -7,7 +7,7 @@
 <%@ taglib prefix="mmt" tagdir="/WEB-INF/tags" %>
 <html>
     <head>
-        <title>MyMedia</title>
+        <title>${title} - Edit Feed</title>
         <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/main.css"/>"></link>
     </head>
     <body>

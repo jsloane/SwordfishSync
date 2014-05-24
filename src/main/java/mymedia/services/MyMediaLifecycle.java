@@ -1,5 +1,6 @@
 package mymedia.services;  // move this to another package?
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,9 +25,11 @@ import mymedia.util.EmailManager;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.Lifecycle;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.transaction.CannotCreateTransactionException;
 
 import ca.benow.transmission.TransmissionClient;
@@ -43,8 +46,11 @@ public class MyMediaLifecycle implements Lifecycle {
     
     @Autowired
     private ApplicationContext applicationContext;
-
-	public final static String propertiesFile = "/mymedia.properties";
+    
+	private final static String defaultPropertiesFile = "default-swordfishsync.properties";
+	public final static String userPropertiesFile = System.getProperty("user.home") + System.getProperty("file.separator")
+			+ ".swordfishsync" + System.getProperty("file.separator") + "swordfishsync.properties";
+	public static String propertiesFile = defaultPropertiesFile;
 	public final static String settingsFile = "/settings.xml";
 	private volatile boolean isRunning = false;
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
@@ -109,7 +115,23 @@ public class MyMediaLifecycle implements Lifecycle {
 		try {
 			String hostName = java.net.InetAddress.getLocalHost().getHostName();
 			
-			PropertiesConfiguration config = new PropertiesConfiguration(propertiesFile);
+			// determine properties file
+			File defaultPropertiesFile = new ClassPathResource(MyMediaLifecycle.defaultPropertiesFile).getFile();
+			File userPropertiesFile = new File(MyMediaLifecycle.userPropertiesFile);
+			if (userPropertiesFile.exists()) {
+				MyMediaLifecycle.propertiesFile = MyMediaLifecycle.userPropertiesFile;
+			} else {
+				// copy default properties file to users directory
+				try {
+					FileUtils.copyFile(defaultPropertiesFile, userPropertiesFile);
+					MyMediaLifecycle.propertiesFile = MyMediaLifecycle.userPropertiesFile;
+				} catch (IOException e) {
+					log.log(Level.WARNING, "Unable to store user properties file, using default settings.", e);
+				}
+			}
+			log.log(Level.INFO, "MyMediaLifecycle.propertiesFile: " + MyMediaLifecycle.propertiesFile);
+			
+			PropertiesConfiguration config = new PropertiesConfiguration(MyMediaLifecycle.propertiesFile);
 			
 			if (config.containsKey("mymedia.debugOnHost")) {
 		    	for (String debugHost : config.getStringArray("mymedia.debugOnHost")) {

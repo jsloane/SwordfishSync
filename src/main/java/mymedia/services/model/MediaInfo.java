@@ -212,10 +212,10 @@ public class MediaInfo {
 					
 					for (MovieDb searchResult : searchResults) {
 						// some image width sizes: w185, w342, w1280
-						if (searchResult.getBackdropPath() != null && !searchResult.getBackdropPath().isEmpty()) {
+						if (StringUtils.isNotBlank(searchResult.getBackdropPath())) {
 							backdropUrl = "http://cf2.imgobject.com/t/p/w342/" + searchResult.getBackdropPath();
 						}
-						if (searchResult.getPosterPath() != null && !searchResult.getPosterPath().isEmpty()) {
+						if (StringUtils.isNotBlank(searchResult.getPosterPath())) {
 							posterUrl = "http://cf2.imgobject.com/t/p/w342/" + searchResult.getPosterPath();
 						}
 			        	if (backdropUrl.equalsIgnoreCase(posterUrl)) {

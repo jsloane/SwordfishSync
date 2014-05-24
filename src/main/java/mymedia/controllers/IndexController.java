@@ -57,7 +57,7 @@ public class IndexController {
     		mav = new ModelAndView("jsp/index");
     	}
 		
-		mav.addObject("title", instanceName);
+		mav.addObject("title", IndexController.instanceName);
 		mav.addObject("feeds", MediaManager.feedProviders);
 		mav.addObject("torrentDownloading", TorrentInfo.STATUS_IN_PROGRESS);
 		mav.addObject("torrentNotifiedCompleted", TorrentInfo.STATUS_NOTIFY_COMPLETED);
@@ -70,7 +70,7 @@ public class IndexController {
     public ModelAndView activeTorrents() {
 		// list feeds and torrents from torrent client
 		ModelAndView mav = new ModelAndView("jsp/clientTorrents");
-		mav.addObject("title", instanceName);
+		mav.addObject("title", IndexController.instanceName);
 		try {
 			mav.addObject("activeTorrents", MediaManager.getAllTorrentStatus());
 		} catch (IOException | JSONException e) {
@@ -83,7 +83,7 @@ public class IndexController {
     @RequestMapping(value = "/feeds", method = RequestMethod.GET)
     public ModelAndView feeds() {
 		ModelAndView mav = new ModelAndView("jsp/feeds");
-		mav.addObject("title", instanceName);
+		mav.addObject("title", IndexController.instanceName);
 		mav.addObject("feeds", MediaManager.feedProviders);
         return mav;
     }
@@ -91,7 +91,7 @@ public class IndexController {
     @RequestMapping(value = "/feeds/add", method = RequestMethod.GET)
     public ModelAndView editFeed(@ModelAttribute("uploadedFile") UploadedFile uploadedFile) {
 		ModelAndView mav = new ModelAndView("jsp/feedEdit");
-		mav.addObject("title", instanceName);
+		mav.addObject("title", IndexController.instanceName);
 		FeedProvider newFeedProvider = new FeedProvider();
     	mav.addObject("feed", newFeedProvider); // new feed object for default values
 		setFeedValues(newFeedProvider, mav);
@@ -134,7 +134,7 @@ public class IndexController {
     @RequestMapping("/feeds/{feedId}")
     public ModelAndView getFeed(@PathVariable("feedId") Integer feedId) {
 		ModelAndView mav = new ModelAndView("jsp/feed");
-		mav.addObject("title", instanceName);
+		mav.addObject("title", IndexController.instanceName);
     	mav.addObject("feed", findFeedProviders(new Integer[]{feedId}).get(0));
 		mav.addObject("torrentNotAdded", TorrentInfo.STATUS_NOT_ADDED);
 		mav.addObject("torrentNotifiedNotAdded", TorrentInfo.STATUS_NOTIFIED_NOT_ADDED);
@@ -147,7 +147,7 @@ public class IndexController {
     	FeedProvider foundFeedProvider = findFeedProviders(new Integer[]{feedId}).get(0);
 		
 		ModelAndView mav = new ModelAndView("jsp/feed");
-		mav.addObject("title", instanceName);
+		mav.addObject("title", IndexController.instanceName);
     	mav.addObject("feed", foundFeedProvider);
     	
     	if (foundFeedProvider != null) {
@@ -159,7 +159,7 @@ public class IndexController {
     		byte[] b = xstream.toXML(foundFeedProvider.getFeedInfo()).getBytes();
     		response.setHeader("Pragma", "private");
     		response.setHeader("Cache-Control", "private, must-revalidate");
-    		response.setHeader("Content-Disposition","attachment; filename=\"" + foundFeedProvider.getFeedInfo().getName() +".xml\"");
+    		response.setHeader("Content-Disposition","attachment; filename=\"" + IndexController.instanceName + " - " + foundFeedProvider.getFeedInfo().getName() +".xml\"");
     		response.setContentType("text/xml");
     		response.setContentLength(b.length);
     		ServletOutputStream ouputStream = response.getOutputStream();
@@ -202,7 +202,7 @@ public class IndexController {
     @RequestMapping(value = "/feeds/{feedId}/edit", method = RequestMethod.GET)
     public ModelAndView editFeed(@PathVariable("feedId") Integer feedId) {
 		ModelAndView mav = new ModelAndView("jsp/feedEdit");
-		mav.addObject("title", instanceName);
+		mav.addObject("title", IndexController.instanceName);
 		
     	for (FeedProvider feed : MediaManager.feedProviders) {
     		if (feed.getFeedInfo().getId().equals(feedId)) {
@@ -229,7 +229,7 @@ public class IndexController {
     public ModelAndView editFeedFilter(@PathVariable("feedId") Integer feedId) {
 		String optionSelected = "selected=\"selected\"";
 		ModelAndView mav = new ModelAndView("jsp/feedEditFilter");
-		mav.addObject("title", instanceName);
+		mav.addObject("title", IndexController.instanceName);
     	String filterEnabled = "";
     	String removeAddFilterOnMatch = "";
     	String actionSelectedIgnore = optionSelected;
@@ -321,7 +321,7 @@ public class IndexController {
 	@RequestMapping(value = "/feeds/{feedId}/delete", method = RequestMethod.GET)
     public ModelAndView deleteFeed(@PathVariable("feedId") Integer feedId) {
 		ModelAndView mav = new ModelAndView("jsp/feedDelete");
-		mav.addObject("title", instanceName);
+		mav.addObject("title", IndexController.instanceName);
     	for (FeedProvider feed : MediaManager.feedProviders) {
     		if (feed.getFeedInfo().getId().equals(feedId)) {
     			mav.addObject("feed", feed);
@@ -342,15 +342,16 @@ public class IndexController {
 	@RequestMapping(value = "/settings", method = RequestMethod.GET)
     public ModelAndView viewSettings(WebRequest webRequest) throws ConfigurationException {
 		ModelAndView mav = new ModelAndView("jsp/settings");
-		mav.addObject("title", instanceName);
+		mav.addObject("title", IndexController.instanceName);
 		mav.addObject("saved", webRequest.getParameter("saved"));
+		mav.addObject("settingsFile", MyMediaLifecycle.propertiesFile);
 		mav.addObject("config", new PropertiesConfiguration(MyMediaLifecycle.propertiesFile));
         return mav;
     }
 	@RequestMapping(value = "/settings/edit", method = RequestMethod.GET)
     public ModelAndView editSettings() throws ConfigurationException {
 		ModelAndView mav = new ModelAndView("jsp/settingsEdit");
-		mav.addObject("title", instanceName);
+		mav.addObject("title", IndexController.instanceName);
 		mav.addObject("config", new PropertiesConfiguration(MyMediaLifecycle.propertiesFile));
         return mav;
     }
@@ -383,7 +384,7 @@ public class IndexController {
 		byte[] b = xstream.toXML(settings).getBytes();
 		response.setHeader("Pragma", "private");
 		response.setHeader("Cache-Control", "private, must-revalidate");
-		response.setHeader("Content-Disposition","attachment; filename=\"settings.xml\"");
+		response.setHeader("Content-Disposition","attachment; filename=\"" + IndexController.instanceName + " - settings.xml\"");
 		response.setContentType("text/xml");
 		response.setContentLength(b.length);
 		ServletOutputStream ouputStream = response.getOutputStream();
@@ -439,7 +440,7 @@ public class IndexController {
     		
     		response.setHeader("Pragma", "private");
     		response.setHeader("Cache-Control", "private, must-revalidate");
-    		response.setHeader("Content-Disposition","attachment; filename=\"" + indexFile.getName() + "\"");
+    		response.setHeader("Content-Disposition","attachment; filename=\"" + IndexController.instanceName + " - " + indexFile.getName() + "\"");
     		response.setContentType("text/plain");
     		response.setContentLength((int) indexFile.length());
     		

@@ -9,7 +9,7 @@
 <%@ taglib prefix="mmt" tagdir="/WEB-INF/tags" %>
 <html>
     <head>
-        <title>MyMedia</title>
+        <title>${title} - Settings</title>
         <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/main.css"/>"></link>
     </head>
     <body>
@@ -22,7 +22,7 @@
             </div>
             <div id="page">
                 <c:if test='${saved != null}'>
-                    <span class="alert"><p>Settings saved, you must <a href="/manager/text/reload?path=/mymedia" target="_blank">restart</a> the application for changes to apply.</p></span>
+                    <span class="alert"><p>Settings saved, you must <a href="/manager/text/reload?path=/SwordfishSync" target="_blank">restart</a> the application for changes to apply.</p></span>
                 </c:if>
                 
 	            <h3 class="page-heading">Settings</h3>
@@ -31,7 +31,7 @@
                 <mmt:buttonLink url="${pageContext.request.contextPath}/index/download" text="Download Index Page" />
                 <mmt:buttonLink url="${pageContext.request.contextPath}/index/revert" text="Revert Default Index Page" />
                 <form:form method="post" enctype="multipart/form-data" modelAttribute="uploadedFile" action="${pageContext.request.contextPath}/index/upload"> 
-                    <label for="file">File:</label>
+                    <label for="file">Replace index page:</label>
                     <input type="file" name="file" />
                     <input type="submit" value="Upload Index Page" />
                 </form:form>
@@ -39,9 +39,10 @@
                 <br/>
 	            Options:
 	            <mmt:buttonLink url="${pageContext.request.contextPath}/settings/export" text="Export Settings" />
-                <mmt:buttonLink url="${pageContext.request.contextPath}/settings/edit" text="Edit Settings" />
+                <mmt:buttonLink url="${pageContext.request.contextPath}/settings/edit" text="Edit/Import Settings" />
 	            <br/><br/>
-                
+	            Settings stored in ${settingsFile}
+	            <br/><br/>
 	            <div class="table">
 	                <c:forEach items="${config.keys}" var="key">
 	                    <fmt:message key="settings.${key}" var="fieldLabel"/>

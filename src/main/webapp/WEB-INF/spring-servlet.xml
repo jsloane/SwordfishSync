@@ -42,9 +42,23 @@
         <property name="defaultEncoding" value="UTF-8" />
     </bean>
     
-    <bean id="propertyConfigurer"
+    <!-- <bean id="propertyConfigurer"
         class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
-        p:location="classpath:mymedia.properties" />
+        p:location="classpath:mymedia.properties" /> -->
+    <bean id="propertyConfigurer"
+        class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="ignoreUnresolvablePlaceholders" value="true"/>
+        <property name="ignoreResourceNotFound" value="true" />
+        <property name="order" value="1"/>
+        <property name="locations">
+            <list>
+                <!-- Default properties -->
+                <value>classpath:default-swordfishsync.properties</value>
+                <!-- User specific properties -->
+                <value>file:${user.home}/.swordfishsync/swordfishsync.properties</value>
+            </list>
+        </property>
+    </bean>
     
     <tx:annotation-driven />
     
