@@ -6,10 +6,10 @@ import javax.persistence.Embeddable;
 @Embeddable
 public class FilterAttribute {
 
-    @Column//(name="filterType")
+    @Column
     private String filterType;
 
-    @Column//(name="filterRegex")
+    @Column
     private String filterRegex;
 
 	public FilterAttribute() {
@@ -44,12 +44,12 @@ public class FilterAttribute {
         
         FilterAttribute filterAttribute = (FilterAttribute) obj;
         return (
-        		filterType != null &&
-        		filterType.equals(filterAttribute.getFilterType())
-    		) && (
-            	filterRegex != null &&
-            	filterRegex.equals(filterAttribute.getFilterRegex())
-            );
+        	filterType != null &&
+        	filterType.equals(filterAttribute.getFilterType())
+    	) && (
+            filterRegex != null &&
+           	filterRegex.equals(filterAttribute.getFilterRegex())
+        );
     }
     
     @Override

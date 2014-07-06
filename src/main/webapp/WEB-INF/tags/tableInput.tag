@@ -2,6 +2,7 @@
 <%@ attribute name="fieldType" required="true" type="java.lang.String" description="Field type." %>
 <%@ attribute name="fieldName" required="true" type="java.lang.String" description="Field name." %>
 <%@ attribute name="fieldLabel" required="true" type="java.lang.String" description="Field value." %>
+<%@ attribute name="fieldSize" required="false" type="java.lang.String" description="Field size." %>
 <%@ attribute name="fieldHelp" required="false" type="java.lang.String" description="Field help." %>
 <%@ attribute name="fieldValue" required="false" type="java.lang.String" description="Field value." %>
 <%@ attribute name="fieldValues" required="false" type="java.util.Map" description="Field values." %>
@@ -19,7 +20,7 @@
     <div class="table-cell">
         <c:choose>
             <c:when test="${fieldType eq 'checkbox'}">
-                <input type="${fieldType}" name="${fieldName}" id="${fieldName}" ${fieldChecked}/>
+                <input type="${fieldType}" name="${fieldName}" id="${fieldName}" size="${fieldSize}" ${fieldChecked}/>
             </c:when>
             <c:when test="${fieldType eq 'select'}">
                 <select name="${fieldName}" id="${fieldName}">
@@ -32,7 +33,7 @@
                 <textarea name="${fieldName}">${fieldValue}</textarea>
             </c:when>
             <c:otherwise>
-                <input type="${fieldType}" class="${fieldClass}" name="${fieldName}" id="${fieldName}" value="${fieldValue}"/>
+                <input type="${fieldType}" class="${fieldClass}" name="${fieldName}" id="${fieldName}" value="${fieldValue}" size="${fieldSize}"/>
             </c:otherwise>
         </c:choose>
         ${fieldHelp}

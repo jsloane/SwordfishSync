@@ -158,15 +158,17 @@ public class MediaManager {
 		return saveTorrent;
 	}
 
-	public static void addTorrent(FeedProvider feedProvider, TorrentInfo torrentInfo) {
+	public static AddedTorrentInfo addTorrent(FeedProvider feedProvider, TorrentInfo torrentInfo) {
 		log.log(Level.INFO, "[DEBUG] MediaManager.addTorrent - adding torrent: " + torrentInfo);
+		AddedTorrentInfo ati = null;
 		try {
 			// add torrent
 			AddTorrentParameters newTorrentParameters = new AddTorrentParameters(torrentInfo.getUrl());
 			//newTorrentParameters.setPeerLimit(-1);
 			//newTorrentParameters.setPeerLimit(0); // testing with no peers
-			AddedTorrentInfo ati = torrentClient.addTorrent(newTorrentParameters);
+			ati = torrentClient.addTorrent(newTorrentParameters);
 			
+			// set torrent details
 			torrentInfo.setHashString(ati.getHashString());
 			torrentInfo.setClientTorrentId(ati.getId());
 			torrentInfo.setStatus(TorrentInfo.STATUS_IN_PROGRESS);
@@ -183,6 +185,7 @@ public class MediaManager {
 			e.printStackTrace();
 		}
 		feedProvider.saveTorrent(torrentInfo);
+		return ati;
 	}
 	
 	private static void checkAndComplete(FeedProvider feedProvider, TorrentInfo torrentInfo) {
@@ -459,6 +462,8 @@ public class MediaManager {
 		for (TorrentInfo torrent : torrents) {
 			t++;
 			if (t == 2) {
+				System.out.println("[DEBUG] torrent: " + torrent);
+				//notifyNew(feedProvider, torrent, new MediaInfo(feedProvider, torrent));
 				//break;
 			}
 		}

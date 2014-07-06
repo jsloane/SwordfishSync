@@ -5,7 +5,7 @@
 <%@ taglib prefix="mmt" tagdir="/WEB-INF/tags" %>
 <html>
     <head>
-        <title>${title} - Edit Feed Filter</title>
+        <title>${title} - Editing Feed Filter - ${feed.feedInfo.name}</title>
         <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/main.css"/>"></link>
         <script src="<c:url value="/resources/javascript/jquery-1.9.1.js"/>"></script>
         <script>

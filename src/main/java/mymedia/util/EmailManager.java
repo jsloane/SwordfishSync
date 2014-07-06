@@ -8,6 +8,7 @@ import mymedia.services.MediaManager;
 import mymedia.services.model.FeedProvider;
 import mymedia.services.model.MediaInfo;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.mail.MailException;
 import org.springframework.mail.MailSender;
 import org.springframework.mail.SimpleMailMessage;
@@ -163,21 +164,21 @@ public class EmailManager {
     
 	private String parseStringValues(String text) {
     	return text
-			.replace(FEED_NAME, feedName)
-    		.replace(TORRENT_NAME, torrentName)
-    		.replace(MEDIA_NAME,  mediaInfo.getName())
-    		.replace(POSTER_IMAGE, posterUrl)
-    		.replace(EXTRA_INFO, mediaInfo.extraInfo)
-    		.replace(DOWNLOAD_DIR, downloadDir)
-    		.replace(SEASON_NUMBER, mediaInfo.seasonNumber)
-    		.replace(EPISODE_NUMBER, mediaInfo.episodeNumber)
-    		.replace(EPISODE_TITLE, mediaInfo.episodeTitle)
-    		.replace(EPISODE_DESCRIPTION, mediaInfo.episodeDescription)
-    		.replace(BACKDROP_IMAGE, backdropUrl)
-    		.replace(YEAR, mediaInfo.year)
-    		.replace(QUALITY, mediaInfo.quality)
-    		.replace(URL, url)
-    		.replace(NOTICE, mediaInfo.notice)
+			.replace(FEED_NAME, StringUtils.trimToEmpty(feedName))
+    		.replace(TORRENT_NAME, StringUtils.trimToEmpty(torrentName))
+    		.replace(MEDIA_NAME,  StringUtils.trimToEmpty(mediaInfo.getName()))
+    		.replace(POSTER_IMAGE, StringUtils.trimToEmpty(posterUrl))
+    		.replace(EXTRA_INFO, StringUtils.trimToEmpty(mediaInfo.extraInfo))
+    		.replace(DOWNLOAD_DIR, StringUtils.trimToEmpty(downloadDir))
+    		.replace(SEASON_NUMBER, StringUtils.trimToEmpty(mediaInfo.seasonNumber))
+    		.replace(EPISODE_NUMBER, StringUtils.trimToEmpty(mediaInfo.episodeNumber))
+    		.replace(EPISODE_TITLE, StringUtils.trimToEmpty(mediaInfo.episodeTitle))
+    		.replace(EPISODE_DESCRIPTION, StringUtils.trimToEmpty(mediaInfo.episodeDescription))
+    		.replace(BACKDROP_IMAGE, StringUtils.trimToEmpty(backdropUrl))
+    		.replace(YEAR, StringUtils.trimToEmpty(mediaInfo.year))
+    		.replace(QUALITY, StringUtils.trimToEmpty(mediaInfo.quality))
+    		.replace(URL, StringUtils.trimToEmpty(url))
+    		.replace(NOTICE, StringUtils.trimToEmpty(mediaInfo.notice))
 		;
     }
 }

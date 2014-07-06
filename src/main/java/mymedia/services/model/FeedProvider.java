@@ -102,14 +102,14 @@ public class FeedProvider {
 		//MediaManager.torrentInfoService.saveTorrentInfo(torrentInfo);
 	}
 
-	private void recordTorrentFromFeed(TorrentInfo torrentInfo) {
+	public void saveNewTorrent(TorrentInfo torrentInfo) {
 		// check if we already have this torrent, by name or url
 		boolean existingTorrent = false;
 		for (TorrentInfo torrentRecord : feedInfo.getFeedTorrents()) {
 			try {
 				if (torrentRecord != null && (
-						torrentRecord.getUrl().trim().equalsIgnoreCase(torrentInfo.getUrl().trim()) ||
-						torrentRecord.getName().trim().equalsIgnoreCase(torrentInfo.getName().trim())
+						torrentRecord.getUrl().trim().equalsIgnoreCase(torrentInfo.getUrl().trim())
+						|| torrentRecord.getName().trim().equalsIgnoreCase(torrentInfo.getName().trim())
 					)
 				) {
 					existingTorrent = true;
@@ -202,7 +202,7 @@ public class FeedProvider {
 	private void refreshFeed() throws Exception {
 		lastFetched = new Date().getTime();
 		torrentsFromFeed = new ArrayList<TorrentInfo>();
-
+		
 		// https://rometools.jira.com/wiki/display/ROME/Preserving+WireFeeds
 		SyndFeed feed = getFeedXml();
 		String type = feed.getFeedType();
@@ -243,13 +243,13 @@ public class FeedProvider {
 				torrentStatus
     		);
         	
-        	recordTorrentFromFeed(newTorrent);
+        	saveNewTorrent(newTorrent);
         	torrentsFromFeed.add(newTorrent);
 			isFeedCurrent = true;
 			lastUpdated = new Date();
         }
 	}
-
+	
 	private SyndFeed getFeedXml() {
         XmlReader reader = null;
         SyndFeed feed = null;

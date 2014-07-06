@@ -48,7 +48,7 @@ public class MyMediaLifecycle implements Lifecycle {
     private ApplicationContext applicationContext;
     
 	private final static String defaultPropertiesFile = "default-swordfishsync.properties";
-	public final static String userPropertiesFile = System.getProperty("user.home") + System.getProperty("file.separator")
+	private final static String userPropertiesFile = System.getProperty("user.home") + System.getProperty("file.separator")
 			+ ".swordfishsync" + System.getProperty("file.separator") + "swordfishsync.properties";
 	public static String propertiesFile = defaultPropertiesFile;
 	public final static String settingsFile = "/settings.xml";

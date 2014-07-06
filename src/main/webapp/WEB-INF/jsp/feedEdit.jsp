@@ -7,7 +7,14 @@
 <%@ taglib prefix="mmt" tagdir="/WEB-INF/tags" %>
 <html>
     <head>
-        <title>${title} - Edit Feed</title>
+        <c:choose>
+            <c:when test="${newFeed}">
+                <title>${title} - Adding Feed</title>
+            </c:when>
+            <c:otherwise>
+                <title>${title} - Editing ${feed.feedInfo.name}</title>
+            </c:otherwise>
+        </c:choose>
         <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/main.css"/>"></link>
     </head>
     <body>
@@ -19,12 +26,6 @@
                 <mmt:navMenu pageid="feeds" />
             </div>
             <div id="page">
-		        <c:choose>
-		            <c:when test="${!newFeed}">
-		            </c:when>
-		        </c:choose>
-		        
-		        
 		        <c:choose>
 		            <c:when test="${newFeed}">
 		                <h3 class="feed-name">Add feed</h3>

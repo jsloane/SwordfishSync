@@ -5,7 +5,7 @@
 <%@ taglib prefix="mmt" tagdir="/WEB-INF/tags" %>
 <html>
     <head>
-        <title>${title} - Feed</title>
+        <title>${title} - Feed - ${feed.feedInfo.name}</title>
         <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/main.css"/>"></link>
         <script src="<c:url value="/resources/javascript/jquery-1.9.1.js"/>"></script>
     </head>
@@ -26,6 +26,7 @@
 		            <mmt:buttonLink url="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}/edit" text="Edit" />
 		            <mmt:buttonLink url="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}/delete" text="Delete" />
 		        </c:if>
+                <mmt:buttonLink url="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}/torrents/add" text="Manually add torrent" />
 		        <br/><br/>
 		        
 		        <div class="table" id="feed">
@@ -111,7 +112,7 @@
 			                            <a href="${feed.getTorrentDetailsUrl(torrent)}">Details</a>
 			                        </c:if>
 				                    <c:if test="${torrent.status == torrentNotAdded || torrent.status == torrentNotifiedNotAdded || torrent.status == torrentSkipped}">
-				                        <a href="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}/torrent/${torrent.id}/download">Download</a>
+				                        <a href="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}/torrents/${torrent.id}/download">Download</a>
 				                    </c:if>
 			                    </div>
 			                    <div class="table-cell">

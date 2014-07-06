@@ -38,6 +38,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.ModelAndView;
 
+import ca.benow.transmission.model.AddedTorrentInfo;
+
 import com.thoughtworks.xstream.XStream;
 
 @Controller
@@ -171,8 +173,46 @@ public class IndexController {
     	
     	return mav;
     }
+	
+    @RequestMapping(value = "/feeds/{feedId}/torrents/add", method = RequestMethod.GET)
+    public ModelAndView addTorrent(@PathVariable("feedId") Integer feedId) {
+		ModelAndView mav = new ModelAndView("jsp/torrentEdit");
+		mav.addObject("title", IndexController.instanceName);
+		mav.addObject("feed", findFeedProviders(new Integer[]{feedId}).get(0));
+		TorrentInfo newTorrentInfo = new TorrentInfo();
+    	mav.addObject("torrentInfo", newTorrentInfo); // new feed object for default values
+		mav.addObject("newTorrent", true);
+        return mav;
+    }
+	@RequestMapping(value = "/feeds/{feedId}/torrents/add", method = RequestMethod.POST)
+    public String saveNewTorrent(@PathVariable("feedId") Integer feedId, WebRequest webRequest) throws JSONException {
+		// this will overwrite existing torrent if exists with the url
+		
+    	FeedProvider foundFeedProvider = findFeedProviders(new Integer[]{feedId}).get(0);
+		String torrentUrl = webRequest.getParameter("torrent_url").trim();
+		if (foundFeedProvider != null && StringUtils.isNotBlank(torrentUrl)) { // need better validation/errors
+			
+        	TorrentInfo newTorrent = new TorrentInfo(
+        		"Torrent manually added at " + new Date(),
+				torrentUrl,
+				new Date(),
+				null,
+				TorrentInfo.STATUS_NOTIFIED_NOT_ADDED
+    		);
+        	
+        	AddedTorrentInfo ati = MediaManager.addTorrent(foundFeedProvider, newTorrent);
+        	
+			if (ati != null) {
+				newTorrent.setName(ati.getName());
+				foundFeedProvider.saveTorrent(newTorrent);
+        		return "redirect:/feeds/" + feedId;
+			}
+		}
+		
+        return "redirect:/feeds/" + feedId + "/torrents/add";
+    }
     
-    @RequestMapping("/feeds/{feedId}/torrent/{torrentId}/download")
+    @RequestMapping("/feeds/{feedId}/torrents/{torrentId}/download")
     public String downloadTorrent(@PathVariable("feedId") Integer feedId, @PathVariable("torrentId") Integer torrentId) {
     	FeedProvider foundFeedProvider = findFeedProviders(new Integer[]{feedId}).get(0);
     	TorrentInfo foundTorrentInfo = null;
@@ -236,6 +276,7 @@ public class IndexController {
     	String actionSelectedAdd = "";
     	String precedenceSelectedIgnore = optionSelected;
     	String precedenceSelectedAdd = "";
+    	
     	for (FeedProvider feed : MediaManager.feedProviders) {
     		if (feed.getFeedInfo().getId().equals(feedId)) {
     			mav.addObject("feed", feed);
@@ -256,7 +297,7 @@ public class IndexController {
     			break;
     		}
     	}
-
+    	
 		mav.addObject("filterEnabled", filterEnabled);
 		mav.addObject("removeAddFilterOnMatch", removeAddFilterOnMatch);
 		mav.addObject("actionSelectedIgnore", actionSelectedIgnore);
