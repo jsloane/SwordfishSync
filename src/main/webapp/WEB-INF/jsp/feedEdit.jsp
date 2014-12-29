@@ -59,7 +59,7 @@
 					        <div class="table">
 			                    <mmt:tableInput fieldType="checkbox" fieldName="feed_active" fieldLabel="Enabled:" fieldChecked="${checkedActive}"/>
 			                    <mmt:tableInput fieldType="text" fieldName="feed_name" fieldLabel="Name:" fieldRequired="${true}" fieldValue="${feed.feedInfo.name}"/>
-			                    <mmt:tableInput fieldType="text" fieldName="feed_url" fieldLabel="URL:" fieldRequired="${true}" fieldValue="${feed.feedInfo.url}"/>
+			                    <mmt:tableInput fieldType="text" fieldName="feed_url" fieldLabel="URL:" fieldRequired="${true}" fieldValue="${feed.feedInfo.url}" fieldClass="long"/>
 			                    <mmt:tableInput fieldType="select" fieldName="feed_action" fieldLabel="Action:" fieldRequired="${true}"
 			                        fieldValue="${feed.feedInfo.action}"
 			                        fieldValues="${actionOptions}"/>

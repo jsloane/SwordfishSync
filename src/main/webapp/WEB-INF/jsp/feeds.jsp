@@ -17,6 +17,11 @@
 	            <mmt:navMenu pageid="feeds" />
 	        </div>
 	        <div id="page">
+                <%-- display any errors --%>
+                <c:if test="${not empty error}">
+                    <div class="alert-box error"><span>Error: </span>${error}</div>
+                </c:if>
+                
                 <h3 class="feed-name">Feeds list</h3>
 	            Options:
 	            <mmt:buttonLink url="${pageContext.request.contextPath}/feeds/add" text="Add feed" />

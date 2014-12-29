@@ -8,13 +8,9 @@
 	<head>
 	    <title>${title} - Client Torrents</title>
 	    <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/main.css"/>"></link>
-        <script src="<c:url value="/resources/javascript/jquery-1.9.1.js"/>"></script>
-        <script src="<c:url value="/resources/javascript/jquery.tmpl.js"/>"></script>
-        <script>
-            var getActivityDate = function(activityDate) {
-        	    return new Date(activityDate * 1000);
-        	};
-        </script>
+        <script type="text/javascript" src="<c:url value="/resources/javascript/jquery-1.9.1.js"/>"></script>
+        <script type="text/javascript" src="<c:url value="/resources/javascript/jquery.tmpl.js"/>"></script>
+        <script type="text/javascript" src="<c:url value="/resources/javascript/main.js"/>"></script>
 	</head>
 	<body>
         <div id="header">
@@ -50,14 +46,14 @@
                             \${statusTitle}
                         </div>
                         <div class="table-cell activityDate" data-timestamp="\${activityDate}">
-                            \${getActivityDate(activityDate)}
+                            \${getDate(activityDate)}
                         </div>
                         <div class="table-cell">
                             <progress class="torrent-progress" value="\${percentDone}" max="1"></progress>
                         </div>
                     </li>
                 </script>
-		        <script>
+		        <script type="text/javascript">
 		            var activeTorrents = [];
 		            <c:forEach items="${activeTorrents}" var="activeTorrent">
 		                activeTorrents.push(${activeTorrent.JSONObject});
@@ -65,14 +61,7 @@
 		            $("#activeTorrentTemplate").tmpl(activeTorrents)
 		                .insertAfter("#activeTorrentListHeader");
 		            
-		            var myList = $('#activeTorrentList');
-		            var listItems = myList.children('li.table-row').get();
-		            listItems.sort(function(a, b) {
-		                return $(b).find(".activityDate").attr("data-timestamp").localeCompare($(a).find(".activityDate").attr("data-timestamp"));
-		            });
-		            $.each(listItems, function(idx, itm) {
-		            	myList.append(itm);
-		            });
+		            sortList('#activeTorrentList', 'li.table-row', '.activityDate', 'data-timestamp');
 		        </script>
             </div>
         </div>

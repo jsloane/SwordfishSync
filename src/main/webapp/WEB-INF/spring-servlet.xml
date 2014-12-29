@@ -88,7 +88,7 @@
         <property name="sessionFactory" ref="sessionFactoryMyMedia" />
         <qualifier value="mymedia"/>
     </bean>
-
+    
     <bean class="mymedia.services.MyMediaLifecycle" init-method="start" destroy-method="stop"></bean>
     
     <!--  MAIL SENDER API -->

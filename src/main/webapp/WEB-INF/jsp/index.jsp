@@ -7,8 +7,9 @@
 <html>
 	<head>
 	    <title>${title}</title>
-	    <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/main.css"/>"></link>
-        <script src="<c:url value="/resources/javascript/jquery-1.9.1.js"/>"></script>
+        <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/main.css"/>"></link>
+        <script type="text/javascript" src="<c:url value="/resources/javascript/jquery-1.9.1.js"/>"></script>
+        <script type="text/javascript" src="<c:url value="/resources/javascript/main.js"/>"></script>
 	</head>
 	<body>
 	    <div id="header">
@@ -19,10 +20,14 @@
 		        <mmt:navMenu pageid="index" />
 		    </div>
 		    <div id="page">
-		        
-		        <h3>Torrents downloading</h3>
-                <div class="table">
-                    <div class="table-row" id="torrent-header">
+                <%-- display any errors --%>
+                <c:if test="${not empty error}">
+	                <div class="alert-box error"><span>Error: </span>${error}</div>
+                </c:if>
+                
+                <h3>Torrents downloading</h3>
+                <ul id="list-torrents-downloading" class="table">
+                    <li id="list-torrents-downloading-header" class="table-header-group">
                         <div class="table-cell">
                             Feed
                         </div>
@@ -35,40 +40,91 @@
                         <div class="table-cell">
                             Progress
                         </div>
-                    </div>
+                    </li>
                     <c:forEach items="${feeds}" var="feed">
                         <c:forEach items="${feed.feedInfo.feedTorrents}" var="torrent">
                             <c:if test="${torrent != null && torrent.status == torrentDownloading}">
                                 <c:set var="foundTorrentDownloading" value="true" />
-                                <div class="table-row">
-	                                <div class="table-cell">
-	                                    ${feed.feedInfo.name}
-	                                </div>
-	                                <div class="table-cell">
-	                                    ${torrent.name}
-	                                </div>
-	                                <div class="table-cell">
-	                                    ${torrent.dateAdded}
-	                                </div>
-	                                <div class="table-cell">
-	                                    <progress class="torrent-progress" value="${torrent.getClientFieldsForTorrent().getPercentDone()}" max="1"></progress>
-	                                </div>
-                                </div>
+                                <li class="table-row">
+                                    <div class="table-cell">
+                                        ${feed.feedInfo.name}
+                                    </div>
+                                    <div class="table-cell">
+                                        ${torrent.name}
+                                    </div>
+                                    <div class="table-cell">
+                                        ${torrent.dateAdded}
+                                    </div>
+                                    <div class="table-cell">
+                                        <progress class="torrent-progress" value="${torrent.getClientFieldsForTorrent().getPercentDone()}" max="1"></progress>
+                                    </div>
+                                </li>
                             </c:if>
                         </c:forEach>
                     </c:forEach>
                     <c:if test="${empty foundTorrentDownloading}">
-	                    <div class="table-row">
-	                        <div class="table-cell">
-	                            No torrents downloading.
-	                        </div>
-	                    </div>
+                        <li class="table-row">
+                            <div class="table-cell">
+                                No torrents downloading.
+                            </div>
+                        </li>
                     </c:if>
-                </div>
+                </ul>
+                
+                <h3>Recently notified torrents</h3>
+                <ul id="list-recently-notified-torrents" class="table">
+                    <li id="list-recently-notified-torrents-header" class="table-header-group">
+                        <div class="table-cell">
+                            Feed
+                        </div>
+                        <div class="table-cell">
+                            Torrent
+                        </div>
+                        <div class="table-cell">
+                            Action
+                        </div>
+                        <div class="table-cell">
+                            Date added
+                        </div>
+                    </li>
+                    <c:forEach items="${feeds}" var="feed">
+                        <c:forEach items="${feed.feedInfo.feedTorrents}" var="torrent">
+                            <c:if test="${torrent != null && torrent.status == torrentNotifiedNotAdded}">
+                                <c:set var="foundTorrentNotified" value="true" />
+                                <li class="table-row">
+                                    <div class="table-cell">
+                                        ${feed.feedInfo.name}
+                                    </div>
+                                    <div class="table-cell">
+                                        ${torrent.name}
+                                    </div>
+                                    <div class="table-cell">
+                                        <c:if test="${torrent.url ne feed.getTorrentDetailsUrl(torrent)}">
+                                            <a href="${feed.getTorrentDetailsUrl(torrent)}">Details</a>
+                                        </c:if>
+                                        <c:if test="${torrent.status == torrentNotAdded || torrent.status == torrentNotifiedNotAdded || torrent.status == torrentSkipped}">
+                                            <a href="${pageContext.request.contextPath}/feeds/${feed.feedInfo.id}/torrents/${torrent.id}/download">Download</a>
+                                        </c:if>
+                                    </div>
+                                    <div class="table-cell sort-timestamp" data-timestamp="${torrent.dateAdded.getTime()}">
+                                        ${torrent.dateAdded}
+                                    </div>
+                                </li>
+                            </c:if>
+                        </c:forEach>
+                    </c:forEach>
+                    <c:if test="${empty foundTorrentNotified}">
+                        <li class="table-row">
+                            <div class="table-cell">
+                                No recent torrents.
+                            </div>
+                        </li>
+                    </c:if>
+                </ul>
                 
                 <h3>Recently completed torrents</h3>
-                <div class="table" id="recent-torrents">
-                    <div class="table-row" id="torrent-header">
+                <ul id="list-recently-completed-torrents" class="table">
+                    <li id="list-recently-completed-torrents-header" class="table-header-group">
                         <div class="table-cell">
                             Feed
                         </div>
@@ -81,46 +137,40 @@
                         <div class="table-cell">
                             Location
                         </div>
-                    </div>
+                    </li>
                     <c:forEach items="${feeds}" var="feed">
                         <c:forEach items="${feed.feedInfo.feedTorrents}" var="torrent">
                             <c:if test="${torrent != null && (torrent.status == torrentNotifiedCompleted || torrent.status == torrentCompleted)}">
                                 <c:set var="foundTorrentCompleted" value="true" />
-                                <div class="table-row">
+                                <li class="table-row">
                                     <div class="table-cell">
                                         ${feed.feedInfo.name}
                                     </div>
                                     <div class="table-cell">
                                         ${torrent.name}
                                     </div>
-                                    <div class="table-cell dateCompleted" data-timestamp="${torrent.dateCompleted.getTime()}">
+                                    <div class="table-cell sort-timestamp" data-timestamp="${torrent.dateCompleted.getTime()}">
                                         ${torrent.dateCompleted}
                                     </div>
                                     <div class="table-cell">
                                         ${torrent.getDownloadDirectoryLocation()}
                                     </div>
-                                </div>
+                                </li>
                             </c:if>
                         </c:forEach>
                     </c:forEach>
                     <c:if test="${empty foundTorrentCompleted}">
-                        <div class="table-row">
+                        <li class="table-row">
                             <div class="table-cell">
                                 No torrents found.
                             </div>
-                        </div>
+                        </li>
                     </c:if>
-                </div>
+                </ul>
                 
-                <script>
-                    var myList = $('#recent-torrents');
-                    var listItems = myList.children('.table-row').get();
-                    listItems.sort(function(a, b) {
-                        return $(b).find(".dateCompleted").attr("data-timestamp").localeCompare($(a).find(".dateCompleted").attr("data-timestamp"));
-                    });
-                    $.each(listItems, function(idx, itm) {
-                    	myList.append(itm);
-                    });
+                <script type="text/javascript">
+                    sortList('#list-recently-notified-torrents', '.table-row', '.sort-timestamp', 'data-timestamp');
+                    sortList('#list-recently-completed-torrents', '.table-row', '.sort-timestamp', 'data-timestamp');
                 </script>
                 
 	        </div>

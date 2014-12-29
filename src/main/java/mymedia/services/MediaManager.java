@@ -75,10 +75,13 @@ public class MediaManager {
 			return;
 		}
 		
+		if (!feedProvider.getFeedInfo().getActive()) {
+			return;
+		}
+		
 		List<TorrentInfo> torrents = new ArrayList<TorrentInfo>(feedProvider.getTorrents()); // create a copy of the torrent list, as it'll be modified during the loop
 		List<TorrentInfo> torrentsFromFeed = feedProvider.getTorrentsFromFeed();
-
-		int t = 0;
+		
 		for (TorrentInfo torrent : torrents) {
 			if (torrent != null) {
 				boolean saveTorrent = true;
@@ -108,7 +111,7 @@ public class MediaManager {
 			}
 		}
 	}
-
+	
 	private static boolean checkAndAdd(FeedProvider feedProvider, TorrentInfo torrentInfo) {
 		if (feedProvider.getFeedInfo().getActive()) {
 			if (feedProvider.shouldAddTorrent(torrentInfo)) {
@@ -131,7 +134,7 @@ public class MediaManager {
 		}
 		return false;
 	}
-
+	
 	private static boolean checkAndRemove(FeedProvider feedProvider, TorrentInfo torrent, List<TorrentInfo> torrentsFromFeed) {
 		boolean saveTorrent = false;
 		if (!feedProvider.isFeedCurrent()) { // || !feedProvider.getKeepTorrentHistory()...
@@ -142,7 +145,8 @@ public class MediaManager {
 			for (TorrentInfo torrentFromFeed : torrentsFromFeed) {
 				if (torrentFromFeed.getName().equals(torrent.getName()) && torrentFromFeed.getUrl().equals(torrent.getUrl())) {
 					torrentInFeed = true;
-				}		
+					break;
+				}
 			}
 			
 			long completedInterval = TimeUnit.MILLISECONDS.toDays(new Date().getTime() - torrent.getDateCompleted().getTime());
@@ -157,7 +161,7 @@ public class MediaManager {
 		}
 		return saveTorrent;
 	}
-
+	
 	public static AddedTorrentInfo addTorrent(FeedProvider feedProvider, TorrentInfo torrentInfo) {
 		log.log(Level.INFO, "[DEBUG] MediaManager.addTorrent - adding torrent: " + torrentInfo);
 		AddedTorrentInfo ati = null;
@@ -391,6 +395,7 @@ public class MediaManager {
 		for (TorrentStatus torrentStatus : torrentStatuses) {
 			if (torrentStatus != null && StringUtils.isNotBlank(torrent.getHashString()) && torrent.getHashString().equals(torrentStatus.getField(TorrentStatus.TorrentField.hashString))) {
 				foundTorrentStatus = torrentStatus;
+				break;
 			}
 		}
 		
@@ -422,7 +427,7 @@ public class MediaManager {
 			return;
 		}
 		downloadedArchive.close();
-
+		
 		System.out.println("[DEBUG] EXTRACTING...");
 		ExtractArchive extractArchive = new ExtractArchive();
 		extractArchive.extractArchive(rar, destinationFolder);
@@ -448,7 +453,7 @@ public class MediaManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}*/
-
+		
 		if (!feedProvider.getFeedInfo().getActive()) {
 			return;
 		}

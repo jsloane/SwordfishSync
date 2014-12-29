@@ -213,7 +213,7 @@ public class MediaInfo {
 					for (MovieDb searchResult : searchResults) {
 						// some image width sizes: w185, w342, w1280
 						if (StringUtils.isNotBlank(searchResult.getBackdropPath())) {
-							backdropUrl = "http://cf2.imgobject.com/t/p/w342/" + searchResult.getBackdropPath();
+							backdropUrl = "http://cf2.imgobject.com/t/p/w342/" + searchResult.getBackdropPath(); // save this url in properties
 						}
 						if (StringUtils.isNotBlank(searchResult.getPosterPath())) {
 							posterUrl = "http://cf2.imgobject.com/t/p/w342/" + searchResult.getPosterPath();
@@ -239,15 +239,17 @@ public class MediaInfo {
 		if (tvdbApiKey != null && !tvdbApiKey.isEmpty()) {
 			notice = tvdbApiNotice;
 			boolean fetchTvdb = true;
-
-			for (Map.Entry<String, String> expandedData : torrentInfo.getProperties().entrySet()) {
-				switch (expandedData.getKey()) {
-					case NAME_KEY:
-						name = expandedData.getValue();
-						break;
-					case EPISODE_ID_KEY:
-						episodeId = expandedData.getValue();
-						break;
+			
+			if (torrentInfo.getProperties() != null) {
+				for (Map.Entry<String, String> expandedData : torrentInfo.getProperties().entrySet()) {
+					switch (expandedData.getKey()) {
+						case NAME_KEY:
+							name = expandedData.getValue();
+							break;
+						case EPISODE_ID_KEY:
+							episodeId = expandedData.getValue();
+							break;
+					}
 				}
 			}
 			if (StringUtils.isBlank(name)) {

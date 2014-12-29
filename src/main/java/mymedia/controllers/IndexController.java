@@ -61,9 +61,11 @@ public class IndexController {
 		
 		mav.addObject("title", IndexController.instanceName);
 		mav.addObject("feeds", MediaManager.feedProviders);
+		mav.addObject("error", MyMediaLifecycle.startupError);
 		mav.addObject("torrentDownloading", TorrentInfo.STATUS_IN_PROGRESS);
 		mav.addObject("torrentNotifiedCompleted", TorrentInfo.STATUS_NOTIFY_COMPLETED);
 		mav.addObject("torrentCompleted", TorrentInfo.STATUS_COMPLETED);
+		mav.addObject("torrentNotifiedNotAdded", TorrentInfo.STATUS_NOTIFIED_NOT_ADDED);
 		
         return mav;
     }
@@ -87,6 +89,7 @@ public class IndexController {
 		ModelAndView mav = new ModelAndView("jsp/feeds");
 		mav.addObject("title", IndexController.instanceName);
 		mav.addObject("feeds", MediaManager.feedProviders);
+		mav.addObject("error", MyMediaLifecycle.startupError);
         return mav;
     }
     
@@ -399,10 +402,18 @@ public class IndexController {
     @RequestMapping(value = "/settings/edit", method = RequestMethod.POST)
     public String editSettings(WebRequest webRequest) throws ConfigurationException {
     	PropertiesConfiguration config = new PropertiesConfiguration(MyMediaLifecycle.propertiesFile);
-    	Iterator<String> i = webRequest.getParameterNames();
+    	Iterator<String> i = config.getKeys();
     	while (i.hasNext()) {
     		String key = i.next();
-        	config.setProperty(key, webRequest.getParameter(key).trim()); // need validation
+    		if (webRequest.getParameterMap().containsKey(key)) {
+    			String value = webRequest.getParameter(key).trim(); // need validation
+    			if ("mymedia.auth.enabled".equals(key) && "on".equals(value)) {
+    				value = "true";
+    			}
+            	config.setProperty(key, value);
+    		} else if ("mymedia.auth.enabled".equals(key)) {
+    			config.setProperty(key, "false");
+    		}
     	}
     	config.save();
         return "redirect:/settings?saved=true";

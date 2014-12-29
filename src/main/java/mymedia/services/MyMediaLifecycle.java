@@ -2,30 +2,33 @@ package mymedia.services;  // move this to another package?
 
 import java.io.File;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mymedia.controllers.IndexController;
 import mymedia.db.form.FeedInfo;
-import mymedia.db.form.FilterAttribute;
 import mymedia.db.service.FeedInfoService;
 import mymedia.db.service.TorrentInfoService;
-import mymedia.model.xsd.Settings;
+import mymedia.exceptions.ApplicationException;
 import mymedia.services.model.FeedProvider;
 import mymedia.services.model.MediaInfo;
 import mymedia.services.tasks.SyncTask;
 import mymedia.util.EmailManager;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.ConversionException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.Lifecycle;
@@ -47,6 +50,8 @@ public class MyMediaLifecycle implements Lifecycle {
     @Autowired
     private ApplicationContext applicationContext;
     
+    public static String startupError = null;
+    
 	private final static String defaultPropertiesFile = "default-swordfishsync.properties";
 	private final static String userPropertiesFile = System.getProperty("user.home") + System.getProperty("file.separator")
 			+ ".swordfishsync" + System.getProperty("file.separator") + "swordfishsync.properties";
@@ -55,6 +60,13 @@ public class MyMediaLifecycle implements Lifecycle {
 	private volatile boolean isRunning = false;
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private long syncInterval = 30; // default 30min
+	
+	// auth settings
+	public static boolean authEnabled = false;
+	public static String username = null;
+	public static String password = null;
+	
+	public static boolean acceptAnySslCertificate = true;
 	
 	public boolean isRunning() {
 		return isRunning;
@@ -102,7 +114,7 @@ public class MyMediaLifecycle implements Lifecycle {
 		 */
 		
 	}
-
+	
 	public void start() {
 		isRunning = true;
 		
@@ -119,6 +131,18 @@ public class MyMediaLifecycle implements Lifecycle {
 			File defaultPropertiesFile = new ClassPathResource(MyMediaLifecycle.defaultPropertiesFile).getFile();
 			File userPropertiesFile = new File(MyMediaLifecycle.userPropertiesFile);
 			if (userPropertiesFile.exists()) {
+				// check if userPropertiesFile is missing properties from propertiesFile and add any
+				PropertiesConfiguration defaultProperties = new PropertiesConfiguration(MyMediaLifecycle.defaultPropertiesFile);
+				PropertiesConfiguration userProperties = new PropertiesConfiguration(MyMediaLifecycle.userPropertiesFile);
+				Iterator<String> defaultPropertiesKeys = defaultProperties.getKeys();
+			    while (defaultPropertiesKeys.hasNext()){
+			        String defaultPropertiesKey = defaultPropertiesKeys.next();
+			        if (!userProperties.containsKey(defaultPropertiesKey)) {
+			        	userProperties.addProperty(defaultPropertiesKey, defaultProperties.getProperty(defaultPropertiesKey));
+			        }
+			    }
+			    userProperties.save();
+				
 				MyMediaLifecycle.propertiesFile = MyMediaLifecycle.userPropertiesFile;
 			} else {
 				// copy default properties file to users directory
@@ -131,6 +155,7 @@ public class MyMediaLifecycle implements Lifecycle {
 			}
 			log.log(Level.INFO, "MyMediaLifecycle.propertiesFile: " + MyMediaLifecycle.propertiesFile);
 			
+			// read properties
 			PropertiesConfiguration config = new PropertiesConfiguration(MyMediaLifecycle.propertiesFile);
 			
 			if (config.containsKey("mymedia.debugOnHost")) {
@@ -167,11 +192,52 @@ public class MyMediaLifecycle implements Lifecycle {
 				}
 			}
 			
-			MediaManager.feedProviders = getFeedProviders(config);
+			// set authentication details
+			if (config.containsKey("mymedia.auth.enabled") && config.containsKey("mymedia.auth.username") && config.containsKey("mymedia.auth.password")) {
+				boolean authEnabled = false;
+				try {
+					authEnabled = config.getBoolean("mymedia.auth.enabled", new Boolean(false));
+				} catch (ConversionException e) {
+					log.log(Level.WARNING, "Unable to read boolean property mymedia.auth.enabled", e);
+				}
+				String username = config.getString("mymedia.auth.username");
+				String password = config.getString("mymedia.auth.password");
+				if (authEnabled && StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+					this.authEnabled = true;
+					this.username = username;
+					this.password = password;
+				}
+			}
+			
+			// set ssl config
+			if (config.containsKey("mymedia.auth.enabled") && config.containsKey("mymedia.auth.username") && config.containsKey("mymedia.auth.password")) {
+				boolean acceptAnySslCertificate = true;
+				try {
+					acceptAnySslCertificate = config.getBoolean("mymedia.acceptAnySslCertificate", new Boolean(false));
+					this.acceptAnySslCertificate = acceptAnySslCertificate;
+				} catch (ConversionException e) {
+					log.log(Level.WARNING, "Unable to read boolean property mymedia.acceptAnySslCertificate", e);
+				}
+			}
+			
+			try {
+				MediaManager.feedProviders = getFeedProviders();
+			} catch (Exception e) {
+				// set the error message
+				Throwable rootCause = ExceptionUtils.getRootCause(e);
+				if (rootCause instanceof ConnectException || rootCause instanceof SQLException) {
+					startupError = "Cannot connect to database, check settings and try again. Error details: " + ExceptionUtils.getMessage(e) + ". Cause: " + ExceptionUtils.getRootCauseMessage(e);
+				} else {
+					startupError = ExceptionUtils.getMessage(e) + ". Cause: " + ExceptionUtils.getRootCauseMessage(e);
+				}
+				throw new ApplicationException("Error loading from database", e);
+			}
+			
+			java.lang.System.setProperty("sun.security.ssl.allowUnsafeRenegotiation", "true");
 			
 			log.log(Level.INFO, "[DEBUG] MyMediaLifecycle.start scheduling sync task: " + syncInterval + " minute intervals");
 			scheduler.scheduleAtFixedRate(new SyncTask(), 0, syncInterval, TimeUnit.MINUTES);
-		} catch (IOException | ConfigurationException | CannotCreateTransactionException e) {
+		} catch (IOException | ConfigurationException | CannotCreateTransactionException | ApplicationException e) {
 			// need an error handler to email severe errors? (not rss feed connection errors)
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -184,7 +250,7 @@ public class MyMediaLifecycle implements Lifecycle {
 		isRunning = false;
 	}
 	
-	private List<FeedProvider> getFeedProviders(PropertiesConfiguration config) {
+	private List<FeedProvider> getFeedProviders() {
 		// read in and init feeds
     	// properties file is a baseline that overrides database records
 		List<FeedProvider> feedProviders = new ArrayList<FeedProvider>();

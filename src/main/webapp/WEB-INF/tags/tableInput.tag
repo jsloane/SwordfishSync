@@ -10,17 +10,17 @@
 <%@ attribute name="fieldRequired" required="false" type="java.lang.Boolean" description="Field required." %>
 <%@ attribute name="fieldAdvanced" required="false" type="java.lang.Boolean" description="Field advanced." %>
 <%@ attribute name="fieldClass" required="false" type="java.lang.String" description="Field class." %>
+<%@ attribute name="fieldNameAttributes" required="false" type="java.lang.String" description="Field name tag attributes." %>
+<%@ attribute name="fieldValueAttributes" required="false" type="java.lang.String" description="Field value tag attributes." %>
 
-
-
-<div class="table-row ${advancedClass}">
-    <div class="table-cell">
+<li class="table-row ${advancedClass}">
+    <div class="table-cell field-name" ${fieldNameAttributes}>
         <label for="${fieldName}">${fieldLabel}</label><c:if test="${fieldRequired}">*</c:if>
     </div>
-    <div class="table-cell">
+    <div class="table-cell field-value" ${fieldValueAttributes}>
         <c:choose>
             <c:when test="${fieldType eq 'checkbox'}">
-                <input type="${fieldType}" name="${fieldName}" id="${fieldName}" size="${fieldSize}" ${fieldChecked}/>
+                <input type="${fieldType}" name="${fieldName}" id="${fieldName}" ${fieldChecked}/>
             </c:when>
             <c:when test="${fieldType eq 'select'}">
                 <select name="${fieldName}" id="${fieldName}">
@@ -38,4 +38,4 @@
         </c:choose>
         ${fieldHelp}
     </div>
-</div>
+</li>

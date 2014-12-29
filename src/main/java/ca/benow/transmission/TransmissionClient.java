@@ -313,7 +313,10 @@ public class TransmissionClient {
   public AddedTorrentInfo addTorrent(AddTorrentParameters params) throws IOException, JSONException {
     JSONObject obj = params.toRequestObject();
     JSONObject result = sendCommand("torrent-add", obj);
-    return new AddedTorrentInfo(result.getJSONObject("torrent-added"));
+    if (!result.has("torrent-added") && result.has("torrent-duplicate")) {
+    	return new AddedTorrentInfo(result.getJSONObject("torrent-duplicate"));
+    }
+	return new AddedTorrentInfo(result.getJSONObject("torrent-added"));
   }
 
   /**

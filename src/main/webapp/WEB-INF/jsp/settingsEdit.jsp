@@ -21,35 +21,49 @@
                 <mmt:navMenu pageid="settings" />
             </div>
             <div id="page">
-                        <h3 class="page-heading">Edit Settings</h3>
-                        Options:
-                        <mmt:buttonLink url="${pageContext.request.contextPath}/settings" text="Return to Settings" />
-                        
-                        <h4>Import Settings from file</h4>
-                        <form:form method="post" enctype="multipart/form-data" modelAttribute="uploadedFile" action="${pageContext.request.contextPath}/settings/upload"> 
-                            <label for="file">File:</label>
-                            <input type="file" name="file" />
-                            <input type="submit" value="Import" />
-                        </form:form>
-                        <br/><hr/>
-                        
-                        
-                        <h4>Enter Settings</h4>
-                        <form method="post" action="?">
-                            <div class="table">
-                                <c:forEach items="${config.keys}" var="key">
-                                    <fmt:message key="settings.${key}" var="fieldLabel"/>
-                                    <c:if test='${!fn:startsWith(fieldLabel, "??")}'>
-                                        <mmt:tableInput fieldType="textarea" fieldName="${key}" fieldLabel="${fieldLabel}" fieldValue="${config.getProperty(key)}"/>
-                                    </c:if>
-                                </c:forEach>
-                            </div>
-                            
-                                    
-                            <button type="submit">Submit</button>
-                            <mmt:buttonLink url="${pageContext.request.contextPath}/settings" text="Cancel" />
-                            
-                        </form>
+	            <h3 class="page-heading">Edit Settings</h3>
+	            Options:
+	            <mmt:buttonLink url="${pageContext.request.contextPath}/settings" text="Return to Settings" />
+	            
+	            <h4>Import Settings from file</h4>
+	            <form:form method="post" enctype="multipart/form-data" modelAttribute="uploadedFile" action="${pageContext.request.contextPath}/settings/upload"> 
+	                <label for="file">File:</label>
+	                <input type="file" name="file" />
+	                <input type="submit" value="Import" />
+	            </form:form>
+	            <br/><hr/>
+	            
+	            <h4>Enter Settings</h4>
+	            <form method="post" action="?">
+	                <ul class="table" id="table-settings">
+	                    <c:forEach items="${config.keys}" var="key">
+	                        <fmt:message key="settings.${key}" var="fieldLabel"/>
+	                        <c:if test='${!fn:startsWith(fieldLabel, "??")}'>
+	                            <c:set var="fieldType" value="textarea" />
+	                            <c:set var="fieldChecked" value="" />
+	                            <c:if test='${key == "mymedia.auth.enabled"}'>
+	                                <c:set var="fieldType" value="checkbox" />
+	                                <c:if test='${config.getProperty(key) == "true"}'>
+	                                    <c:set var="fieldChecked" value='checked="checked"' />
+	                                </c:if>
+	                            </c:if>
+	                            <mmt:tableInput
+	                               fieldType="${fieldType}"
+	                               fieldName="${key}"
+	                               fieldLabel="${fieldLabel}"
+	                               fieldValue="${config.getProperty(key)}"
+	                               fieldChecked="${fieldChecked}"
+	                               fieldNameAttributes="data-name=${key}"/>
+	                        </c:if>
+	                    </c:forEach>
+	                </ul>
+	                
+	                <button type="submit">Submit</button>
+	                <mmt:buttonLink url="${pageContext.request.contextPath}/settings" text="Cancel" />
+	            </form>
+                <script type="text/javascript">
+                    sortList('#table-settings', '.table-row', '.field-name', 'data-name', 'asc');
+                </script>
             </div>
         </div>
     </body>

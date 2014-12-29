@@ -11,6 +11,8 @@
     <head>
         <title>${title} - Settings</title>
         <link rel="stylesheet" type="text/css" href="<c:url value="/resources/css/main.css"/>"></link>
+        <script type="text/javascript" src="<c:url value="/resources/javascript/jquery-1.9.1.js"/>"></script>
+        <script type="text/javascript" src="<c:url value="/resources/javascript/main.js"/>"></script>
     </head>
     <body>
         <div id="header">
@@ -22,7 +24,7 @@
             </div>
             <div id="page">
                 <c:if test='${saved != null}'>
-                    <span class="alert"><p>Settings saved, you must <a href="/manager/text/reload?path=/SwordfishSync" target="_blank">restart</a> the application for changes to apply.</p></span>
+                    <p class="alert">Settings saved, you must <a href="/manager/text/reload?path=/SwordfishSync" target="_blank">restart</a> the application for changes to apply.</p>
                 </c:if>
                 
 	            <h3 class="page-heading">Settings</h3>
@@ -43,14 +45,20 @@
 	            <br/><br/>
 	            Settings stored in ${settingsFile}
 	            <br/><br/>
-	            <div class="table">
+	            <ul class="table" id="table-settings">
 	                <c:forEach items="${config.keys}" var="key">
 	                    <fmt:message key="settings.${key}" var="fieldLabel"/>
 	                    <c:if test='${!fn:startsWith(fieldLabel, "??")}'>
-	                        <mmt:tableData fieldName="${fieldLabel}:" fieldData="${config.getProperty(key)}"/>
+	                        <mmt:tableData
+	                           fieldName="${fieldLabel}:"
+	                           fieldValue="${config.getProperty(key)}"
+	                           fieldNameAttributes="data-name=${key}"/>
 	                    </c:if>
 	                </c:forEach>
-	            </div>
+	            </ul>
+                <script type="text/javascript">
+                    sortList('#table-settings', '.table-row', '.field-name', 'data-name', 'asc');
+                </script>
             </div>
         </div>
     </body>

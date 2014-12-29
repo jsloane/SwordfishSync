@@ -1,21 +1,29 @@
 package mymedia.services.model;
 
-import java.net.URL;
-import java.net.URLConnection;
+import java.io.IOException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.ssl.SSLContexts;
+import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.jdom.Element;
 
 import mymedia.db.form.FeedInfo;
@@ -107,11 +115,16 @@ public class FeedProvider {
 		boolean existingTorrent = false;
 		for (TorrentInfo torrentRecord : feedInfo.getFeedTorrents()) {
 			try {
-				if (torrentRecord != null && (
+				if (torrentRecord != null && torrentRecord.getUrl() != null && torrentRecord.getName() != null &&
+						torrentInfo != null && torrentInfo.getUrl() != null && torrentInfo.getName() != null && (
 						torrentRecord.getUrl().trim().equalsIgnoreCase(torrentInfo.getUrl().trim())
 						|| torrentRecord.getName().trim().equalsIgnoreCase(torrentInfo.getName().trim())
 					)
 				) {
+					existingTorrent = true;
+				} else if (torrentRecord != null && torrentRecord.getUrl() != null &&
+						torrentInfo != null && torrentInfo.getUrl() != null &&
+						torrentRecord.getUrl().trim().equalsIgnoreCase(torrentInfo.getUrl().trim())) {
 					existingTorrent = true;
 				}
 			} catch (Exception ex) {
@@ -149,6 +162,8 @@ public class FeedProvider {
 	
 	
 	public List<TorrentInfo> getTorrents() { // this includes all torrents in the DB, and fetched torrents from the rss feed
+		log.log(Level.INFO, "FeedProvider.getTorrents() Fetching feed: " + feedInfo.getName());
+		
 		boolean refreshFeed = false;
 		int syncInterval = feedInfo.getSyncInterval();
 		if (syncInterval != 0 || ttl != 0) {
@@ -184,7 +199,7 @@ public class FeedProvider {
 					statusMessage = e.toString();
 				}
 			}
-			log.log(Level.INFO, "[DEBUG] Fetched feed: " + feedInfo.getName() + ", "
+			log.log(Level.INFO, "FeedProvider.getTorrents() Fetched feed: " + feedInfo.getName() + ", "
 					+ "current: " + isFeedCurrent
 					+ ", ttl: " + ttl);
 		}
@@ -253,16 +268,40 @@ public class FeedProvider {
 	private SyndFeed getFeedXml() {
         XmlReader reader = null;
         SyndFeed feed = null;
+        HttpGet httpGet = null;
+        CloseableHttpResponse httpResponse = null;
         try {
-        	URLConnection urlConnection = new URL(feedInfo.getUrl()).openConnection();
-        	urlConnection.setConnectTimeout(60000);
-        	urlConnection.setReadTimeout(60000);
-        	urlConnection.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0"); // set user agent as browser
+        	CloseableHttpClient httpClient = null;
+        	if (MyMediaLifecycle.acceptAnySslCertificate) {
+	        	// accept any SSL certificate
+	        	SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(
+					null, new TrustStrategy() {
+						@Override
+						public boolean isTrusted(final X509Certificate[] chain, final String authType) throws CertificateException {
+							return true;
+						}
+					}
+				).useTLS().build();
+	        	httpClient = HttpClients.custom()
+	        			.setSslcontext(sslContext)
+	        			.build();
+        	} else {
+        		httpClient = HttpClients.custom().build();
+        	}
         	
-    		log.log(Level.INFO, "[DEBUG] FeedProvider.getFeedXml() urlConnection: " + urlConnection);
+    		// set http configuration
+        	RequestConfig requestConfig = RequestConfig.custom()
+        		    .setSocketTimeout(120000)
+        		    .setConnectTimeout(120000)
+        		    .setConnectionRequestTimeout(120000)
+        		    //.setLocalAddress(localAddress)
+        		    .build();
+    		httpGet = new HttpGet(feedInfo.getUrl());
+    		httpGet.setConfig(requestConfig);
+    		httpResponse = httpClient.execute(httpGet);
     		
-    		// sometimes the connection still times out without throwing an exception...
-    		reader = new XmlReader(urlConnection);
+    		reader = new XmlReader(httpResponse.getEntity().getContent());
+    		
 			SyndFeedInput in = new SyndFeedInput();
 			in.setPreserveWireFeed(true);
             feed = in.build(reader);
@@ -279,6 +318,16 @@ public class FeedProvider {
 					System.out.println("TEST - getFeedXml 2");
 					e.printStackTrace();
 				}
+	        }
+	        if (httpResponse != null) {
+	        	try {
+					httpResponse.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+	        }
+	        if (httpGet != null) {
+	        	httpGet.releaseConnection();
 	        }
 	    }
 		return feed;
@@ -311,9 +360,11 @@ public class FeedProvider {
 		// check if feed has custom notification link url defined
 		if (!StringUtils.isBlank(getFeedInfo().getDetailsUrlValueFromRegex()) && !StringUtils.isBlank(getFeedInfo().getDetailsUrlFormat())) {
 			Pattern pUrl = Pattern.compile(getFeedInfo().getDetailsUrlValueFromRegex());
-			Matcher mUrl = pUrl.matcher(torrentInfo.getUrl());
-			if (mUrl.matches()) {
-				url = getFeedInfo().getDetailsUrlFormat().replace("{regex-value}", mUrl.group(1));
+			if (pUrl != null && url != null) {
+				Matcher mUrl = pUrl.matcher(url);
+				if (mUrl.matches()) {
+					url = getFeedInfo().getDetailsUrlFormat().replace("{regex-value}", mUrl.group(1));
+				}
 			}
 		}
 		
@@ -380,7 +431,7 @@ public class FeedProvider {
 		
 		List<FilterAttribute> removeList = new ArrayList<FilterAttribute>();
         for (FilterAttribute filterAttribute : feedInfo.getFilterAttributes()) {
-    		if (filterAttribute.getFilterType().equalsIgnoreCase(filterType) && value.matches(filterAttribute.getFilterRegex())) {
+    		if (filterAttribute.getFilterType().equalsIgnoreCase(filterType) && value != null && value.matches(filterAttribute.getFilterRegex())) {
     			match = true;
     			if (removeMatchedRegex) {
     				// remove matched regex from filter

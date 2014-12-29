@@ -43,7 +43,7 @@
                 
                 <form method="post" action="?">
                     <div class="table">
-                        <mmt:tableInput fieldType="text" fieldName="torrent_url" fieldLabel="Link:" fieldRequired="${true}" fieldSize="140"/>
+                        <mmt:tableInput fieldType="text" fieldName="torrent_url" fieldLabel="Link:" fieldRequired="${true}" fieldClass="long"/>
                     </div>
                     <br/>
                     
