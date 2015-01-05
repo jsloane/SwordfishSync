@@ -26,6 +26,8 @@ import mymedia.services.model.FeedProvider;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.springframework.core.io.ClassPathResource;
@@ -54,14 +56,12 @@ public class IndexController {
     	// Check for custom JSP file
     	Resource customIndex = new ClassPathResource("index.jsp");
     	if (customIndex.exists() && customIndex.isReadable()) {
-    		mav = new ModelAndView("classes/index");
+    		mav = setCommonObjects(new ModelAndView("classes/index"));
     	} else {
-    		mav = new ModelAndView("jsp/index");
+    		mav = setCommonObjects(new ModelAndView("jsp/index"));
     	}
 		
-		mav.addObject("title", IndexController.instanceName);
 		mav.addObject("feeds", MediaManager.feedProviders);
-		mav.addObject("error", MyMediaLifecycle.startupError);
 		mav.addObject("torrentDownloading", TorrentInfo.STATUS_IN_PROGRESS);
 		mav.addObject("torrentNotifiedCompleted", TorrentInfo.STATUS_NOTIFY_COMPLETED);
 		mav.addObject("torrentCompleted", TorrentInfo.STATUS_COMPLETED);
@@ -73,30 +73,21 @@ public class IndexController {
     @RequestMapping("/client-torrents")
     public ModelAndView activeTorrents() {
 		// list feeds and torrents from torrent client
-		ModelAndView mav = new ModelAndView("jsp/clientTorrents");
-		mav.addObject("title", IndexController.instanceName);
-		try {
-			mav.addObject("activeTorrents", MediaManager.getAllTorrentStatus());
-		} catch (IOException | JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		ModelAndView mav = setCommonObjects(new ModelAndView("jsp/clientTorrents"));
+		mav.addObject("activeTorrents", MediaManager.getAllTorrentStatus());
         return mav;
     }
     
     @RequestMapping(value = "/feeds", method = RequestMethod.GET)
     public ModelAndView feeds() {
-		ModelAndView mav = new ModelAndView("jsp/feeds");
-		mav.addObject("title", IndexController.instanceName);
+		ModelAndView mav = setCommonObjects(new ModelAndView("jsp/feeds"));
 		mav.addObject("feeds", MediaManager.feedProviders);
-		mav.addObject("error", MyMediaLifecycle.startupError);
         return mav;
     }
     
     @RequestMapping(value = "/feeds/add", method = RequestMethod.GET)
     public ModelAndView editFeed(@ModelAttribute("uploadedFile") UploadedFile uploadedFile) {
-		ModelAndView mav = new ModelAndView("jsp/feedEdit");
-		mav.addObject("title", IndexController.instanceName);
+		ModelAndView mav = setCommonObjects(new ModelAndView("jsp/feedEdit"));
 		FeedProvider newFeedProvider = new FeedProvider();
     	mav.addObject("feed", newFeedProvider); // new feed object for default values
 		setFeedValues(newFeedProvider, mav);
@@ -138,8 +129,7 @@ public class IndexController {
     
     @RequestMapping("/feeds/{feedId}")
     public ModelAndView getFeed(@PathVariable("feedId") Integer feedId) {
-		ModelAndView mav = new ModelAndView("jsp/feed");
-		mav.addObject("title", IndexController.instanceName);
+		ModelAndView mav = setCommonObjects(new ModelAndView("jsp/feed"));
     	mav.addObject("feed", findFeedProviders(new Integer[]{feedId}).get(0));
 		mav.addObject("torrentNotAdded", TorrentInfo.STATUS_NOT_ADDED);
 		mav.addObject("torrentNotifiedNotAdded", TorrentInfo.STATUS_NOTIFIED_NOT_ADDED);
@@ -151,8 +141,7 @@ public class IndexController {
     public ModelAndView exportFeed(@PathVariable("feedId") Integer feedId, HttpServletResponse response) throws IOException {
     	FeedProvider foundFeedProvider = findFeedProviders(new Integer[]{feedId}).get(0);
 		
-		ModelAndView mav = new ModelAndView("jsp/feed");
-		mav.addObject("title", IndexController.instanceName);
+		ModelAndView mav = setCommonObjects(new ModelAndView("jsp/feed"));
     	mav.addObject("feed", foundFeedProvider);
     	
     	if (foundFeedProvider != null) {
@@ -179,8 +168,7 @@ public class IndexController {
 	
     @RequestMapping(value = "/feeds/{feedId}/torrents/add", method = RequestMethod.GET)
     public ModelAndView addTorrent(@PathVariable("feedId") Integer feedId) {
-		ModelAndView mav = new ModelAndView("jsp/torrentEdit");
-		mav.addObject("title", IndexController.instanceName);
+		ModelAndView mav = setCommonObjects(new ModelAndView("jsp/torrentEdit"));
 		mav.addObject("feed", findFeedProviders(new Integer[]{feedId}).get(0));
 		TorrentInfo newTorrentInfo = new TorrentInfo();
     	mav.addObject("torrentInfo", newTorrentInfo); // new feed object for default values
@@ -244,8 +232,7 @@ public class IndexController {
     
     @RequestMapping(value = "/feeds/{feedId}/edit", method = RequestMethod.GET)
     public ModelAndView editFeed(@PathVariable("feedId") Integer feedId) {
-		ModelAndView mav = new ModelAndView("jsp/feedEdit");
-		mav.addObject("title", IndexController.instanceName);
+		ModelAndView mav = setCommonObjects(new ModelAndView("jsp/feedEdit"));
 		
     	for (FeedProvider feed : MediaManager.feedProviders) {
     		if (feed.getFeedInfo().getId().equals(feedId)) {
@@ -271,8 +258,7 @@ public class IndexController {
 	@RequestMapping(value = "/feeds/{feedId}/edit/filter", method = RequestMethod.GET)
     public ModelAndView editFeedFilter(@PathVariable("feedId") Integer feedId) {
 		String optionSelected = "selected=\"selected\"";
-		ModelAndView mav = new ModelAndView("jsp/feedEditFilter");
-		mav.addObject("title", IndexController.instanceName);
+		ModelAndView mav = setCommonObjects(new ModelAndView("jsp/feedEditFilter"));
     	String filterEnabled = "";
     	String removeAddFilterOnMatch = "";
     	String actionSelectedIgnore = optionSelected;
@@ -364,8 +350,7 @@ public class IndexController {
     
 	@RequestMapping(value = "/feeds/{feedId}/delete", method = RequestMethod.GET)
     public ModelAndView deleteFeed(@PathVariable("feedId") Integer feedId) {
-		ModelAndView mav = new ModelAndView("jsp/feedDelete");
-		mav.addObject("title", IndexController.instanceName);
+		ModelAndView mav = setCommonObjects(new ModelAndView("jsp/feedDelete"));
     	for (FeedProvider feed : MediaManager.feedProviders) {
     		if (feed.getFeedInfo().getId().equals(feedId)) {
     			mav.addObject("feed", feed);
@@ -385,54 +370,102 @@ public class IndexController {
     
 	@RequestMapping(value = "/settings", method = RequestMethod.GET)
     public ModelAndView viewSettings(WebRequest webRequest) throws ConfigurationException {
-		ModelAndView mav = new ModelAndView("jsp/settings");
-		mav.addObject("title", IndexController.instanceName);
+		ModelAndView mav = setCommonObjects(new ModelAndView("jsp/settings"));
 		mav.addObject("saved", webRequest.getParameter("saved"));
-		mav.addObject("settingsFile", MyMediaLifecycle.propertiesFile);
-		mav.addObject("config", new PropertiesConfiguration(MyMediaLifecycle.propertiesFile));
+		mav.addObject("restartRequired", webRequest.getParameter("restartRequired"));
+		mav.addObject("propertiesFile", MyMediaLifecycle.propertiesFile);
+		mav.addObject("configFile", MyMediaLifecycle.configFile);
+		XMLConfiguration config = new XMLConfiguration(MyMediaLifecycle.configFile);
+		config.setExpressionEngine(new XPathExpressionEngine());
+		mav.addObject("config", config);
         return mav;
     }
 	@RequestMapping(value = "/settings/edit", method = RequestMethod.GET)
     public ModelAndView editSettings() throws ConfigurationException {
-		ModelAndView mav = new ModelAndView("jsp/settingsEdit");
-		mav.addObject("title", IndexController.instanceName);
-		mav.addObject("config", new PropertiesConfiguration(MyMediaLifecycle.propertiesFile));
+		ModelAndView mav = setCommonObjects(new ModelAndView("jsp/settingsEdit"));
+		XMLConfiguration config = new XMLConfiguration(MyMediaLifecycle.configFile);
+		config.setExpressionEngine(new XPathExpressionEngine());
+		mav.addObject("config", config);
+		
         return mav;
     }
     @RequestMapping(value = "/settings/edit", method = RequestMethod.POST)
-    public String editSettings(WebRequest webRequest) throws ConfigurationException {
-    	PropertiesConfiguration config = new PropertiesConfiguration(MyMediaLifecycle.propertiesFile);
-    	Iterator<String> i = config.getKeys();
-    	while (i.hasNext()) {
-    		String key = i.next();
-    		if (webRequest.getParameterMap().containsKey(key)) {
-    			String value = webRequest.getParameter(key).trim(); // need validation
-    			if ("mymedia.auth.enabled".equals(key) && "on".equals(value)) {
-    				value = "true";
+    public String editSettings(WebRequest webRequest) throws ConfigurationException, IOException {
+    	boolean restartRequired = false;
+    	boolean saveConfig = false;
+    	boolean saveProperties = false;
+    	
+		XMLConfiguration config = new XMLConfiguration(MyMediaLifecycle.configFile);
+		PropertiesConfiguration properties = new PropertiesConfiguration(MyMediaLifecycle.propertiesFile);
+		
+    	Iterator<String> parameterNames = webRequest.getParameterNames();
+    	
+    	while (parameterNames.hasNext()) {
+    		String parameterName = parameterNames.next();
+    		String parameterValue = webRequest.getParameter(parameterName).trim();
+    		
+    		// save checkbox fields as true
+    		if (config.containsKey(parameterName + "[@fieldtype]") && config.getProperty(parameterName + "[@fieldtype]").equals("checkbox")) {
+    			if ("on".equals(parameterValue)) {
+    				parameterValue = "true";
+    			} else {
+    				parameterValue = "false";
     			}
-            	config.setProperty(key, value);
-    		} else if ("mymedia.auth.enabled".equals(key)) {
-    			config.setProperty(key, "false");
     		}
+    		
+    		if (!parameterValue.equals(config.getProperty(parameterName))) {
+            	// update config.xml
+        		config.setProperty(parameterName, parameterValue);
+        		saveConfig = true;
+        	}
+        	
+    		// update properties only if it contains a value for this key
+        	if (properties.containsKey(parameterName) && !properties.getProperty(parameterName).equals(parameterValue)) {
+            	// update swordfishsync.properties
+        		properties.setProperty(parameterName, parameterValue);
+        		saveProperties = true;
+        	}
     	}
-    	config.save();
-        return "redirect:/settings?saved=true";
+    	
+    	// save changes and reload config
+    	if (saveProperties) {
+        	restartRequired = true;
+        	properties.save();
+    	}
+    	if (saveConfig) {
+    		config.save();
+        	MyMediaLifecycle.readConfig();
+    	}
+    	
+        return "redirect:/settings?saved=true&restartRequired=" + Boolean.toString(restartRequired); // needs error message/validation
     }
 	@RequestMapping(value = "/settings/export", method = RequestMethod.GET)
     public String exportSettings(HttpServletResponse response) throws IOException, ConfigurationException {
-		Map<String, Object> settings = new HashMap<String, Object>();
-    	PropertiesConfiguration config = new PropertiesConfiguration(MyMediaLifecycle.propertiesFile);
-    	Iterator<String> i = config.getKeys();
-    	while (i.hasNext()) {
-    		String key = i.next();
-    		settings.put(key, config.getProperty(key));
+		Map<String, Object> propertiesMap = new HashMap<String, Object>();
+    	PropertiesConfiguration properties = new PropertiesConfiguration(MyMediaLifecycle.propertiesFile);
+    	Iterator<String> p = properties.getKeys();
+    	while (p.hasNext()) {
+    		String key = p.next();
+    		propertiesMap.put(key, properties.getProperty(key));
     	}
+    	
+		Map<String, Object> configMap = new HashMap<String, Object>();
+		XMLConfiguration config = new XMLConfiguration(MyMediaLifecycle.configFile);
+    	Iterator<String> c = config.getKeys();
+    	while (c.hasNext()) {
+    		String key = c.next();
+    		configMap.put(key, config.getProperty(key));
+    	}
+    	
+    	Map<String, Map<String, Object>> settings = new HashMap<String, Map<String, Object>>();
+    	settings.put("properties", propertiesMap);
+    	settings.put("config", configMap);
     	
     	// export XML
 		XStream xstream = new XStream();
 		xstream.autodetectAnnotations(true);
 		xstream.alias("settings", Map.class);
-		
+
 		byte[] b = xstream.toXML(settings).getBytes();
 		response.setHeader("Pragma", "private");
 		response.setHeader("Cache-Control", "private, must-revalidate");
@@ -451,19 +484,57 @@ public class IndexController {
 		XStream xstream = new XStream();
 		xstream.autodetectAnnotations(true);
 		xstream.alias("settings", Map.class);
-		Map<String, Object> settings = (HashMap<String, Object>) xstream.fromXML(uploadedFile.getFile().getInputStream());
+		Map<String, Map<String, Object>> settings = (HashMap<String, Map<String, Object>>) xstream.fromXML(uploadedFile.getFile().getInputStream());
 		
-    	PropertiesConfiguration config = new PropertiesConfiguration(MyMediaLifecycle.propertiesFile);
-		
-		Iterator<String> i = settings.keySet().iterator();
-    	while (i.hasNext()) {
-    		String key = i.next();
-    		System.out.println("[DEBUG] key: " + key + ", value: " + settings.get(key));
-        	config.setProperty(key, settings.get(key)); // need validation
-    	}
-    	config.save();
+    	boolean restartRequired = false;
+    	boolean saveConfig = false;
+    	boolean saveProperties = false;
     	
-		return "redirect:/settings?saved=true"; // needs error message/validation
+    	PropertiesConfiguration properties = new PropertiesConfiguration(MyMediaLifecycle.propertiesFile);
+		XMLConfiguration config = new XMLConfiguration(MyMediaLifecycle.configFile);
+		
+		Iterator<String> s = settings.keySet().iterator();
+    	while (s.hasNext()) {
+    		String settingsKey = s.next();
+    		if ("properties".equals(settingsKey)) {
+    			Map<String, Object> propertiesMap = settings.get(settingsKey);
+    			Iterator<String> p = propertiesMap.keySet().iterator();
+    	    	while (p.hasNext()) {
+    	    		String propertiesKey = p.next();
+                	if (!properties.containsKey(propertiesKey) || !propertiesMap.get(propertiesKey).equals(properties.getProperty(propertiesKey))) {
+                    	// update swordfishsync.properties
+                		properties.setProperty(propertiesKey, propertiesMap.get(propertiesKey)); // need validation
+                		System.out.println("[DEBUG] properties - " + propertiesKey + ":" + propertiesMap.get(propertiesKey));
+                		saveProperties = true;
+                	}
+    	    	}
+    		}
+    		if ("config".equals(settingsKey)) {
+    			Map<String, Object> configMap = settings.get(settingsKey);
+    			Iterator<String> c = configMap.keySet().iterator();
+    	    	while (c.hasNext()) {
+    	    		String configKey = c.next();
+                	if (!properties.containsKey(configKey) || !configMap.get(configKey).equals(properties.getProperty(configKey))) {
+                    	// update config.xml
+                		config.setProperty(configKey, configMap.get(configKey)); // need validation
+                		System.out.println("[DEBUG] config - " + configKey + ":" + configMap.get(configKey));
+                		saveConfig = true;
+                	}
+    	    	}
+    		}
+    	}
+    	
+    	// save changes and reload config
+    	if (saveProperties) {
+        	restartRequired = true;
+        	properties.save();
+    	}
+    	if (saveConfig) {
+    		config.save();
+        	MyMediaLifecycle.readConfig();
+    	}
+    	
+		return "redirect:/settings?saved=true&restartRequired=" + Boolean.toString(restartRequired); // needs error message/validation
     }
     
     @RequestMapping(value = "/index/upload", method = RequestMethod.POST)
@@ -562,6 +633,13 @@ public class IndexController {
 		actionOptions.put("notify", "Notify");
 		mav.addObject("actionOptions", actionOptions);
 	}
+    
+    private ModelAndView setCommonObjects(ModelAndView mav) {
+		mav.addObject("title", IndexController.instanceName);
+		mav.addObject("startupError", MyMediaLifecycle.startupError);
+		mav.addObject("torrentHostError", MyMediaLifecycle.torrentHostError);
+    	return mav;
+    }
     
     private boolean saveFeedInfoValues(FeedProvider feedProvider, WebRequest webRequest) {
 		String url = webRequest.getParameter("feed_url").trim();

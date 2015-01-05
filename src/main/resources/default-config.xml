@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config version="1">
+    <application label="Application" fieldtype="section" order="1">
+        <title label="Title" fieldtype="text" order="1">SwordfishSync</title>
+        <syncinterval label="Feed sync interval (minutes)" fieldtype="text" order="2">15</syncinterval>
+        <security label="Security" fieldtype="section" order="3">
+            <basicauth fieldtype="section" order="1">
+	            <enabled label="Enable Basic Authentication" fieldtype="checkbox" order="1">false</enabled>
+	            <username label="Username" fieldtype="text" order="2">swordfishsync</username>
+	            <password label="Password" fieldtype="password" order="3">swordfishsync</password>
+            </basicauth>
+            <acceptanysslcertificate label="Accept untrusted SSL certificates" fieldtype="checkbox" order="2">false</acceptanysslcertificate>
+        </security>
+        <debugonhost></debugonhost>
+    </application>
+    <media label="Media" fieldtype="section" order="2">
+        <tvdb label="TVDB" fieldtype="section" order="1">
+            <apikey label="API Key" fieldtype="text" order="1"></apikey>
+            <notice label="Notice"  fieldtype="textarea" order="2">thetvdb dot com</notice>
+        </tvdb>
+        <tmdb label="TMDb" fieldtype="section" order="2">
+            <apikey label="API Key" fieldtype="text" order="1"></apikey>
+            <notice label="Notice"  fieldtype="textarea" order="2">This product uses the TMDb API but is not endorsed or certified by TMDb.</notice>
+        </tmdb>
+        <notifications>
+            <default>
+                <subject>
+                    {feedName} notification: {torrentName}
+                </subject>
+                <body>
+                    &lt;p&gt;Notification for: &lt;b&gt;{torrentName}&lt;/b&gt;&lt;/p&gt;&lt;p&gt;{posterImage}&lt;/p&gt;&lt;p&gt;{extraInfo}&lt;/p&gt;
+                </body>
+            </default>
+            <newdefault>
+                <subject>
+                    {feedName} download available: {torrentName}
+                </subject>
+                <body>
+                    &lt;p&gt;&lt;b&gt;{torrentName}&lt;/b&gt; is available to download: {url}&lt;/p&gt;&lt;p&gt;{posterImage}&lt;/p&gt;&lt;p&gt;{extraInfo}&lt;/p&gt;
+                </body>
+            </newdefault>
+            <newtv>
+                <subject>
+                    {feedName} download available: {mediaName}
+                </subject>
+                <body>
+                    &lt;p&gt;&lt;b&gt;{torrentName}&lt;/b&gt; is available to download: {url}&lt;/p&gt;&lt;p&gt;{backdropImage}&lt;/p&gt;&lt;p&gt;{episodeTitle}&lt;/p&gt;&lt;p&gt;{episodeDescription}&lt;/p&gt;&lt;p&gt;{posterImage}&lt;/p&gt;&lt;p&gt;{extraInfo}&lt;/p&gt;&lt;p style="color:#FFFFFF;"&gt;{notice}&lt;/p&gt;
+                </body>
+            </newtv>
+            <newmovie>
+                <subject>
+                    {feedName} download available: {mediaName} ({year}) {quality}
+                </subject>
+                <body>
+                    &lt;p&gt;&lt;b&gt;{torrentName}&lt;/b&gt; is available to download: {url}&lt;/p&gt;&lt;p&gt;{backdropImage}&lt;/p&gt;&lt;p&gt;{extraInfo}&lt;/p&gt;&lt;p&gt;{posterImage}&lt;/p&gt;&lt;p style="color:#FFFFFF;"&gt;{notice}&lt;/p&gt;
+                </body>
+            </newmovie>
+            <completeddefault>
+                <subject>
+                    {feedName} download complete: {torrentName}
+                </subject>
+                <body>
+                    &lt;p&gt;&lt;b&gt;{torrentName}&lt;/b&gt; has finished downloading to {downloadDir}&lt;/p&gt;&lt;p&gt;{posterImage}&lt;/p&gt;&lt;p&gt;{extraInfo}&lt;/p&gt;
+                </body>
+            </completeddefault>
+            <completedtv>
+                <subject>
+                    {feedName} download complete: {mediaName}
+                </subject>
+                <body>
+                    &lt;p&gt;&lt;b&gt;{torrentName}&lt;/b&gt; has finished downloading to {downloadDir}&lt;/p&gt;&lt;p&gt;{backdropImage}&lt;/p&gt;&lt;p&gt;{episodeTitle}&lt;/p&gt;&lt;p&gt;{episodeDescription}&lt;/p&gt;&lt;p&gt;{posterImage}&lt;/p&gt;&lt;p&gt;{extraInfo}&lt;/p&gt;&lt;p style="color:#FFFFFF;"&gt;{notice}&lt;/p&gt;
+                </body>
+            </completedtv>
+            <completedmovie>
+                <subject>
+                    {feedName} download complete: {mediaName} ({year}) {quality}
+                </subject>
+                <body>
+                    &lt;p&gt;&lt;b&gt;{torrentName}&lt;/b&gt; has finished downloading to {downloadDir}&lt;/p&gt;&lt;p&gt;{backdropImage}&lt;/p&gt;&lt;p&gt;{extraInfo}&lt;/p&gt;&lt;p&gt;{posterImage}&lt;/p&gt;&lt;p style="color:#FFFFFF;"&gt;{notice}&lt;/p&gt;
+                </body>
+            </completedmovie>
+        </notifications>
+    </media>
+    <email label="Email" fieldtype="section" order="3">
+        <smtp>
+            <host label="Host" fieldtype="text">localhost</host>
+            <port label="Port" fieldtype="text">25</port>
+        </smtp>
+        <from label="From address" fieldtype="text">SwordfishSync@localhost</from>
+    </email>
+    <torrentclient label="Torrent Host" fieldtype="section" order="4">
+        <type>Transmission</type>
+        <host label="Hostname" fieldtype="text">localhost</host>
+        <port label="Port" fieldtype="text">9091</port>
+        <username label="Username" fieldtype="text">transmission</username>
+        <password label="Password" fieldtype="password">transmission</password>
+    </torrentclient>
+    <database label="Database" fieldtype="section" order="5">
+        <driverclassname label="Driver class name" fieldtype="text" order="4">com.mysql.jdbc.Driver</driverclassname>
+        <databaseurl label="Connection string" fieldtype="text" order="1">jdbc:mysql://localhost:3306/swordfishsync?zeroDateTimeBehavior=convertToNull</databaseurl>
+        <username label="Username" fieldtype="text" order="2">swordfishsync</username>
+        <password label="Password" fieldtype="password" order="3">swordfishsync</password>
+        <hibernate fieldtype="section" order="5">
+            <dialect label="Hibernate Dialect" fieldtype="text" order="1">org.hibernate.dialect.MySQLDialect</dialect>
+        </hibernate>
+    </database>
+</config>

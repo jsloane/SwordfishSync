@@ -296,7 +296,7 @@ public class TorrentStatus extends JSONAccessor {
     return obj;
   }
 
-  public Object getField(TorrentField field) throws JSONException {
+  public Object getField(TorrentField field) {
     return obj.get(getFieldName(field));
   }
 
@@ -304,11 +304,11 @@ public class TorrentStatus extends JSONAccessor {
     return fieldNameByFieldPos[field.ordinal()];
   }
 
-  public int getId() throws JSONException {
+  public int getId() {
     return (Integer) getField(TorrentField.id);
   }
 
-  public double getPercentDone() throws JSONException {
+  public double getPercentDone() {
     Object percentDone = getField(TorrentField.percentDone);
     if (percentDone instanceof Integer) { // 100% is returned as an integer (1)
       return (Integer) percentDone;
@@ -320,22 +320,16 @@ public class TorrentStatus extends JSONAccessor {
     return parseStatus((Integer) getField(TorrentField.status), rpcVersion);
   }
 
-  public String getName() throws JSONException {
+  public String getName() {
     return (String) getField(TorrentField.name);
   }
 
-  public Date getDateField(TorrentField field) throws JSONException {
+  public Date getDateField(TorrentField field) {
     return new Date((Long) getField(field));
   }
 
   @Override
   public String toString() {
-    try {
-		return obj.toString(2);
-	} catch (JSONException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
-    return "";
+	return obj.toString(2);
   }
 }

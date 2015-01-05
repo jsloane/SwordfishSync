@@ -179,3 +179,40 @@ progress.torrent-progress {
     background: #e3f7fc;
     border: 1px solid #8ed9f6;
 }
+
+/**
+ * Settings page
+ */
+ul#table-config {
+    table-layout: fixed;
+    width: 60em;
+}
+ul#table-config li {
+    width: 100%;
+}
+ul#table-config ul.table {
+    table-layout: fixed;
+    width: 60em;
+}
+ul#table-config .table-cell input, 
+ul#table-config .table-cell textarea {
+    width: 100%;
+}
+ul#table-config .table-cell input[type=checkbox] {
+    width: auto;
+}
+ul#table-config div.field-name {
+	vertical-align: top;
+    text-align: right;
+}
+ul#table-config h1 {
+    font-size: 1.5em;
+    font-weight: normal;
+}
+ul#table-config h2 {
+    font-size: 1.2em;
+    font-weight: normal;
+}
+.settings-location {
+	font-size: small;
+}

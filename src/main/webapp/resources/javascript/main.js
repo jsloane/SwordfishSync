@@ -1,14 +1,17 @@
 
-var sortList = function(listId, rowClass, tagClass, tagAttribute, order) {
-	$(listId).children(rowClass).sort(function(a, b) {
+var sortList = function($list, rowClass, tagClass, tagAttribute, order) {
+	$list.children(rowClass).sort(function(a, b) {
 		var first = b;
 		var second = a;
 		if (order && order == "asc") {
 			first = a;
 			second = b;
 		}
-        return $(first).find(tagClass).attr(tagAttribute).localeCompare($(second).find(tagClass).attr(tagAttribute));
-    }).appendTo(listId);
+		if (tagClass) {
+			return $(first).find(tagClass).attr(tagAttribute).localeCompare($(second).find(tagClass).attr(tagAttribute));
+		}
+		return $(first).attr(tagAttribute).localeCompare($(second).attr(tagAttribute));
+    }).appendTo($list);
 };
 
 var getDate = function(timestamp) {

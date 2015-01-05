@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import ca.benow.transmission.model.TrackerPair;
@@ -100,7 +99,7 @@ public class SetTorrentParameters extends TorrentParameters {
     return this;
   }
 
-  public JSONObject toRequestObject() throws JSONException {
+  public JSONObject toRequestObject() {
     JSONObject obj = new JSONObject();
     if (!ids.isEmpty()) {
       JSONArray ary = new JSONArray(ids);

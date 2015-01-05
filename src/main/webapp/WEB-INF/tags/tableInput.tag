@@ -8,12 +8,12 @@
 <%@ attribute name="fieldValues" required="false" type="java.util.Map" description="Field values." %>
 <%@ attribute name="fieldChecked" required="false" type="java.lang.String" description="Field value." %>
 <%@ attribute name="fieldRequired" required="false" type="java.lang.Boolean" description="Field required." %>
-<%@ attribute name="fieldAdvanced" required="false" type="java.lang.Boolean" description="Field advanced." %>
 <%@ attribute name="fieldClass" required="false" type="java.lang.String" description="Field class." %>
+<%@ attribute name="fieldAttributes" required="false" type="java.lang.String" description="Field tag attributes." %>
 <%@ attribute name="fieldNameAttributes" required="false" type="java.lang.String" description="Field name tag attributes." %>
 <%@ attribute name="fieldValueAttributes" required="false" type="java.lang.String" description="Field value tag attributes." %>
 
-<li class="table-row ${advancedClass}">
+<li class="table-row ${fieldClass}" ${fieldAttributes}>
     <div class="table-cell field-name" ${fieldNameAttributes}>
         <label for="${fieldName}">${fieldLabel}</label><c:if test="${fieldRequired}">*</c:if>
     </div>
@@ -21,6 +21,7 @@
         <c:choose>
             <c:when test="${fieldType eq 'checkbox'}">
                 <input type="${fieldType}" name="${fieldName}" id="${fieldName}" ${fieldChecked}/>
+                <input type="hidden" name="${fieldName}" id="${fieldName}_hidden" value="off" />
             </c:when>
             <c:when test="${fieldType eq 'select'}">
                 <select name="${fieldName}" id="${fieldName}">

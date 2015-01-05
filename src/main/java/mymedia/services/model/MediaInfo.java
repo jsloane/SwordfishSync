@@ -208,7 +208,7 @@ public class MediaInfo {
 					//String imdbId = "";
 					int movieId;
 					
-					List<MovieDb> searchResults = tmdb.searchMovie(name, Integer.parseInt(year), null, true, 0);
+					List<MovieDb> searchResults = tmdb.searchMovie(name, Integer.parseInt(year), null, true, 0).getResults();
 					
 					for (MovieDb searchResult : searchResults) {
 						// some image width sizes: w185, w342, w1280

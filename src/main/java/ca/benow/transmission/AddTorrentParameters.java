@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 public class AddTorrentParameters extends TorrentParameters {
@@ -36,7 +35,7 @@ public class AddTorrentParameters extends TorrentParameters {
     return this;
   }
 
-  public JSONObject toRequestObject() throws IOException, JSONException {
+  public JSONObject toRequestObject() throws IOException {
     JSONObject obj = new JSONObject();
     if (location != null)
       obj.put("download-dir", location);

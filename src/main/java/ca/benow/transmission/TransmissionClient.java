@@ -177,9 +177,8 @@ public class TransmissionClient {
    *           on problem communicating
    * @throws TransmissionException
    *           on Transmission problem when performing the command
-   * @throws JSONException 
    */
-  public JSONObject sendCommand(String name, JSONObject args) throws IOException, TransmissionException, JSONException {
+  public JSONObject sendCommand(String name, JSONObject args) throws IOException, TransmissionException {
     HttpURLConnection hconn = (HttpURLConnection) url.openConnection();
     hconn.setRequestMethod("POST");
     hconn.setDoOutput(true);
@@ -230,8 +229,8 @@ public class TransmissionClient {
       throw e;
     }
 
-    if (log.isDebugEnabled())
-      log.debug("Read:\n" + result.toString(2));
+    //if (log.isDebugEnabled())
+      //log.debug("Read:\n" + result.toString(2));
 
     String resultStr = result.getString("result");
     if (!resultStr.equals("success"))
@@ -254,9 +253,8 @@ public class TransmissionClient {
    *          fields are fetched
    * @return status for requested torrents
    * @throws IOException
-   * @throws JSONException 
    */
-  public List<TorrentStatus> getTorrents(int[] ids, TorrentStatus.TorrentField... requestedFields) throws IOException, JSONException {
+  public List<TorrentStatus> getTorrents(int[] ids, TorrentStatus.TorrentField... requestedFields) throws IOException {
     JSONObject args = new JSONObject();
     if (ids != null && ids.length > 0) {
       JSONArray idAry = new JSONArray();
@@ -295,11 +293,11 @@ public class TransmissionClient {
     return torrents;
   }
 
-  public List<TorrentStatus> getAllTorrents(TorrentField[] torrentFields) throws IOException, JSONException {
+  public List<TorrentStatus> getAllTorrents(TorrentField[] torrentFields) throws IOException {
     return getTorrents(null, torrentFields);
   }
 
-  public List<TorrentStatus> getAllTorrents() throws IOException, JSONException {
+  public List<TorrentStatus> getAllTorrents() throws IOException {
     return getTorrents(new int[] {}, new TorrentField[] {});
   }
 
@@ -308,9 +306,8 @@ public class TransmissionClient {
    * @param params parameters for torrent addition
    * @return info about the added torrent
    * @throws IOException
-   * @throws JSONException 
    */
-  public AddedTorrentInfo addTorrent(AddTorrentParameters params) throws IOException, JSONException {
+  public AddedTorrentInfo addTorrent(AddTorrentParameters params) throws IOException {
     JSONObject obj = params.toRequestObject();
     JSONObject result = sendCommand("torrent-add", obj);
     if (!result.has("torrent-added") && result.has("torrent-duplicate")) {
@@ -325,9 +322,8 @@ public class TransmissionClient {
    * @param ids
    *          numerical ids, string hashes or the ID_RECENTLY_ADDED constant
    * @throws IOException
-   * @throws JSONException 
    */
-  public void startTorrents(Object... ids) throws IOException, JSONException {
+  public void startTorrents(Object... ids) throws IOException {
     if (ids == null)
       throw new NullPointerException("At least one id is required");
     JSONObject obj = new JSONObject();
@@ -348,9 +344,8 @@ public class TransmissionClient {
    * @param ids
    *          numerical ids, string hashes or the ID_RECENTLY_ADDED constant
    * @throws IOException
-   * @throws JSONException 
    */
-  public void stopTorrents(Object... ids) throws IOException, JSONException {
+  public void stopTorrents(Object... ids) throws IOException {
     if (ids == null)
       throw new NullPointerException("At least one id is required");
     JSONObject obj = new JSONObject();
@@ -371,9 +366,8 @@ public class TransmissionClient {
    * @param ids
    *          numerical ids, string hashes or the ID_RECENTLY_ADDED constant
    * @throws IOException
-   * @throws JSONException 
    */
-  public void verifyTorrents(Object... ids) throws IOException, JSONException {
+  public void verifyTorrents(Object... ids) throws IOException {
     if (ids == null)
       throw new NullPointerException("At least one id is required");
     JSONObject obj = new JSONObject();
@@ -394,9 +388,8 @@ public class TransmissionClient {
    * @param ids
    *          numerical ids, string hashes or the ID_RECENTLY_ADDED constant
    * @throws IOException
-   * @throws JSONException 
    */
-  public void reannounceTorrents(Object... ids) throws IOException, JSONException {
+  public void reannounceTorrents(Object... ids) throws IOException {
     if (ids == null)
       throw new NullPointerException("At least one id is required");
     JSONObject obj = new JSONObject();
@@ -415,9 +408,8 @@ public class TransmissionClient {
    * Sets properties of selected torrents
    * @param params parameters for torrents
    * @throws IOException
-   * @throws JSONException 
    */
-  public void setTorrents(SetTorrentParameters params) throws IOException, JSONException {
+  public void setTorrents(SetTorrentParameters params) throws IOException {
     JSONObject obj = params.toRequestObject();
     sendCommand("torrent-set", obj);
   }
@@ -429,9 +421,8 @@ public class TransmissionClient {
    *          numerical ids, string hashes or the ID_RECENTLY_ADDED constant
    * @param deleteLocalData
    * @throws IOException
-   * @throws JSONException 
    */
-  public void removeTorrents(Object[] ids, boolean deleteLocalData) throws IOException, JSONException {
+  public void removeTorrents(Object[] ids, boolean deleteLocalData) throws IOException {
     if (ids == null)
       throw new NullPointerException("At least one id is required");
     JSONObject obj = new JSONObject();
@@ -454,9 +445,8 @@ public class TransmissionClient {
    * @param location
    * @param move
    * @throws IOException
-   * @throws JSONException 
    */
-  public void moveTorrents(Object[] ids, String location, boolean move) throws IOException, JSONException {
+  public void moveTorrents(Object[] ids, String location, boolean move) throws IOException {
     if (ids == null)
       throw new NullPointerException("At least one id is required");
     JSONObject obj = new JSONObject();
@@ -485,9 +475,8 @@ public class TransmissionClient {
    *          rpcVersion, rpcVersionMinimum, and version. An error will be
    *          surfaced if those are included
    * @throws IOException
-   * @throws JSONException 
    */
-  public void setSession(SessionPair... pairs) throws IOException, JSONException {
+  public void setSession(SessionPair... pairs) throws IOException {
     if (pairs == null)
       throw new NullPointerException("At least one pair is required");
     JSONObject obj = new JSONObject();
@@ -516,13 +505,12 @@ public class TransmissionClient {
   /**
    * @return session status
    * @throws IOException
-   * @throws JSONException 
    */
-  public SessionStatus getSessionStats() throws IOException, JSONException {
+  public SessionStatus getSessionStats() throws IOException {
     return new SessionStatus(sendCommand("session-stats", null));
   }
 
-  public int updateBlocklist() throws IOException, JSONException {
+  public int updateBlocklist() throws IOException {
     return sendCommand("session-stats", null).getInt("blocklist-size");
   }
 
@@ -532,9 +520,8 @@ public class TransmissionClient {
    * 
    * @return true if incoming peer port is accessible from outside
    * @throws IOException
-   * @throws JSONException 
    */
-  public boolean isPortOpen() throws IOException, JSONException {
+  public boolean isPortOpen() throws IOException {
     return sendCommand("port-test", null).getBoolean("port-is-open");
   }
 

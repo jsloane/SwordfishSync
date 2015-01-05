@@ -16,14 +16,10 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
+import javax.persistence.OrderColumn;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.persistence.Version;
-
-import org.hibernate.annotations.IndexColumn;
 
 import com.thoughtworks.xstream.annotations.XStreamOmitField;
 
@@ -112,7 +108,7 @@ public class FeedInfo {
     @XStreamOmitField
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name="feed_id")
-    @IndexColumn(name="idx")
+    @OrderColumn(name="idx")
     private List<TorrentInfo> feedTorrents = new ArrayList<TorrentInfo>(); // this is the list stored in the DB
 	
    	public Integer getId() {

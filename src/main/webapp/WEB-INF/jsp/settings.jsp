@@ -23,8 +23,20 @@
                 <mmt:navMenu pageid="settings" />
             </div>
             <div id="page">
+                <%-- display any errors --%>
+                <c:if test="${not empty startupError}">
+                    <div class="alert-box error"><span>Error: </span>${startupError}</div>
+                </c:if>
+                <c:if test="${not empty torrentHostError}">
+                    <div class="alert-box error"><span>Error: </span>${torrentHostError}</div>
+                </c:if>
                 <c:if test='${saved != null}'>
-                    <p class="alert">Settings saved, you must <a href="/manager/text/reload?path=/SwordfishSync" target="_blank">restart</a> the application for changes to apply.</p>
+                    <div class="alert-box success"><span>Success: </span>
+                        Settings updated.
+                        <c:if test='${restartRequired == "true"}'>
+                            You must <a href="/manager/text/reload?path=/SwordfishSync" target="_blank">restart</a> the application for changes to apply.
+                        </c:if>
+                    </div>
                 </c:if>
                 
 	            <h3 class="page-heading">Settings</h3>
@@ -38,27 +50,28 @@
                     <input type="submit" value="Upload Index Page" />
                 </form:form>
                 
-                <br/>
 	            Options:
 	            <mmt:buttonLink url="${pageContext.request.contextPath}/settings/export" text="Export Settings" />
                 <mmt:buttonLink url="${pageContext.request.contextPath}/settings/edit" text="Edit/Import Settings" />
-	            <br/><br/>
-	            Settings stored in ${settingsFile}
-	            <br/><br/>
-	            <ul class="table" id="table-settings">
-	                <c:forEach items="${config.keys}" var="key">
-	                    <fmt:message key="settings.${key}" var="fieldLabel"/>
-	                    <c:if test='${!fn:startsWith(fieldLabel, "??")}'>
-	                        <mmt:tableData
-	                           fieldName="${fieldLabel}:"
-	                           fieldValue="${config.getProperty(key)}"
-	                           fieldNameAttributes="data-name=${key}"/>
-	                    </c:if>
-	                </c:forEach>
-	            </ul>
+                
+                <ul class="table table-view" id="table-config">
+                    <c:set var="configDepth" value="0" />
+                    <c:forEach items="${config.rootNode.children}" var="configNode">
+                        <mmt:configNode config="${config}" configNode="${configNode}" configNodeKey="" depth="${1}" editable="${false}" />
+                    </c:forEach>
+                </ul>
                 <script type="text/javascript">
-                    sortList('#table-settings', '.table-row', '.field-name', 'data-name', 'asc');
+                    $('#table-config ul').each(
+                        function(index) {
+                            sortList($(this), 'li.table-row', null, 'data-order', 'asc');
+                        }
+                    );
+                    sortList($('#table-config'), 'li.table-row', null, 'data-order', 'asc');
                 </script>
+                
+                <p class="settings-location">
+                    Settings stored in <b>${configFile}</b> and <b>${propertiesFile}</b>
+                </p>
             </div>
         </div>
     </body>

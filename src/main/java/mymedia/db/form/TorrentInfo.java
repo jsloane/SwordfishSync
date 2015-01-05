@@ -17,8 +17,6 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.json.JSONException;
-
 import mymedia.services.MediaManager;
 import mymedia.services.model.FeedProvider;
 import mymedia.services.model.MediaInfo;
@@ -133,7 +131,7 @@ public class TorrentInfo {
    		this.properties = properties;
    	}
    	
-   	public TorrentStatus getClientFieldsForTorrent() throws IOException, JSONException {
+   	public TorrentStatus getClientFieldsForTorrent() throws IOException {
    		try {
    	   		return MediaManager.getTorrentStatus(this);
    		} catch (Exception ex) {

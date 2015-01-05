@@ -21,7 +21,7 @@
                 <h3 class="feed-name">Delete feed: ${feed.feedInfo.name}?</h3>
 		        
 		        <c:if test="${!empty feed.torrentsInprogress}">
-		            <p>Warning: this feed has torrents in progress, which will no longer be automatically managed.</p>
+		            <p>Warning: this feed has torrents in progress, which will no longer be managed.</p>
 	                <div class="table" id="torrent-list">
 	                    <div class="table-row" id="torrent-header">
 	                        <div class="table-cell">
@@ -44,7 +44,7 @@
 	                        </div>
 	                    </div>
 			            <c:forEach items="${feed.torrentsInprogress}" var="torrent">
-	                        <div class="table-row torrent-record"">
+	                        <div class="table-row torrent-record">
 	                            <div class="table-cell">
 	                                ${torrent.name}
 	                            </div>

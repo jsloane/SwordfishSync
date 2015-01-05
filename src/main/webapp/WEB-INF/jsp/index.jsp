@@ -21,8 +21,11 @@
 		    </div>
 		    <div id="page">
                 <%-- display any errors --%>
-                <c:if test="${not empty error}">
-	                <div class="alert-box error"><span>Error: </span>${error}</div>
+                <c:if test="${not empty startupError}">
+                    <div class="alert-box error"><span>Error: </span>${startupError}</div>
+                </c:if>
+                <c:if test="${not empty torrentHostError}">
+                    <div class="alert-box error"><span>Error: </span>${torrentHostError}</div>
                 </c:if>
                 
                 <h3>Torrents downloading</h3>
@@ -169,8 +172,8 @@
                 </ul>
                 
                 <script type="text/javascript">
-                    sortList('#list-recently-notified-torrents', '.table-row', '.sort-timestamp', 'data-timestamp');
-                    sortList('#list-recently-completed-torrents', '.table-row', '.sort-timestamp', 'data-timestamp');
+                    sortList($('#list-recently-notified-torrents'), '.table-row', '.sort-timestamp', 'data-timestamp');
+                    sortList($('#list-recently-completed-torrents'), '.table-row', '.sort-timestamp', 'data-timestamp');
                 </script>
                 
 	        </div>

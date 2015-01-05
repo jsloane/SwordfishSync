@@ -220,48 +220,50 @@ public class FeedProvider {
 		
 		// https://rometools.jira.com/wiki/display/ROME/Preserving+WireFeeds
 		SyndFeed feed = getFeedXml();
-		String type = feed.getFeedType();
-		// if RSS feed, check for TTL
-        if (type.contains("rss")) {
-			Channel channel = (Channel) feed.originalWireFeed();
-			ttl = channel.getTtl();
-        }
-		
-        for (Iterator<?> i = feed.getEntries().iterator(); i.hasNext();) {
-        	SyndEntry entry = (SyndEntry) i.next();
-        	
-        	Map<String, String> expandedData = new HashMap<String, String>();
-        	
-        	// check for extra data
-        	for (Element element : (List<Element>) entry.getForeignMarkup()) { 
-            	expandedData.put(
-        			element.getName(),
-					element.getValue()
-    			);
-        	}
-        	
-        	Date dateAdded = entry.getPublishedDate();
-        	if (dateAdded == null) {
-        		dateAdded = new Date();
-        	}
-        	
-        	String torrentStatus = TorrentInfo.STATUS_NOT_ADDED;
-        	if (!feedInfo.getInitilised() && !feedInfo.getInitialPopulate()) {
-        		torrentStatus = TorrentInfo.STATUS_SKIPPED; // skip existing feed entries when adding feed
-        	}
-        	
-        	TorrentInfo newTorrent = new TorrentInfo(
-				entry.getTitle(),
-				entry.getLink(),
-				dateAdded,
-				expandedData,
-				torrentStatus
-    		);
-        	
-        	saveNewTorrent(newTorrent);
-        	torrentsFromFeed.add(newTorrent);
-			isFeedCurrent = true;
-			lastUpdated = new Date();
+        if (feed != null) {
+			String type = feed.getFeedType();
+			// if RSS feed, check for TTL
+	        if (type.contains("rss")) {
+				Channel channel = (Channel) feed.originalWireFeed();
+				ttl = channel.getTtl();
+	        }
+	        
+	        for (Iterator<?> i = feed.getEntries().iterator(); i.hasNext();) {
+	        	SyndEntry entry = (SyndEntry) i.next();
+	        	
+	        	Map<String, String> expandedData = new HashMap<String, String>();
+	        	
+	        	// check for extra data
+	        	for (Element element : (List<Element>) entry.getForeignMarkup()) { 
+	            	expandedData.put(
+	        			element.getName(),
+						element.getValue()
+	    			);
+	        	}
+	        	
+	        	Date dateAdded = entry.getPublishedDate();
+	        	if (dateAdded == null) {
+	        		dateAdded = new Date();
+	        	}
+	        	
+	        	String torrentStatus = TorrentInfo.STATUS_NOT_ADDED;
+	        	if (!feedInfo.getInitilised() && !feedInfo.getInitialPopulate()) {
+	        		torrentStatus = TorrentInfo.STATUS_SKIPPED; // skip existing feed entries when adding feed
+	        	}
+	        	
+	        	TorrentInfo newTorrent = new TorrentInfo(
+					entry.getTitle(),
+					entry.getLink(),
+					dateAdded,
+					expandedData,
+					torrentStatus
+	    		);
+	        	
+	        	saveNewTorrent(newTorrent);
+	        	torrentsFromFeed.add(newTorrent);
+				isFeedCurrent = true;
+				lastUpdated = new Date();
+	        }
         }
 	}
 	
@@ -272,7 +274,7 @@ public class FeedProvider {
         CloseableHttpResponse httpResponse = null;
         try {
         	CloseableHttpClient httpClient = null;
-        	if (MyMediaLifecycle.acceptAnySslCertificate) {
+        	if (MyMediaLifecycle.acceptUntrustedSslCertificate) {
 	        	// accept any SSL certificate
 	        	SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(
 					null, new TrustStrategy() {

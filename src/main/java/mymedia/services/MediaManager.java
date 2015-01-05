@@ -2,28 +2,24 @@ package mymedia.services;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.CopyOption;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.mail.MessagingException;
 
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.Element;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 
 import com.github.junrar.Archive;
@@ -32,16 +28,15 @@ import com.github.junrar.extract.ExtractArchive;
 
 import ca.benow.transmission.AddTorrentParameters;
 import ca.benow.transmission.SetTorrentParameters;
-import ca.benow.transmission.TorrentParameters;
 import ca.benow.transmission.TransmissionClient;
 import ca.benow.transmission.model.AddedTorrentInfo;
 import ca.benow.transmission.model.TorrentStatus;
 import ca.benow.transmission.model.TorrentStatus.StatusField;
 import ca.benow.transmission.model.TorrentStatus.TorrentField;
-import mymedia.db.form.FilterAttribute;
 import mymedia.db.form.TorrentInfo;
 import mymedia.db.service.FeedInfoService;
 import mymedia.db.service.TorrentInfoService;
+import mymedia.exceptions.ApplicationException;
 import mymedia.services.model.FeedProvider;
 import mymedia.services.model.MediaInfo;
 import mymedia.util.EmailManager;
@@ -57,6 +52,7 @@ public class MediaManager {
     public static EmailManager mailManager;
 	public static boolean debug = false;
 	//public static boolean isSyncingFeeds = false; // avoid concurrent editing of objects, or use hibernate services  //
+	
 	
 	public static void syncTorrents() {
 		//isSyncingFeeds = true;
@@ -183,10 +179,8 @@ public class MediaManager {
 				setTorrentParameters.setUploadLimit(feedProvider.getFeedInfo().getUploadLimit());
 				torrentClient.setTorrents(setTorrentParameters);
 			}
-		} catch (Exception e) {
-			System.out.println("TEST - MediaManager.addTorrent");
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (IOException e) {
+			setTorrentHostError(e);
 		}
 		feedProvider.saveTorrent(torrentInfo);
 		return ati;
@@ -227,10 +221,15 @@ public class MediaManager {
 							if (filename.endsWith(".rar")) {
 								System.out.println("[DEBUG] found rar file to extract: " + torrentDownloadDir + filename);
 								log.log(Level.INFO, "[DEBUG] MediaManager.checkAndComplete unraring archive to: " + downloadDir);
-								
-								// extract rar file
-								extractRar(torrentDownloadDir + filename, downloadDir); // overwrites existing files
-								unrared = true;
+								try {
+									// extract rar file
+									extractRar(torrentDownloadDir + filename, downloadDir); // overwrites existing files
+									unrared = true;
+								} catch (IOException | RarException e) {
+									// this is an error that needs to be reported to the user
+									//notifyError // manual cleanup may be required
+									throw new ApplicationException("Error extracting rar.", e);
+								}
 							}
 						}
 					}
@@ -259,10 +258,16 @@ public class MediaManager {
 								 * filename: /?
 								 * downloadDir: /data/virtual/TV 
 								 */
-								// should be creating a hard link if supported by OS, but not possible across file systems (eg pooled file system; mhddfs)
-								FileUtils.copyFileToDirectory(new File(torrentDownloadDir + filename), new File(downloadDir)); // overwrites existing files
-								//Files.copy(in, target, options); OR Files.setPosixFilePermissions(Paths.get(downloadDir + filename?), perms);
-								// http://www.journaldev.com/855/how-to-set-file-permissions-in-java-easily-using-java-7-posixfilepermission
+								try {
+									// should be creating a hard link if supported by OS, but not possible across file systems (eg pooled file system; mhddfs)
+									FileUtils.copyFileToDirectory(new File(torrentDownloadDir + filename), new File(downloadDir)); // overwrites existing files
+									//Files.copy(in, target, options); OR Files.setPosixFilePermissions(Paths.get(downloadDir + filename?), perms);
+									// http://www.journaldev.com/855/how-to-set-file-permissions-in-java-easily-using-java-7-posixfilepermission
+								} catch (IOException e) {
+									// this is an error that needs to be reported to the user
+									//notifyError // manual cleanup may be required
+									throw new ApplicationException("Error copying files.", e);
+								}
 							}
 							System.out.println("[DEBUG] ...DONE");
 						}
@@ -285,16 +290,11 @@ public class MediaManager {
 				
 				notifyComplete(feedProvider, torrentInfo, mediaInfo);
 			}
-		} catch (IOException | JSONException | RarException e) {
+		} catch (ApplicationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			
-			
-			
-			// this is an error that needs to be reported to the user
-			
-			
-			//notifyError // manual cleanup may be required
+		} catch (IOException e) {
+			setTorrentHostError(e);
 		}
 	}
 	
@@ -373,41 +373,67 @@ public class MediaManager {
 		}
 	}
 	
-	public static TorrentStatus getTorrentStatus(TorrentInfo torrent) throws IOException, JSONException {
+	public static TorrentStatus getTorrentStatus(TorrentInfo torrent) {
 		TorrentStatus foundTorrentStatus = null;
+		List<TorrentStatus> torrentStatuses = null;
 		
-		// can't rely on torrent id if torrent removed/added from another client, or if transmission restarts, ids change, so get all torrents...
-		List<TorrentStatus> torrentStatuses = torrentClient.getAllTorrents(
-		//List<TorrentStatus> torrentStatuses = torrentClient.getTorrents(
-		//	new int[] {torrent.getClientTorrentId()}, // unreliable, ids can be inconsistent and change on transmission restart
-			new TorrentStatus.TorrentField[] {
-				TorrentStatus.TorrentField.id,
-				TorrentStatus.TorrentField.activityDate,
-				TorrentStatus.TorrentField.status,
-				TorrentStatus.TorrentField.hashString,
-				TorrentStatus.TorrentField.files,
-				TorrentStatus.TorrentField.percentDone,
-				TorrentStatus.TorrentField.downloadDir
+		// store torrent details in cache
+		Cache cache = MyMediaLifecycle.cacheManager.getCache("torrentClientData");
+		Element torrentStatusesElement = null;
+	    if (cache != null) {
+	    	torrentStatusesElement = cache.get("torrentStatuses");
+	    }
+	    
+	    try {
+			if (torrentStatusesElement != null) {
+				torrentStatuses = (List<TorrentStatus>) torrentStatusesElement.getObjectValue();
+			} else {
+				// can't rely on torrent id if torrent removed/added from another client, or if transmission restarts, ids change, so get all torrents...
+				torrentStatuses = torrentClient.getAllTorrents(
+				//List<TorrentStatus> torrentStatuses = torrentClient.getTorrents(
+				//	new int[] {torrent.getClientTorrentId()}, // unreliable, ids can be inconsistent and change on transmission restart
+					new TorrentStatus.TorrentField[] {
+						TorrentStatus.TorrentField.id,
+						TorrentStatus.TorrentField.activityDate,
+						TorrentStatus.TorrentField.status,
+						TorrentStatus.TorrentField.hashString,
+						TorrentStatus.TorrentField.files,
+						TorrentStatus.TorrentField.percentDone,
+						TorrentStatus.TorrentField.downloadDir
+					}
+				);
+				torrentStatusesElement = new Element("torrentStatuses", torrentStatuses);
+				cache.put(torrentStatusesElement);
 			}
-		);
-		//System.out.println("[DEBUG] torrentStatuses: " + torrentStatuses);
+	    } catch (IOException e) {
+	    	setTorrentHostError(e);
+	    }
 		
-		for (TorrentStatus torrentStatus : torrentStatuses) {
-			if (torrentStatus != null && StringUtils.isNotBlank(torrent.getHashString()) && torrent.getHashString().equals(torrentStatus.getField(TorrentStatus.TorrentField.hashString))) {
-				foundTorrentStatus = torrentStatus;
-				break;
+		
+		//System.out.println("[DEBUG] torrentStatuses: " + torrentStatuses);
+		if (torrentStatuses != null) {
+			for (TorrentStatus torrentStatus : torrentStatuses) {
+				if (torrentStatus != null && StringUtils.isNotBlank(torrent.getHashString()) && torrent.getHashString().equals(torrentStatus.getField(TorrentStatus.TorrentField.hashString))) {
+					foundTorrentStatus = torrentStatus;
+					break;
+				}
 			}
 		}
 		
 		return foundTorrentStatus;
 	}
 	
-	public static List<TorrentStatus> getAllTorrentStatus() throws IOException, JSONException {
-		return torrentClient.getAllTorrents(
-			new TorrentStatus.TorrentField[] {
-				TorrentStatus.TorrentField.all
-			}
-		);
+	public static List<TorrentStatus> getAllTorrentStatus() {
+		try {
+			return torrentClient.getAllTorrents(
+				new TorrentStatus.TorrentField[] {
+					TorrentStatus.TorrentField.all
+				}
+			);
+		} catch (IOException e) {
+			setTorrentHostError(e);
+		}
+		return null;
 	}
 	
 	public static void extractRar(String filename, String destinationDir) throws RarException, IOException {
@@ -442,6 +468,10 @@ public class MediaManager {
 		System.out.println("[DEBUG] ...DONE");
 	}
 	
+	private static void setTorrentHostError(Throwable e) {
+		e.printStackTrace();
+		MyMediaLifecycle.torrentHostError = "[" + new Date() + "] Error communicating with torrent host, check settings and try again. Error details: " + ExceptionUtils.getMessage(e) + ". Cause: " + ExceptionUtils.getRootCauseMessage(e);
+	}
 	
 	
 	private static void debugMethod(FeedProvider feedProvider) {

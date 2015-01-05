@@ -21,6 +21,13 @@
                 <mmt:navMenu pageid="active-torrents" />
             </div>
             <div id="page">
+                <%-- display any errors --%>
+                <c:if test="${not empty startupError}">
+                    <div class="alert-box error"><span>Error: </span>${startupError}</div>
+                </c:if>
+                <c:if test="${not empty torrentHostError}">
+                    <div class="alert-box error"><span>Error: </span>${torrentHostError}</div>
+                </c:if>
 		        <ul id="activeTorrentList" class="table">
 		            <li id="activeTorrentListHeader" class="table-header-group">
                         <div class="table-cell">
@@ -61,7 +68,7 @@
 		            $("#activeTorrentTemplate").tmpl(activeTorrents)
 		                .insertAfter("#activeTorrentListHeader");
 		            
-		            sortList('#activeTorrentList', 'li.table-row', '.activityDate', 'data-timestamp');
+		            sortList($('#activeTorrentList'), 'li.table-row', '.activityDate', 'data-timestamp');
 		        </script>
             </div>
         </div>

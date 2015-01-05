@@ -30,19 +30,19 @@
 		        <br/><br/>
 		        
 		        <div class="table" id="feed">
-		            <mmt:tableData fieldName="Enabled:" fieldData="${feed.feedInfo.active}"/>
-		            <mmt:tableData fieldName="Name:" fieldData="${feed.feedInfo.name}"/>
-                    <mmt:tableData fieldName="URL:" fieldData="${feed.feedInfo.url}"/>
-                    <mmt:tableData fieldName="Initilised:" fieldData="${feed.feedInfo.initilised}"/>
-                    <mmt:tableData fieldName="Date created:" fieldData="${feed.feedInfo.created}"/>
-                    <mmt:tableData fieldName="Date updated:" fieldData="${feed.feedInfo.updated}"/>
-		            <mmt:tableData fieldName="Action:" fieldData="${feed.feedInfo.action}"/>
-                    <mmt:tableData fieldName="Sync Interval (minutes):" fieldData="${feed.feedInfo.syncInterval}"/>
-                    <mmt:tableData fieldName="Delete Interval (days):" fieldData="${feed.feedInfo.deleteInterval}"/>
-                    <mmt:tableData fieldName="Download directory:" fieldData="${feed.feedInfo.downloadDirectory}"/>
-                    <mmt:tableData fieldName="Determine Sub Directory:" fieldData="${feed.feedInfo.determineSubDirectory}"/>
-                    <mmt:tableData fieldName="Remove Torrent On Completion:" fieldData="${feed.feedInfo.removeTorrentOnComplete}"/>
-                    <mmt:tableData fieldName="Extract Rars:" fieldData="${feed.feedInfo.extractRars}"/>
+		            <mmt:tableData fieldName="Enabled:" fieldValue="${feed.feedInfo.active}"/>
+		            <mmt:tableData fieldName="Name:" fieldValue="${feed.feedInfo.name}"/>
+                    <mmt:tableData fieldName="URL:" fieldValue="${feed.feedInfo.url}"/>
+                    <mmt:tableData fieldName="Initilised:" fieldValue="${feed.feedInfo.initilised}"/>
+                    <mmt:tableData fieldName="Date created:" fieldValue="${feed.feedInfo.created}"/>
+                    <mmt:tableData fieldName="Date updated:" fieldValue="${feed.feedInfo.updated}"/>
+		            <mmt:tableData fieldName="Action:" fieldValue="${feed.feedInfo.action}"/>
+                    <mmt:tableData fieldName="Sync Interval (minutes):" fieldValue="${feed.feedInfo.syncInterval}"/>
+                    <mmt:tableData fieldName="Delete Interval (days):" fieldValue="${feed.feedInfo.deleteInterval}"/>
+                    <mmt:tableData fieldName="Download directory:" fieldValue="${feed.feedInfo.downloadDirectory}"/>
+                    <mmt:tableData fieldName="Determine Sub Directory:" fieldValue="${feed.feedInfo.determineSubDirectory}"/>
+                    <mmt:tableData fieldName="Remove Torrent On Completion:" fieldValue="${feed.feedInfo.removeTorrentOnComplete}"/>
+                    <mmt:tableData fieldName="Extract Rars:" fieldValue="${feed.feedInfo.extractRars}"/>
 		            <div class="table-row">
 		                <div class="table-cell">
 		                    Torrent upload limit:
@@ -58,7 +58,7 @@
 							</c:choose>
 		                </div>
 		            </div>
-                    <mmt:tableData fieldName="Notify Email:" fieldData="${feed.feedInfo.notifyEmail}"/>
+                    <mmt:tableData fieldName="Notify Email:" fieldValue="${feed.feedInfo.notifyEmail}"/>
 		            <div class="table-row">
 		                <div class="table-cell">
 		                    Filter:
