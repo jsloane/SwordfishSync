@@ -39,7 +39,6 @@ import mymedia.db.service.TorrentInfoService;
 import mymedia.exceptions.ApplicationException;
 import mymedia.services.model.FeedProvider;
 import mymedia.services.model.MediaInfo;
-import mymedia.util.EmailManager;
 
 public class MediaManager {
 
@@ -113,11 +112,11 @@ public class MediaManager {
 			if (feedProvider.shouldAddTorrent(torrentInfo)) {
 				if (feedProvider.getFeedInfo().getAction().equalsIgnoreCase("download")) {
 					// if download
-					//try {
+					try {
 						addTorrent(feedProvider, torrentInfo);
-					//} catch (Exception e) {
-						
-					//}
+					} catch (IOException e) {
+						setTorrentHostError(e);
+					}
 				} else if (feedProvider.getFeedInfo().getAction().equalsIgnoreCase("notify")) {
 					// if notify only
 					notifyNew(feedProvider, torrentInfo, new MediaInfo(feedProvider, torrentInfo));
@@ -158,10 +157,9 @@ public class MediaManager {
 		return saveTorrent;
 	}
 	
-	public static AddedTorrentInfo addTorrent(FeedProvider feedProvider, TorrentInfo torrentInfo) {
+	public static AddedTorrentInfo addTorrent(FeedProvider feedProvider, TorrentInfo torrentInfo) throws IOException {
 		log.log(Level.INFO, "[DEBUG] MediaManager.addTorrent - adding torrent: " + torrentInfo);
 		AddedTorrentInfo ati = null;
-		try {
 			// add torrent
 			AddTorrentParameters newTorrentParameters = new AddTorrentParameters(torrentInfo.getUrl());
 			//newTorrentParameters.setPeerLimit(-1);
@@ -179,9 +177,6 @@ public class MediaManager {
 				setTorrentParameters.setUploadLimit(feedProvider.getFeedInfo().getUploadLimit());
 				torrentClient.setTorrents(setTorrentParameters);
 			}
-		} catch (IOException e) {
-			setTorrentHostError(e);
-		}
 		feedProvider.saveTorrent(torrentInfo);
 		return ati;
 	}
@@ -470,9 +465,8 @@ public class MediaManager {
 	
 	private static void setTorrentHostError(Throwable e) {
 		e.printStackTrace();
-		MyMediaLifecycle.torrentHostError = "[" + new Date() + "] Error communicating with torrent host, check settings and try again. Error details: " + ExceptionUtils.getMessage(e) + ". Cause: " + ExceptionUtils.getRootCauseMessage(e);
+		MyMediaLifecycle.torrentHostError = "[" + new Date() + "] Torrent host error, check settings and try again. Error details: " + ExceptionUtils.getMessage(e) + ". Cause: " + ExceptionUtils.getRootCauseMessage(e);
 	}
-	
 	
 	private static void debugMethod(FeedProvider feedProvider) {
 		log.log(Level.INFO, "[MYMEDIA] MediaManager.debug: "+ debug + ", skipping torrent checks.");

@@ -3,7 +3,7 @@ var sortList = function($list, rowClass, tagClass, tagAttribute, order) {
 	$list.children(rowClass).sort(function(a, b) {
 		var first = b;
 		var second = a;
-		if (order && order == "asc") {
+		if (order && order == 'asc') {
 			first = a;
 			second = b;
 		}
@@ -17,3 +17,14 @@ var sortList = function($list, rowClass, tagClass, tagAttribute, order) {
 var getDate = function(timestamp) {
     return new Date(timestamp * 1000);
 };
+
+$(document).ready(function() {
+	
+	$('button[type="submit"]').click(function() {
+		// disable submit button when clicked
+		this.innerText = 'Submitting...';
+		this.disabled = 'disabled';
+		this.form.submit();
+	});
+	
+});

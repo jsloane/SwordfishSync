@@ -1,10 +1,9 @@
-package mymedia.util;
+package mymedia.services;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import mymedia.db.form.TorrentInfo;
-import mymedia.services.MediaManager;
 import mymedia.services.model.FeedProvider;
 import mymedia.services.model.MediaInfo;
 

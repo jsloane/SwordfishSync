@@ -48,7 +48,6 @@ public class FeedProvider {
 	private FeedInfo feedInfo;
 	private boolean isFeedCurrent = false; // use this to check if an exception occurred (connection timeout, etc) when checking completed torrents to remove
 	private String statusMessage = "";
-	private boolean fromPropertiesFile = false; // use this to disable editing of feed details in web
 	private List<TorrentInfo> torrentsFromFeed;
 
 	public FeedProvider() {
@@ -66,12 +65,6 @@ public class FeedProvider {
 	}
 	public String getStatusMessage() {
 		return statusMessage;
-	}
-	public boolean getFromPropertiesFile() {
-		return fromPropertiesFile;
-	}
-	public void setFromPropertiesFile(boolean fromPropertiesFile) {
-		this.fromPropertiesFile = fromPropertiesFile;
 	}
 	public int getTtl() {
 		return ttl;

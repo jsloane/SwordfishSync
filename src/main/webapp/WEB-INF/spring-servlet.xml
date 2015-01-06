@@ -22,6 +22,8 @@
  	<context:annotation-config />
     <context:component-scan base-package="mymedia" />
     
+    <mvc:annotation-driven />
+    
 	<!--Handle static content in /resources -->
 	<context:component-scan base-package="spring.web" />
 	<mvc:resources mapping="/resources/**" location="/resources/" />
@@ -131,7 +133,7 @@
         <property name="text" value="${media.notifications.completedmovie.body}"/>
     </bean>
     <!-- MAIL MANAGER -->
-    <bean id="emailManager" class="mymedia.util.EmailManager">
+    <bean id="emailManager" class="mymedia.services.EmailManager">
         <property name="mailSender" ref="mailSender"/>
         <property name="defaultTemplateMessage" ref="defaultTemplateMessage"/>
         <property name="newDefaultTemplateMessage" ref="newDefaultTemplateMessage"/>

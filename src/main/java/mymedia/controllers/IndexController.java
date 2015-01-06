@@ -28,8 +28,8 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONException;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Controller;
@@ -39,6 +39,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import ca.benow.transmission.model.AddedTorrentInfo;
 
@@ -173,30 +174,69 @@ public class IndexController {
 		TorrentInfo newTorrentInfo = new TorrentInfo();
     	mav.addObject("torrentInfo", newTorrentInfo); // new feed object for default values
 		mav.addObject("newTorrent", true);
+		
         return mav;
     }
 	@RequestMapping(value = "/feeds/{feedId}/torrents/add", method = RequestMethod.POST)
-    public String saveNewTorrent(@PathVariable("feedId") Integer feedId, WebRequest webRequest) throws JSONException {
+    public String saveNewTorrent(@PathVariable("feedId") Integer feedId, WebRequest webRequest, RedirectAttributes redir) throws InterruptedException {
 		// this will overwrite existing torrent if exists with the url
 		
+		List<String> addedTorrents = new ArrayList<String>();
+		List<String> erroredTorrents = new ArrayList<String>();
     	FeedProvider foundFeedProvider = findFeedProviders(new Integer[]{feedId}).get(0);
-		String torrentUrl = webRequest.getParameter("torrent_url").trim();
-		if (foundFeedProvider != null && StringUtils.isNotBlank(torrentUrl)) { // need better validation/errors
+		String torrentUrls = webRequest.getParameter("torrent_urls").trim();
+		
+		if (foundFeedProvider != null) {
+			for (String torrentUrl : torrentUrls.split("\\n")) { // need better validation/errors
+				torrentUrl = torrentUrl.trim();
+				if (StringUtils.isNotBlank(torrentUrl)) {
+		        	TorrentInfo newTorrent = new TorrentInfo(
+		        		"Torrent manually added at " + new Date(),
+						torrentUrl,
+						new Date(),
+						null,
+						TorrentInfo.STATUS_NOTIFIED_NOT_ADDED
+		    		);
+		        	
+		        	AddedTorrentInfo ati = null;
+					try {
+						ati = MediaManager.addTorrent(foundFeedProvider, newTorrent);
+						if (ati != null) {
+							newTorrent.setName(ati.getName());
+							foundFeedProvider.saveTorrent(newTorrent);
+							addedTorrents.add(newTorrent.getName());
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+						erroredTorrents.add(torrentUrl + ". Error: " + e.getMessage());
+					}
+				} else {
+					erroredTorrents.add("Blank URL entered.");
+				}
+			}
 			
-        	TorrentInfo newTorrent = new TorrentInfo(
-        		"Torrent manually added at " + new Date(),
-				torrentUrl,
-				new Date(),
-				null,
-				TorrentInfo.STATUS_NOTIFIED_NOT_ADDED
-    		);
-        	
-        	AddedTorrentInfo ati = MediaManager.addTorrent(foundFeedProvider, newTorrent);
-        	
-			if (ati != null) {
-				newTorrent.setName(ati.getName());
-				foundFeedProvider.saveTorrent(newTorrent);
-        		return "redirect:/feeds/" + feedId;
+			// set success/error messages
+			if (!addedTorrents.isEmpty()) {
+				List<String> successMessages = new ArrayList<String>();
+				StringBuilder successMessage = new StringBuilder();
+				for (String message : addedTorrents) {
+					successMessage.append(message + "<br/>");
+				}
+				successMessages.add("Successfully added torrent(s):<br/>" + successMessage.toString());
+				redir.addFlashAttribute("successMessages", successMessages);
+			}
+			if (!erroredTorrents.isEmpty()) {
+				List<String> erroredMessages = new ArrayList<String>();
+				StringBuilder errorMessage = new StringBuilder();
+				for (String message : erroredTorrents) {
+					errorMessage.append(message + "<br/>");
+				}
+				erroredMessages.add("Error adding torrent(s):<br/>" + errorMessage.toString());
+				redir.addFlashAttribute("errorMessages", erroredMessages);
+			}
+			
+			if (!addedTorrents.isEmpty()) {
+				return "redirect:/feeds/" + feedId;
 			}
 		}
 		
@@ -204,7 +244,7 @@ public class IndexController {
     }
     
     @RequestMapping("/feeds/{feedId}/torrents/{torrentId}/download")
-    public String downloadTorrent(@PathVariable("feedId") Integer feedId, @PathVariable("torrentId") Integer torrentId) {
+    public String downloadTorrent(@PathVariable("feedId") Integer feedId, @PathVariable("torrentId") Integer torrentId, RedirectAttributes redir) {
     	FeedProvider foundFeedProvider = findFeedProviders(new Integer[]{feedId}).get(0);
     	TorrentInfo foundTorrentInfo = null;
     	
@@ -220,11 +260,17 @@ public class IndexController {
     			foundTorrentInfo.getStatus().equals(TorrentInfo.STATUS_NOTIFIED_NOT_ADDED) ||
     			foundTorrentInfo.getStatus().equals(TorrentInfo.STATUS_SKIPPED)
     		)) {
-    		//try {
+    		try {
     			MediaManager.addTorrent(foundFeedProvider, foundTorrentInfo);
-    		//} catch (Exception e) {
-    			
-    		//}
+				List<String> successMessages = new ArrayList<String>();
+				successMessages.add("Downloading torrent: " + foundTorrentInfo.getName());
+				redir.addFlashAttribute("successMessages", successMessages);
+    		} catch (IOException e) {
+    			e.printStackTrace();
+				List<String> erroredMessages = new ArrayList<String>();
+				erroredMessages.add("Error adding torrent: " + ExceptionUtils.getMessage(e) + ". Cause: " + ExceptionUtils.getRootCauseMessage(e));
+				redir.addFlashAttribute("errorMessages", erroredMessages);
+    		}
     	}
     	
         return "redirect:/feeds/" + feedId;
@@ -248,7 +294,7 @@ public class IndexController {
     @RequestMapping(value = "/feeds/{feedId}/edit", method = RequestMethod.POST)
     public String saveFeed(@PathVariable("feedId") Integer feedId, WebRequest webRequest) {
     	FeedProvider foundFeedProvider = findFeedProviders(new Integer[]{feedId}).get(0);
-    	if (foundFeedProvider != null && !foundFeedProvider.getFromPropertiesFile()) {
+    	if (foundFeedProvider != null) {
         	// save data
 	    	saveFeedInfoValues(foundFeedProvider, webRequest);
     	}
@@ -362,7 +408,7 @@ public class IndexController {
     @RequestMapping(value = "/feeds/{feedId}/delete", method = RequestMethod.POST)
     public String deleteFeed(@PathVariable("feedId") Integer feedId, WebRequest webRequest) {
     	FeedProvider foundFeedProvider = findFeedProviders(new Integer[]{feedId}).get(0);
-    	if (foundFeedProvider != null && !foundFeedProvider.getFromPropertiesFile()) {
+    	if (foundFeedProvider != null) {
     		foundFeedProvider.removeFeedInfo();
     	}
         return "redirect:/feeds";
@@ -371,8 +417,15 @@ public class IndexController {
 	@RequestMapping(value = "/settings", method = RequestMethod.GET)
     public ModelAndView viewSettings(WebRequest webRequest) throws ConfigurationException {
 		ModelAndView mav = setCommonObjects(new ModelAndView("jsp/settings"));
-		mav.addObject("saved", webRequest.getParameter("saved"));
-		mav.addObject("restartRequired", webRequest.getParameter("restartRequired"));
+		if ("true".equals(webRequest.getParameter("saved"))) {
+			String successMessage = "Settings updated.";
+			if ("true".equals(webRequest.getParameter("restartRequired"))) {
+				successMessage += "You must <a href=\"/manager/text/reload?path=/SwordfishSync\" target=\"_blank\">restart</a> the application for changes to apply.";
+			}
+			List<String> successMessages = new ArrayList<String>();
+			successMessages.add(successMessage);
+			mav.addObject("successMessages", successMessages);
+		}
 		mav.addObject("propertiesFile", MyMediaLifecycle.propertiesFile);
 		mav.addObject("configFile", MyMediaLifecycle.configFile);
 		XMLConfiguration config = new XMLConfiguration(MyMediaLifecycle.configFile);
@@ -636,8 +689,16 @@ public class IndexController {
     
     private ModelAndView setCommonObjects(ModelAndView mav) {
 		mav.addObject("title", IndexController.instanceName);
-		mav.addObject("startupError", MyMediaLifecycle.startupError);
-		mav.addObject("torrentHostError", MyMediaLifecycle.torrentHostError);
+		
+		List<String> systemErrors = new ArrayList<String>();
+		if (StringUtils.isNotBlank(MyMediaLifecycle.startupError)) {
+			systemErrors.add(MyMediaLifecycle.startupError);
+		}
+		if (StringUtils.isNotBlank(MyMediaLifecycle.torrentHostError)) {
+			systemErrors.add(MyMediaLifecycle.torrentHostError);
+		}
+		mav.addObject("systemErrors", systemErrors);
+		
     	return mav;
     }
     

@@ -23,7 +23,6 @@ import mymedia.exceptions.ApplicationException;
 import mymedia.services.model.FeedProvider;
 import mymedia.services.model.MediaInfo;
 import mymedia.services.tasks.SyncTask;
-import mymedia.util.EmailManager;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 
@@ -248,9 +247,9 @@ public class MyMediaLifecycle implements Lifecycle {
 		// set ssl config
 		if (config.containsKey("application.security.acceptAnySslCertificate")) {
 			try {
-				acceptUntrustedSslCertificate = config.getBoolean("application.security.acceptAnySslCertificate", new Boolean(false));
+				acceptUntrustedSslCertificate = config.getBoolean("application.security.acceptanysslcertificate", new Boolean(false));
 			} catch (ConversionException e) {
-				log.log(Level.WARNING, "Unable to read boolean property application.security.acceptAnySslCertificate", e);
+				log.log(Level.WARNING, "Unable to read boolean property application.security.acceptanysslcertificate", e);
 			}
 		}
 	}

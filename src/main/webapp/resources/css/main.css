@@ -69,6 +69,13 @@ ul.table {
 .table-row {
     display: table-row;
 }
+.table-row .field-name {
+    vertical-align: top;
+}
+.table-row p.help-text {
+    font-weight: bold;
+    font-size: smaller;
+}
 .table-cell {
     display: table-cell;
     padding: 0.25em;
@@ -93,7 +100,13 @@ form div.filter-textarea textarea {
     float: right;
 }
 input.long {
-	width: 50em;
+    width: 50em;
+}
+textarea.long {
+    width: 50em;
+}
+textarea.tall {
+    height: 20em;
 }
 
 /**
@@ -202,7 +215,6 @@ ul#table-config .table-cell input[type=checkbox] {
     width: auto;
 }
 ul#table-config div.field-name {
-	vertical-align: top;
     text-align: right;
 }
 ul#table-config h1 {

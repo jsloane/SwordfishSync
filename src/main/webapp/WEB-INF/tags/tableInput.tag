@@ -31,12 +31,12 @@
                 </select>
             </c:when>
             <c:when test="${fieldType eq 'textarea'}">
-                <textarea name="${fieldName}">${fieldValue}</textarea>
+                <textarea name="${fieldName}" class="${fieldClass}">${fieldValue}</textarea>
             </c:when>
             <c:otherwise>
                 <input type="${fieldType}" class="${fieldClass}" name="${fieldName}" id="${fieldName}" value="${fieldValue}" size="${fieldSize}"/>
             </c:otherwise>
         </c:choose>
-        ${fieldHelp}
+        <p class="help-text">${fieldHelp}</p>
     </div>
 </li>
