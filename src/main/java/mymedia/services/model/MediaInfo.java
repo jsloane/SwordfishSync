@@ -12,11 +12,6 @@ import com.omertron.thetvdbapi.model.Episode;
 import com.omertron.thetvdbapi.model.Series;
 import com.omertron.themoviedbapi.*;
 import com.omertron.themoviedbapi.model.MovieDb;
-//import com.omertron.themoviedbapi.TheMovieDbApi;
-//import com.omertron.themoviedbapi.MovieDbException;
-
-
-
 
 import mymedia.db.form.TorrentInfo;
 
@@ -71,7 +66,7 @@ public class MediaInfo {
 		
 		// default values
 		name = torrentInfo.getName();
-		subDirectory = name + "/";
+		subDirectory = name + System.getProperty("file.separator");
 		
 		processMedia(feedProvider, torrentInfo);
 	}
@@ -299,18 +294,18 @@ public class MediaInfo {
 	
 	private void determineTvSubDirectory() {
 		String seasonDirectoryPrefix = "Season"; // should be a property - seasonDirectoryPrefix
-		subDirectory = name + "/";
+		subDirectory = name + System.getProperty("file.separator");;
 		if (StringUtils.isNotBlank(seasonNumber)) {
 			if (seasonNumber.length() == 1) {
-				subDirectory = subDirectory + seasonDirectoryPrefix + " 0" + seasonNumber + "/";
+				subDirectory = subDirectory + seasonDirectoryPrefix + " 0" + seasonNumber + System.getProperty("file.separator");;
 			} else {
-				subDirectory = subDirectory + seasonDirectoryPrefix + " " + seasonNumber + "/";
+				subDirectory = subDirectory + seasonDirectoryPrefix + " " + seasonNumber + System.getProperty("file.separator");;
 			}
 		}
 	}
 	
 	private void determineMovieSubDirectory() {
-		subDirectory = name + " (" + year + ") (" + quality + ")/";
+		subDirectory = name + " (" + year + ") (" + quality + ")" + System.getProperty("file.separator");;
 	}
 	
 	public String getType() {

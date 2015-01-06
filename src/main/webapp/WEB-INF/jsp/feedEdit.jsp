@@ -52,8 +52,10 @@
 			</c:if>
 			<mmt:tableInput fieldType="text" fieldName="feed_syncInterval" fieldLabel="Sync Interval (minutes):" fieldValue="${feed.feedInfo.syncInterval}"/>
 			<mmt:tableInput fieldType="text" fieldName="feed_deleteInterval" fieldLabel="Delete Interval (days):" fieldValue="${feed.feedInfo.deleteInterval}"/>
-			<mmt:tableInput fieldType="text" fieldName="feed_downloadDirectory" fieldLabel="Download Directory:" fieldValue="${feed.feedInfo.downloadDirectory}"/>
+			<mmt:tableInput fieldType="text" fieldName="feed_downloadDirectory" fieldLabel="Download Directory:" fieldValue="${feed.feedInfo.downloadDirectory}" fieldClass="long"/>
 			<mmt:tableInput fieldType="checkbox" fieldName="feed_determineSubDirectory" fieldLabel="Determine Sub Directory:" fieldChecked="${checkedDetermineSubDirectory}"/>
+			<mmt:tableInput fieldType="text" fieldName="feed_systemCommand" fieldLabel="System command on torrent completion:" fieldValue="${feed.feedInfo.systemCommand}"
+				fieldHelp="Passed arguments: name=torrent name, directory=torrent download directory (if applicable). Needs to be executable by user: ${processUser}." fieldClass="long"/>
 			<mmt:tableInput fieldType="checkbox" fieldName="feed_removeTorrentOnComplete" fieldLabel="Remove Torrent On Complete:" fieldChecked="${checkedRemoveTorrentOnComplete}"/>
 			<mmt:tableInput fieldType="checkbox" fieldName="feed_extractRars" fieldLabel="Extract Rars:" fieldChecked="${checkedExtractRars}"/>
 			<mmt:tableInput fieldType="text" fieldName="feed_uploadLimit" fieldLabel="Torrent Upload Limit (KB/s):" fieldValue="${feed.feedInfo.uploadLimit}"/>

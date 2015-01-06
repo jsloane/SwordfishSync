@@ -57,6 +57,9 @@ public class FeedInfo {
 	@Column(name="download_directory")
 	private String downloadDirectory;
 	
+	@Column(name="system_command")
+	private String systemCommand; // system command to execute when torrent completes
+	
 	@Column(name="sync_interval")
 	private Integer syncInterval = 0; // sync interval in minutes, overrides the ttl
 	
@@ -128,6 +131,9 @@ public class FeedInfo {
    	}
    	public String getDownloadDirectory() {
    		return downloadDirectory;
+   	}
+   	public String getSystemCommand() {
+   		return systemCommand;
    	}
    	public boolean getActive() {
    		return active;
@@ -204,6 +210,9 @@ public class FeedInfo {
    	}
    	public void setDownloadDirectory(String downloadDirectory) {
    		this.downloadDirectory = downloadDirectory;
+   	}
+   	public void setSystemCommand(String systemCommand) {
+   		this.systemCommand = systemCommand;
    	}
    	public void setActive(boolean active) {
    		this.active = active;

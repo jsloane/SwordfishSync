@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -66,7 +67,8 @@ public class MyMediaLifecycle implements Lifecycle {
 	public static String propertiesFile = defaultPropertiesFile;
 	public final static String settingsFile = "/settings.xml";
 	private volatile boolean isRunning = false;
-	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+	private final ScheduledExecutorService schedulerThreadPool = Executors.newScheduledThreadPool(1);
+	public static final ExecutorService singleThreadPool = Executors.newSingleThreadExecutor();
 	private static long syncInterval = 30; // default 30min
 	
 	public static boolean acceptUntrustedSslCertificate = false;
@@ -138,7 +140,7 @@ public class MyMediaLifecycle implements Lifecycle {
 			cacheManager.addCache(memoryOnlyCache);
 			
 			log.log(Level.INFO, "[DEBUG] MyMediaLifecycle.start scheduling sync task: " + syncInterval + " minute intervals");
-			scheduler.scheduleAtFixedRate(new SyncTask(), 0, syncInterval, TimeUnit.MINUTES);
+			schedulerThreadPool.scheduleAtFixedRate(new SyncTask(), 0, syncInterval, TimeUnit.MINUTES);
 		} catch (IOException | ConfigurationException | ApplicationException e) {
 			// need an error handler to email severe errors? (not rss feed connection errors)
 			// TODO Auto-generated catch block
@@ -255,7 +257,8 @@ public class MyMediaLifecycle implements Lifecycle {
 	}
 
 	public void stop() {
-		scheduler.shutdown();
+		schedulerThreadPool.shutdown();
+		singleThreadPool.shutdown();
 		isRunning = false;
 	}
 	

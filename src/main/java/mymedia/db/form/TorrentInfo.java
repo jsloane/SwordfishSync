@@ -25,7 +25,7 @@ import ca.benow.transmission.model.TorrentStatus;
 @Entity
 @Table(name="torrent")
 public class TorrentInfo {
-
+	
 	public static final String STATUS_NOT_ADDED = "not_added"; // 
 	public static final String STATUS_NOTIFIED_NOT_ADDED = "notified_not_added"; // 
 	public static final String STATUS_IN_PROGRESS = "in_progress"; // downloading

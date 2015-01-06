@@ -25,6 +25,7 @@
 		<mmt:tableData fieldName="Delete Interval (days):" fieldValue="${feed.feedInfo.deleteInterval}"/>
 		<mmt:tableData fieldName="Download directory:" fieldValue="${feed.feedInfo.downloadDirectory}"/>
 		<mmt:tableData fieldName="Determine Sub Directory:" fieldValue="${feed.feedInfo.determineSubDirectory}"/>
+		<mmt:tableData fieldName="System command on torrent completion:" fieldValue="${feed.feedInfo.systemCommand}"/>
 		<mmt:tableData fieldName="Remove Torrent On Completion:" fieldValue="${feed.feedInfo.removeTorrentOnComplete}"/>
 		<mmt:tableData fieldName="Extract Rars:" fieldValue="${feed.feedInfo.extractRars}"/>
 		<div class="table-row">

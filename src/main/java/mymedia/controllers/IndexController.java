@@ -288,6 +288,7 @@ public class IndexController {
     		}
     	}
 		mav.addObject("newFeed", false);
+		mav.addObject("processUser", System.getProperty("user.name"));
 		
         return mav;
     }
@@ -746,10 +747,11 @@ public class IndexController {
 			
 	    	feedProvider.getFeedInfo().setUrl(url);
 	    	feedProvider.getFeedInfo().setName(name);
-	    	feedProvider.getFeedInfo().setAction(webRequest.getParameter("feed_action").trim()); // action: "download" or "nofify", otherwise no action is taken
+	    	feedProvider.getFeedInfo().setAction(webRequest.getParameter("feed_action").trim()); // action: "download" or "notify", otherwise no action is taken
 	    	feedProvider.getFeedInfo().setSyncInterval(Integer.parseInt(webRequest.getParameter("feed_syncInterval").trim()));
 	    	feedProvider.getFeedInfo().setDeleteInterval(Integer.parseInt(webRequest.getParameter("feed_deleteInterval").trim()));
 	    	feedProvider.getFeedInfo().setDownloadDirectory(webRequest.getParameter("feed_downloadDirectory").trim());
+	    	feedProvider.getFeedInfo().setSystemCommand(webRequest.getParameter("feed_systemCommand").trim());
 	    	feedProvider.getFeedInfo().setUploadLimit(Integer.parseInt(webRequest.getParameter("feed_uploadLimit").trim()));
 	    	feedProvider.getFeedInfo().setNotifyEmail(webRequest.getParameter("feed_notifyEmail").trim());
 	    	feedProvider.getFeedInfo().setDetailsUrlValueFromRegex(webRequest.getParameter("feed_detailsUrlValueFromRegex").trim());

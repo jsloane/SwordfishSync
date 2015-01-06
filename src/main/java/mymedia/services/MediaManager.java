@@ -39,10 +39,13 @@ import mymedia.db.service.TorrentInfoService;
 import mymedia.exceptions.ApplicationException;
 import mymedia.services.model.FeedProvider;
 import mymedia.services.model.MediaInfo;
+import mymedia.services.tasks.SystemCommandTask;
 
 public class MediaManager {
 
-	private final static Logger log = Logger.getLogger(MyMediaLifecycle.class.getName());
+	private final static String className = MyMediaLifecycle.class.getName();
+	private final static Logger log = Logger.getLogger(className);
+	private final static String logClassName = className + ": ";
 	
     public static FeedInfoService feedInfoService;
     public static TorrentInfoService torrentInfoService;
@@ -146,7 +149,7 @@ public class MediaManager {
 			
 			long completedInterval = TimeUnit.MILLISECONDS.toDays(new Date().getTime() - torrent.getDateCompleted().getTime());
 			if (!torrentInFeed && completedInterval > feedProvider.getFeedInfo().getDeleteInterval() && feedProvider.getFeedInfo().getDeleteInterval() > 0) {
-				log.log(Level.INFO, "[DEBUG] Deleting torrent \"" + torrent.getName() + "\" from db, dateCompleted: "
+				log.log(Level.INFO, logClassName + "checkAndRemove Deleting torrent \"" + torrent.getName() + "\" from db, dateCompleted: "
 						+ torrent.getDateCompleted() + ", " + completedInterval + " days ago");
 				feedProvider.removeTorrent(torrent);
 			}
@@ -158,7 +161,7 @@ public class MediaManager {
 	}
 	
 	public static AddedTorrentInfo addTorrent(FeedProvider feedProvider, TorrentInfo torrentInfo) throws IOException {
-		log.log(Level.INFO, "[DEBUG] MediaManager.addTorrent - adding torrent: " + torrentInfo);
+		log.log(Level.INFO, logClassName + "addTorrent - adding torrent: " + torrentInfo);
 		AddedTorrentInfo ati = null;
 			// add torrent
 			AddTorrentParameters newTorrentParameters = new AddTorrentParameters(torrentInfo.getUrl());
@@ -188,7 +191,7 @@ public class MediaManager {
 			TorrentStatus torrentStatus = getTorrentStatus(torrentInfo);
 			// check if torrent is completed
 			if (torrentStatus != null && (torrentStatus.getStatus() == StatusField.seeding || torrentStatus.getStatus() == StatusField.seedWait)) {
-				log.log(Level.INFO, "[DEBUG] MediaManager.checkAndComplete Torrent download completed for: " + torrentInfo);
+				log.log(Level.INFO, logClassName + "checkAndComplete Torrent download completed for: " + torrentInfo);
 				
 				MediaInfo mediaInfo = new MediaInfo(feedProvider, torrentInfo);
 				
@@ -214,8 +217,7 @@ public class MediaManager {
 							JSONObject obj = new JSONObject(fileArray.get(i).toString());
 							String filename = obj.getString("name");
 							if (filename.endsWith(".rar")) {
-								System.out.println("[DEBUG] found rar file to extract: " + torrentDownloadDir + filename);
-								log.log(Level.INFO, "[DEBUG] MediaManager.checkAndComplete unraring archive to: " + downloadDir);
+								log.log(Level.INFO, logClassName + "checkAndComplete found rar file [" + torrentDownloadDir + filename + "], extracting to [" + downloadDir + "]");
 								try {
 									// extract rar file
 									extractRar(torrentDownloadDir + filename, downloadDir); // overwrites existing files
@@ -233,12 +235,12 @@ public class MediaManager {
 					if (!unrared) {
 						if (feedProvider.getFeedInfo().getRemoveTorrentOnComplete()) {
 							// just move torrent files using transmission
-							log.log(Level.INFO, "[DEBUG] MediaManager.checkAndComplete moving torrent to: " + downloadDir);
+							log.log(Level.INFO, logClassName + "checkAndComplete moving torrent to: " + downloadDir);
 							torrentClient.moveTorrents(new Object[] {torrentStatus.getId()}, downloadDir, true);
 							// need to set group writable on any folders that are moved
 						} else {
 							// copy torrent files to downloadDir
-							log.log(Level.INFO, "[DEBUG] MediaManager.checkAndComplete copying torrent files to: " + downloadDir);
+							log.log(Level.INFO, logClassName + "checkAndComplete copying torrent files to: " + downloadDir);
 							
 							System.out.println("[DEBUG] COPYING FILES...");
 							System.out.println("[DEBUG] downloadDir: " + downloadDir);
@@ -274,7 +276,7 @@ public class MediaManager {
 				// checkRemoveRules() // do torrentClient.removeTorrents in this method..., or logic block
 				// seed ratios, activity dates, minimum seed time, etc...
 				if (feedProvider.getFeedInfo().getRemoveTorrentOnComplete()) {
-					log.log(Level.INFO, "[DEBUG] MediaManager.checkAndComplete removing torrent from torrent client");
+					log.log(Level.INFO, logClassName + "checkAndComplete removing torrent from torrent client");
 					torrentClient.removeTorrents(new Object[] {torrentStatus.getId()}, false); // DON'T DELETE TORRENT DATA
 				}
 				
@@ -284,6 +286,7 @@ public class MediaManager {
 				torrentInfo.setDateCompleted(new Date());
 				
 				notifyComplete(feedProvider, torrentInfo, mediaInfo);
+				runSystemCommand(feedProvider, torrentInfo);
 			}
 		} catch (ApplicationException e) {
 			// TODO Auto-generated catch block
@@ -293,12 +296,21 @@ public class MediaManager {
 		}
 	}
 	
+	private static void runSystemCommand(FeedProvider feedProvider, TorrentInfo torrentInfo) {
+		String systemCommand = feedProvider.getFeedInfo().getSystemCommand();
+		if (StringUtils.isNotBlank(systemCommand)) {
+			MyMediaLifecycle.singleThreadPool.execute(
+					new SystemCommandTask(systemCommand, torrentInfo)
+			);
+		}
+	}
+	
 	private static String constructAndCreateDownloadDirectory(FeedProvider feedProvider, MediaInfo mediaInfo) throws IOException {
 		String baseDir = constructDownloadDirectory(feedProvider, mediaInfo);
 		
 		// create destinationDir if it doesn't exist
 		File saveDir = new File(baseDir);
-		if(!saveDir.exists()) {
+		if (!saveDir.exists()) {
 			System.out.println("[DEBUG] baseDir does not exist, creating it: " + baseDir);
 			boolean createdDir  = saveDir.mkdirs();
 			if (!createdDir) {
@@ -324,8 +336,8 @@ public class MediaManager {
 			baseDir = feedProvider.getFeedInfo().getDownloadDirectoryHd();
 		}*/
 		
-		if (baseDir != null && !baseDir.endsWith("/")) {
-			baseDir += "/";
+		if (baseDir != null && !baseDir.endsWith(System.getProperty("file.separator"))) {
+			baseDir += System.getProperty("file.separator");
 		}
 		if (baseDir != null && feedProvider.getFeedInfo().getDetermineSubDirectory()) {
 			baseDir = baseDir + mediaInfo.subDirectory;
@@ -335,7 +347,7 @@ public class MediaManager {
 	}
 	
 	private static void notifyNew(FeedProvider feedProvider, TorrentInfo torrentInfo, MediaInfo mediaInfo) {
-		log.log(Level.INFO, "[DEBUG] MediaManager.notifyNew for new torrent: " + torrentInfo);
+		log.log(Level.INFO, logClassName + "notifyNew for new torrent: " + torrentInfo);
 		if (feedProvider.getFeedInfo().getNotifyEmail() != null && !feedProvider.getFeedInfo().getNotifyEmail().isEmpty()) {
 			// send email notification
 			try {
@@ -352,7 +364,7 @@ public class MediaManager {
 	
 	private static void notifyComplete(FeedProvider feedProvider, TorrentInfo torrentInfo, MediaInfo mediaInfo) {
 		if (feedProvider.getFeedInfo().getNotifyEmail() != null && !feedProvider.getFeedInfo().getNotifyEmail().isEmpty()) {
-			log.log(Level.INFO, "[DEBUG] MediaManager.notifyComplete for completed torrent: " + torrentInfo);
+			log.log(Level.INFO, logClassName + "notifyComplete for completed torrent: " + torrentInfo);
 			// send email notification
 			try {
 				mailManager.sendMail(feedProvider, torrentInfo, mediaInfo, "completed");
@@ -469,7 +481,7 @@ public class MediaManager {
 	}
 	
 	private static void debugMethod(FeedProvider feedProvider) {
-		log.log(Level.INFO, "[MYMEDIA] MediaManager.debug: "+ debug + ", skipping torrent checks.");
+		log.log(Level.INFO, logClassName + "MediaManager.debug: "+ debug + ", skipping torrent checks.");
 		
 		/*try {
 			Thread.sleep(1000);
@@ -481,7 +493,7 @@ public class MediaManager {
 		if (!feedProvider.getFeedInfo().getActive()) {
 			return;
 		}
-		if (feedProvider.getFeedInfo().getId() != 17) {
+		if (feedProvider.getFeedInfo().getId() != 18) {
 			return;
 		}
 		
@@ -492,6 +504,7 @@ public class MediaManager {
 			t++;
 			if (t == 2) {
 				System.out.println("[DEBUG] torrent: " + torrent);
+				runSystemCommand(feedProvider, torrent);
 				//notifyNew(feedProvider, torrent, new MediaInfo(feedProvider, torrent));
 				//break;
 			}

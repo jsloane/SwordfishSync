@@ -100,7 +100,7 @@ form div.filter-textarea textarea {
     float: right;
 }
 input.long {
-    width: 50em;
+    width: 100%;
 }
 textarea.long {
     width: 50em;
