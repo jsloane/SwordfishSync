@@ -40,6 +40,6 @@ echo "Directory to update: ${DIRECTORY}"
 echo
 echo "Kodi response:"
 
-curl --data-binary '{ "jsonrpc": "2.0", "method": "VideoLibrary.Scan", "id": "updateKodiLibrary.sh", "directory": "$DIRECTORY"}' -H 'content-type: application/json;' $KODI_JSON_RPC
+curl --data-binary "{ \"jsonrpc\": \"2.0\", \"method\": \"VideoLibrary.Scan\", \"id\": \"updateKodiLibrary.sh\", \"params\": {\"directory\": \"${DIRECTORY}\"}}" -H 'content-type: application/json;' $KODI_JSON_RPC
 
 echo
