@@ -23,6 +23,7 @@ import mymedia.db.service.TorrentInfoService;
 import mymedia.exceptions.ApplicationException;
 import mymedia.services.model.FeedProvider;
 import mymedia.services.model.MediaInfo;
+import mymedia.services.tasks.SyncCheckTask;
 import mymedia.services.tasks.SyncTask;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
@@ -67,8 +68,10 @@ public class MyMediaLifecycle implements Lifecycle {
 	public static String propertiesFile = defaultPropertiesFile;
 	public final static String settingsFile = "/settings.xml";
 	private volatile boolean isRunning = false;
-	private final ScheduledExecutorService schedulerThreadPool = Executors.newScheduledThreadPool(1);
+	private static ScheduledExecutorService schedulerThreadPool = Executors.newScheduledThreadPool(1);
+	private final ScheduledExecutorService schedulerThreadPoolForChecker = Executors.newScheduledThreadPool(1);
 	public static final ExecutorService singleThreadPool = Executors.newSingleThreadExecutor();
+	public static Date lastSynced = null;
 	private static long syncInterval = 30; // default 30min
 	
 	public static boolean acceptUntrustedSslCertificate = false;
@@ -139,14 +142,26 @@ public class MyMediaLifecycle implements Lifecycle {
 			Cache memoryOnlyCache = new Cache("torrentClientData", 1, false, false, 15, 15);
 			cacheManager.addCache(memoryOnlyCache);
 			
-			log.log(Level.INFO, "[DEBUG] MyMediaLifecycle.start scheduling sync task: " + syncInterval + " minute intervals");
-			schedulerThreadPool.scheduleAtFixedRate(new SyncTask(), 0, syncInterval, TimeUnit.MINUTES);
+			scheduleSyncTask(false);
+			
+			schedulerThreadPoolForChecker.scheduleAtFixedRate(new SyncCheckTask(syncInterval * 8), syncInterval * 2, syncInterval * 2, TimeUnit.MINUTES); // task to calculate minutes since last sync task, kill scheduler and reschedule
 		} catch (IOException | ConfigurationException | ApplicationException e) {
 			// need an error handler to email severe errors? (not rss feed connection errors)
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			log.log(Level.SEVERE, "[DEBUG] STARTUP FAILED, JOB NOT SCHEDULED ################");
 		}
+	}
+	
+	public static void scheduleSyncTask(boolean forceRestart) {
+		int delay = 0;
+		if (forceRestart) {
+			schedulerThreadPool.shutdownNow();
+			schedulerThreadPool = Executors.newScheduledThreadPool(1);
+			delay = 1;
+		}
+		log.log(Level.INFO, "Scheduling sync task: " + syncInterval + " minute intervals");
+		schedulerThreadPool.scheduleAtFixedRate(new SyncTask(), delay, syncInterval, TimeUnit.MINUTES);
 	}
 	
 	public static void readConfig() throws IOException, ConfigurationException {

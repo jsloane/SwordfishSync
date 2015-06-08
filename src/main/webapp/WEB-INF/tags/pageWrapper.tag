@@ -21,7 +21,7 @@
                 <mmt:navMenu pageid="${pageId}" />
             </div>
             <div id="page">
-                <mmt:notifications systemErrors="${systemErrors}" errorMessages="${errorMessages}" successMessages="${successMessages}" />
+                <mmt:notifications systemErrors="${systemErrors}" errorMessages="${errorMessages}" warningMessages="${warningMessages}" successMessages="${successMessages}" />
                 <jsp:doBody/>
             </div>
         </div>

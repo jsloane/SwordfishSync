@@ -14,9 +14,7 @@ import mymedia.exceptions.ApplicationException;
 
 public class SystemCommandTask implements Runnable {
 	
-	private final static String className = SystemCommandTask.class.getName();
-	private final static Logger log = Logger.getLogger(className);
-	private final static String logClassName = className + ": ";
+	private final static Logger log = Logger.getLogger(SystemCommandTask.class.getName());
 	
 	private String systemCommand;
 	private TorrentInfo torrentInfo;
@@ -42,7 +40,7 @@ public class SystemCommandTask implements Runnable {
 			ProcessBuilder pb = new ProcessBuilder(commandAndArguments);
 			pb.directory(workingDirectory);
 			
-			log.log(Level.INFO, logClassName + "Executing system command: " + commandAndArguments);
+			log.log(Level.INFO, "Executing system command: " + commandAndArguments);
 			
 			try {
 				pb.start();
@@ -50,7 +48,7 @@ public class SystemCommandTask implements Runnable {
 				throw new ApplicationException("Error executing system command.", e);
 			}
 		} catch (Exception e) {
-    		log.log(Level.WARNING, logClassName + "Exception executing system command. ", e);
+    		log.log(Level.WARNING, "Exception executing system command. ", e);
 			e.printStackTrace();
 		}
 	}

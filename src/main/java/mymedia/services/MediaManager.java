@@ -42,10 +42,8 @@ import mymedia.services.model.MediaInfo;
 import mymedia.services.tasks.SystemCommandTask;
 
 public class MediaManager {
-
-	private final static String className = MyMediaLifecycle.class.getName();
-	private final static Logger log = Logger.getLogger(className);
-	private final static String logClassName = className + ": ";
+	
+	private final static Logger log = Logger.getLogger(MediaManager.class.getName());
 	
     public static FeedInfoService feedInfoService;
     public static TorrentInfoService torrentInfoService;
@@ -77,7 +75,7 @@ public class MediaManager {
 			return;
 		}
 		
-		List<TorrentInfo> torrents = new ArrayList<TorrentInfo>(feedProvider.getTorrents()); // create a copy of the torrent list, as it'll be modified during the loop
+		List<TorrentInfo> torrents = new ArrayList<TorrentInfo>(feedProvider.getTorrents(false)); // create a copy of the torrent list, as it'll be modified during the loop
 		List<TorrentInfo> torrentsFromFeed = feedProvider.getTorrentsFromFeed();
 		
 		for (TorrentInfo torrent : torrents) {
@@ -85,7 +83,7 @@ public class MediaManager {
 				boolean saveTorrent = true;
 				switch (torrent.getStatus()) {
 					case TorrentInfo.STATUS_NOT_ADDED: // new torrent, add to torrent client
-						saveTorrent = checkAndAdd(feedProvider, torrent);
+						saveTorrent = checkAndAdd(feedProvider, torrent, torrents);
 						break;
 					case TorrentInfo.STATUS_IN_PROGRESS: // downloading/seeding torrent, check if finished
 						checkAndComplete(feedProvider, torrent);
@@ -110,19 +108,26 @@ public class MediaManager {
 		}
 	}
 	
-	private static boolean checkAndAdd(FeedProvider feedProvider, TorrentInfo torrentInfo) {
+	private static boolean checkAndAdd(FeedProvider feedProvider, TorrentInfo torrentInfo, List<TorrentInfo> torrents) {
 		if (feedProvider.getFeedInfo().getActive()) {
 			if (feedProvider.shouldAddTorrent(torrentInfo)) {
-				if (feedProvider.getFeedInfo().getAction().equalsIgnoreCase("download")) {
-					// if download
-					try {
-						addTorrent(feedProvider, torrentInfo);
-					} catch (IOException e) {
-						setTorrentHostError(e);
+				if (!foundDuplicateTorrent(feedProvider, torrentInfo, torrents)) {
+					if (feedProvider.getFeedInfo().getAction().equalsIgnoreCase("download")) {
+						// if download
+						try {
+							addTorrent(feedProvider, torrentInfo);
+						} catch (IOException e) {
+							setTorrentHostError(e);
+						}
+					} else if (feedProvider.getFeedInfo().getAction().equalsIgnoreCase("notify")) {
+						// if notify only
+						notifyNew(feedProvider, torrentInfo, new MediaInfo(feedProvider, torrentInfo));
 					}
-				} else if (feedProvider.getFeedInfo().getAction().equalsIgnoreCase("notify")) {
-					// if notify only
-					notifyNew(feedProvider, torrentInfo, new MediaInfo(feedProvider, torrentInfo));
+				} else {
+					// torrent already downloaded, set to skipped
+					log.log(Level.INFO, "Duplicate torrent detected, not adding.");
+					torrentInfo.setStatus(TorrentInfo.STATUS_SKIPPED);
+					// email notification?
 				}
 			} else {
 				// not interested in this torrent, set to skipped
@@ -131,6 +136,70 @@ public class MediaManager {
 			}
 		}
 		return false;
+	}
+	
+	private static boolean foundDuplicateTorrent(FeedProvider feedProvider, TorrentInfo torrentInfo, List<TorrentInfo> torrents) {
+		if (!feedProvider.getFeedInfo().getSkipDuplicates()) {
+			return false;
+		}
+		
+		if (!feedProvider.getFeedInfo().getDetermineSubDirectory()) {
+			return false;
+		}
+		
+		MediaInfo newTorrentMediaInfo = new MediaInfo(feedProvider, torrentInfo, false);
+		
+		if (newTorrentMediaInfo.proper || newTorrentMediaInfo.repack) {
+			// always get propers/repacks
+			log.log(Level.INFO, "Proper/repack torrent detected.");
+			return false;
+		}
+		
+		try {
+			// check torrents in progress for the feed
+			for (TorrentInfo torrent : torrents) {
+				if (torrent != null) {
+					if (TorrentInfo.STATUS_IN_PROGRESS.equals(torrent.getStatus())) {
+						MediaInfo existingTorrentMediaInfo = new MediaInfo(feedProvider, torrent, false);
+						if (isSameMedia(newTorrentMediaInfo, existingTorrentMediaInfo)) {
+							return true;
+						}
+					}
+				}
+			}
+			
+			String dirString = constructDownloadDirectory(feedProvider, newTorrentMediaInfo);
+			
+			if (StringUtils.isNotBlank(dirString)) {
+				// find files in sub directory, if tv, check if any match season/episode
+				File dir = new File(dirString);
+				File[] files = dir.listFiles();
+				
+				for (File file : files) {
+				    if (file.isFile()) {
+						MediaInfo fileMediaInfo = new MediaInfo(feedProvider, null, file.getName(), false);
+						if (isSameMedia(newTorrentMediaInfo, fileMediaInfo)) {
+							return true;
+						}
+				    }
+				}
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		
+		return false;
+	}
+	
+	private static boolean isSameMedia(MediaInfo m1, MediaInfo m2) {
+		return MediaInfo.TYPE_TV.equals(m1.getType())
+				&& MediaInfo.TYPE_TV.equals(m2.getType())
+				&& m1.getName() != null
+				&& m1.getName().equals(m2.getName())
+				&& m1.seasonNumber != null
+				&& m1.seasonNumber.equals(m2.seasonNumber)
+				&& m1.episodeNumber != null
+				&& m1.episodeNumber.equals(m2.episodeNumber);
 	}
 	
 	private static boolean checkAndRemove(FeedProvider feedProvider, TorrentInfo torrent, List<TorrentInfo> torrentsFromFeed) {
@@ -149,7 +218,7 @@ public class MediaManager {
 			
 			long completedInterval = TimeUnit.MILLISECONDS.toDays(new Date().getTime() - torrent.getDateCompleted().getTime());
 			if (!torrentInFeed && completedInterval > feedProvider.getFeedInfo().getDeleteInterval() && feedProvider.getFeedInfo().getDeleteInterval() > 0) {
-				log.log(Level.INFO, logClassName + "checkAndRemove Deleting torrent \"" + torrent.getName() + "\" from db, dateCompleted: "
+				log.log(Level.INFO, "checkAndRemove Deleting torrent \"" + torrent.getName() + "\" from db, dateCompleted: "
 						+ torrent.getDateCompleted() + ", " + completedInterval + " days ago");
 				feedProvider.removeTorrent(torrent);
 			}
@@ -161,7 +230,7 @@ public class MediaManager {
 	}
 	
 	public static AddedTorrentInfo addTorrent(FeedProvider feedProvider, TorrentInfo torrentInfo) throws IOException {
-		log.log(Level.INFO, logClassName + "addTorrent - adding torrent: " + torrentInfo);
+		log.log(Level.INFO, "Adding torrent: " + torrentInfo);
 		AddedTorrentInfo ati = null;
 			// add torrent
 			AddTorrentParameters newTorrentParameters = new AddTorrentParameters(torrentInfo.getUrl());
@@ -191,7 +260,7 @@ public class MediaManager {
 			TorrentStatus torrentStatus = getTorrentStatus(torrentInfo);
 			// check if torrent is completed
 			if (torrentStatus != null && (torrentStatus.getStatus() == StatusField.seeding || torrentStatus.getStatus() == StatusField.seedWait)) {
-				log.log(Level.INFO, logClassName + "checkAndComplete Torrent download completed for: " + torrentInfo);
+				log.log(Level.INFO, "checkAndComplete Torrent download completed for: " + torrentInfo);
 				
 				MediaInfo mediaInfo = new MediaInfo(feedProvider, torrentInfo);
 				
@@ -217,7 +286,7 @@ public class MediaManager {
 							JSONObject obj = new JSONObject(fileArray.get(i).toString());
 							String filename = obj.getString("name");
 							if (filename.endsWith(".rar")) {
-								log.log(Level.INFO, logClassName + "checkAndComplete found rar file [" + torrentDownloadDir + filename + "], extracting to [" + downloadDir + "]");
+								log.log(Level.INFO, "checkAndComplete found rar file [" + torrentDownloadDir + filename + "], extracting to [" + downloadDir + "]");
 								try {
 									// extract rar file
 									extractRar(torrentDownloadDir + filename, downloadDir); // overwrites existing files
@@ -235,12 +304,12 @@ public class MediaManager {
 					if (!unrared) {
 						if (feedProvider.getFeedInfo().getRemoveTorrentOnComplete()) {
 							// just move torrent files using transmission
-							log.log(Level.INFO, logClassName + "checkAndComplete moving torrent to: " + downloadDir);
+							log.log(Level.INFO, "checkAndComplete moving torrent to: " + downloadDir);
 							torrentClient.moveTorrents(new Object[] {torrentStatus.getId()}, downloadDir, true);
 							// need to set group writable on any folders that are moved
 						} else {
 							// copy torrent files to downloadDir
-							log.log(Level.INFO, logClassName + "checkAndComplete copying torrent files to: " + downloadDir);
+							log.log(Level.INFO, "checkAndComplete copying torrent files to: " + downloadDir);
 							
 							System.out.println("[DEBUG] COPYING FILES...");
 							System.out.println("[DEBUG] downloadDir: " + downloadDir);
@@ -276,7 +345,7 @@ public class MediaManager {
 				// checkRemoveRules() // do torrentClient.removeTorrents in this method..., or logic block
 				// seed ratios, activity dates, minimum seed time, etc...
 				if (feedProvider.getFeedInfo().getRemoveTorrentOnComplete()) {
-					log.log(Level.INFO, logClassName + "checkAndComplete removing torrent from torrent client");
+					log.log(Level.INFO, "checkAndComplete removing torrent from torrent client");
 					torrentClient.removeTorrents(new Object[] {torrentStatus.getId()}, false); // DON'T DELETE TORRENT DATA
 				}
 				
@@ -310,7 +379,7 @@ public class MediaManager {
 		
 		// create destinationDir if it doesn't exist
 		File saveDir = new File(baseDir);
-		if (!saveDir.exists()) {
+		if (!saveDir.exists()) { // appears to be case sensitive (linux)
 			System.out.println("[DEBUG] baseDir does not exist, creating it: " + baseDir);
 			boolean createdDir  = saveDir.mkdirs();
 			if (!createdDir) {
@@ -325,20 +394,8 @@ public class MediaManager {
 	}
 	
 	public static String constructDownloadDirectory(FeedProvider feedProvider, MediaInfo mediaInfo) {
-		String baseDir = null;
+		String baseDir = feedProvider.getDownloadDirectory();
 		
-		// default download directory
-		if (StringUtils.isNotBlank(feedProvider.getFeedInfo().getDownloadDirectory())) {
-			baseDir = feedProvider.getFeedInfo().getDownloadDirectory();
-		}
-		// HD download directory if HD media - not implemented
-		/*if (mediaInfo.hd && feedProvider.getFeedInfo().getDownloadDirectoryHd() != null && !feedProvider.getFeedInfo().getDownloadDirectoryHd().isEmpty()) {
-			baseDir = feedProvider.getFeedInfo().getDownloadDirectoryHd();
-		}*/
-		
-		if (baseDir != null && !baseDir.endsWith(System.getProperty("file.separator"))) {
-			baseDir += System.getProperty("file.separator");
-		}
 		if (baseDir != null && feedProvider.getFeedInfo().getDetermineSubDirectory()) {
 			baseDir = baseDir + mediaInfo.subDirectory;
 		}
@@ -347,7 +404,7 @@ public class MediaManager {
 	}
 	
 	private static void notifyNew(FeedProvider feedProvider, TorrentInfo torrentInfo, MediaInfo mediaInfo) {
-		log.log(Level.INFO, logClassName + "notifyNew for new torrent: " + torrentInfo);
+		log.log(Level.INFO, "notifyNew for new torrent: " + torrentInfo);
 		if (feedProvider.getFeedInfo().getNotifyEmail() != null && !feedProvider.getFeedInfo().getNotifyEmail().isEmpty()) {
 			// send email notification
 			try {
@@ -364,7 +421,7 @@ public class MediaManager {
 	
 	private static void notifyComplete(FeedProvider feedProvider, TorrentInfo torrentInfo, MediaInfo mediaInfo) {
 		if (feedProvider.getFeedInfo().getNotifyEmail() != null && !feedProvider.getFeedInfo().getNotifyEmail().isEmpty()) {
-			log.log(Level.INFO, logClassName + "notifyComplete for completed torrent: " + torrentInfo);
+			log.log(Level.INFO, "notifyComplete for completed torrent: " + torrentInfo);
 			// send email notification
 			try {
 				mailManager.sendMail(feedProvider, torrentInfo, mediaInfo, "completed");
@@ -481,7 +538,7 @@ public class MediaManager {
 	}
 	
 	private static void debugMethod(FeedProvider feedProvider) {
-		log.log(Level.INFO, logClassName + "MediaManager.debug: "+ debug + ", skipping torrent checks.");
+		log.log(Level.INFO, "MediaManager.debug: "+ debug + ", skipping torrent checks.");
 		
 		/*try {
 			Thread.sleep(1000);
@@ -493,18 +550,19 @@ public class MediaManager {
 		if (!feedProvider.getFeedInfo().getActive()) {
 			return;
 		}
-		if (feedProvider.getFeedInfo().getId() != 18) {
+		if (feedProvider.getFeedInfo().getId() != 4) {
 			return;
 		}
 		
-		List<TorrentInfo> torrents = new ArrayList<TorrentInfo>(feedProvider.getTorrents());
+		List<TorrentInfo> torrents = new ArrayList<TorrentInfo>(feedProvider.getTorrents(true));
 		
 		int t = 0;
 		for (TorrentInfo torrent : torrents) {
 			t++;
-			if (t == 2) {
+			if (torrent.getId() == 2021) {
 				System.out.println("[DEBUG] torrent: " + torrent);
-				runSystemCommand(feedProvider, torrent);
+				System.out.println("[DEBUG] foundDuplicateTorrent: " + foundDuplicateTorrent(feedProvider, torrent, torrents));
+				//runSystemCommand(feedProvider, torrent);
 				//notifyNew(feedProvider, torrent, new MediaInfo(feedProvider, torrent));
 				//break;
 			}

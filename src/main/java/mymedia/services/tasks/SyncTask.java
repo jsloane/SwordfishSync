@@ -1,9 +1,11 @@
 package mymedia.services.tasks;
 
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mymedia.services.MediaManager;
+import mymedia.services.MyMediaLifecycle;
 
 public class SyncTask implements Runnable {
 	
@@ -11,6 +13,7 @@ public class SyncTask implements Runnable {
 	
 	@Override
 	public void run() {
+		MyMediaLifecycle.lastSynced = new Date();
 		try {
 			MediaManager.syncTorrents();
 		} catch (Exception e) {

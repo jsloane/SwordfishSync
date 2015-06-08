@@ -81,6 +81,9 @@ public class FeedInfo {
 	@Column(name="details_url_format")
 	private String detailsUrlFormat; // eg http://localhost/details?id={regex-value}
 	
+	@Column(name="skip_duplicates")
+	private Boolean skipDuplicates = true;
+	
 	@Column(name="remove_torrent_on_complete")
 	private Boolean removeTorrentOnComplete = false;
 	
@@ -171,6 +174,9 @@ public class FeedInfo {
 	public String getDetailsUrlFormat() {
 		return detailsUrlFormat;
 	}
+	public boolean getSkipDuplicates() {
+		return (skipDuplicates != null) ? skipDuplicates : true;
+	}
 	public boolean getRemoveTorrentOnComplete() {
 		return removeTorrentOnComplete;
 	}
@@ -249,6 +255,9 @@ public class FeedInfo {
 	}
 	public void setDetailsUrlFormat(String detailsUrlFormat) {
 		this.detailsUrlFormat = detailsUrlFormat;
+	}
+	public void setSkipDuplicates(boolean skipDuplicates) {
+		this.skipDuplicates = skipDuplicates;
 	}
 	public void setRemoveTorrentOnComplete(boolean removeTorrentOnComplete) {
 		this.removeTorrentOnComplete = removeTorrentOnComplete;

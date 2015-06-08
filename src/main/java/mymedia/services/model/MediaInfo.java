@@ -49,6 +49,8 @@ public class MediaInfo {
 	public String episodeNumber = "";
 	public String episodeTitle = "";
 	public String episodeDescription = "";
+	public boolean proper = false;
+	public boolean repack = false;
 	
 	// movie
 	public String year = "";
@@ -60,18 +62,29 @@ public class MediaInfo {
 	}
 
 	public MediaInfo(FeedProvider feedProvider, TorrentInfo torrentInfo, boolean fetchDetails) {
+		this(feedProvider, torrentInfo, torrentInfo.getName(), fetchDetails);
+	}
+
+	public MediaInfo(FeedProvider feedProvider, TorrentInfo torrentInfo, String title, boolean fetchDetails) {
 		this.torrentInfo = torrentInfo;
 		this.fetchDetails = fetchDetails;
 		url = feedProvider.getTorrentDetailsUrl(torrentInfo);
 		
 		// default values
-		name = torrentInfo.getName();
+		name = title;
 		subDirectory = name + System.getProperty("file.separator");
 		
-		processMedia(feedProvider, torrentInfo);
+		processMedia(title);
 	}
 	
-	public void processMedia(FeedProvider feedProvider, TorrentInfo torrentInfo) {
+	public void processMedia(String title) {
+		
+		if (title.toLowerCase().contains("proper")) {
+			this.proper = true;
+		}
+		if (title.toLowerCase().contains("repack")) {
+			this.repack = true;
+		}
 		
 		// determine if torrent is tv/movie/other
 		
@@ -121,7 +134,7 @@ public class MediaInfo {
 		//System.out.println("[DEBUG] #### MediaInfo TV show check S##E##");
 		// TV show regex S##E##
 		Pattern pTv = Pattern.compile("(.*?)[.\\s][sS](\\d{2})[eE](\\d{2}).*");
-		Matcher mTv = pTv.matcher(torrentInfo.getName());
+		Matcher mTv = pTv.matcher(title);
 		if (mTv.matches()) {
 			/*System.out.println("[DEBUG] #### MediaInfo TV show matched S##E##");
 			System.out.println("[DEBUG] #### mTvx.group(1) name: " + mTv.group(1));
@@ -138,7 +151,7 @@ public class MediaInfo {
 		//System.out.println("[DEBUG] #### MediaInfo TV show check ##x###");
 		// TV show regex ##x###
 		Pattern pTvx = Pattern.compile("(.*?)(\\d+)x(\\d+).*");
-		Matcher mTvx = pTvx.matcher(torrentInfo.getName());
+		Matcher mTvx = pTvx.matcher(title);
 		if (mTvx.matches()) {
 			/*System.out.println("[DEBUG] #### MediaInfo TV show matched ##x###");
 			System.out.println("[DEBUG] #### mTvx.group(1) name: " + mTvx.group(1));
@@ -154,7 +167,7 @@ public class MediaInfo {
 		
 		//System.out.println("[DEBUG] #### HDTV check");
 		// might be a non standard tv show format
-		if (torrentInfo.getName().toLowerCase().contains("hdtv")) {
+		if (title.toLowerCase().contains("hdtv")) {
 			processTvShow();
 			return;
 		}
@@ -163,7 +176,7 @@ public class MediaInfo {
 		//System.out.println("[DEBUG] #### MediaInfo HD movie check");
 		// HD movie regex
 		Pattern pMovieHd = Pattern.compile("^(.*[^-]+)[\\.|_ ](\\d{4}).*\\.(\\d{3,4}p).*\\.(.{2,4}).*");
-		Matcher mMovieHd = pMovieHd.matcher(torrentInfo.getName());
+		Matcher mMovieHd = pMovieHd.matcher(title);
 		if (mMovieHd.matches()) {
 			name = mMovieHd.group(1).replace(".", " ");
 			year = mMovieHd.group(2);
@@ -177,7 +190,7 @@ public class MediaInfo {
 		//System.out.println("[DEBUG] #### MediaInfo SD movie check");
 		// SD movie regex
 		Pattern pMovieSd = Pattern.compile("^([^-]+)[\\.|_ ](\\d{4}).*\\.(.{2,4}).*");
-		Matcher mMovieSd = pMovieSd.matcher(torrentInfo.getName());
+		Matcher mMovieSd = pMovieSd.matcher(title);
 		if (mMovieSd.matches()) {
 			name = mMovieSd.group(1).replace(".", " ");
 			year = mMovieSd.group(2);
@@ -235,7 +248,7 @@ public class MediaInfo {
 			notice = tvdbApiNotice;
 			boolean fetchTvdb = true;
 			
-			if (torrentInfo.getProperties() != null) {
+			if (torrentInfo != null && torrentInfo.getProperties() != null) {
 				for (Map.Entry<String, String> expandedData : torrentInfo.getProperties().entrySet()) {
 					switch (expandedData.getKey()) {
 						case NAME_KEY:
@@ -247,7 +260,7 @@ public class MediaInfo {
 					}
 				}
 			}
-			if (StringUtils.isBlank(name)) {
+			if (StringUtils.isBlank(name) && torrentInfo != null) {
 				name = torrentInfo.getName();
 				fetchTvdb = false;
 			} else {

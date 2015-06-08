@@ -1,6 +1,9 @@
 package mymedia.services.model;
 
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -17,6 +20,7 @@ import java.util.regex.Pattern;
 import javax.net.ssl.SSLContext;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -35,12 +39,13 @@ import mymedia.services.MyMediaLifecycle;
 import com.sun.syndication.feed.rss.Channel;
 import com.sun.syndication.feed.synd.SyndEntry;
 import com.sun.syndication.feed.synd.SyndFeed;
+import com.sun.syndication.io.FeedException;
 import com.sun.syndication.io.SyndFeedInput;
 import com.sun.syndication.io.XmlReader;
 
 public class FeedProvider {
 
-	private final static Logger log = Logger.getLogger(MyMediaLifecycle.class.getName());
+	private final static Logger log = Logger.getLogger(FeedProvider.class.getName());
 	
 	private int ttl = 0; // ttl is in minutes (from rss spec?)
 	private long lastFetched = 0; // when the feed was last fetched (in minutes)
@@ -134,7 +139,7 @@ public class FeedProvider {
 	}
 	public void removeTorrent(TorrentInfo torrent) {
 		feedInfo.getFeedTorrents().remove(torrent);
-		log.log(Level.INFO, "[DEBUG] FeedProvider.removeTorrent() torrent: " + torrent);
+		//log.log(Level.INFO, "[DEBUG] FeedProvider.removeTorrent() torrent: " + torrent);
 		//Log.log(Level.INFO, "[DEBUG] FeedProvider.removeTorrent() MediaManager.feedInfoService.saveFeedInfo");
 		MediaManager.feedInfoService.saveFeedInfo(feedInfo);
 		//Log.log(Level.INFO, "[DEBUG] FeedProvider.removeTorrent() MediaManager.torrentInfoService.removeTorrentInfo(torrent)");
@@ -154,8 +159,8 @@ public class FeedProvider {
 	}
 	
 	
-	public List<TorrentInfo> getTorrents() { // this includes all torrents in the DB, and fetched torrents from the rss feed
-		log.log(Level.INFO, "FeedProvider.getTorrents() Fetching feed: " + feedInfo.getName());
+	public List<TorrentInfo> getTorrents(boolean skipRefresh) { // this includes all torrents in the DB, and fetched torrents from the rss feed
+		log.log(Level.INFO, "Fetching feed: " + feedInfo.getName());
 		
 		boolean refreshFeed = false;
 		int syncInterval = feedInfo.getSyncInterval();
@@ -176,7 +181,7 @@ public class FeedProvider {
 		}
 
 		//LOG.log(Level.INFO, "[DEBUG] getTorrents refreshFeed: "+refreshFeed);
-		if (refreshFeed) {
+		if (refreshFeed && !skipRefresh) {
 			isFeedCurrent = false;
 			statusMessage = "";
 			try {
@@ -192,7 +197,7 @@ public class FeedProvider {
 					statusMessage = e.toString();
 				}
 			}
-			log.log(Level.INFO, "FeedProvider.getTorrents() Fetched feed: " + feedInfo.getName() + ", "
+			log.log(Level.INFO, "Fetched feed: " + feedInfo.getName() + ", "
 					+ "current: " + isFeedCurrent
 					+ ", ttl: " + ttl);
 		}
@@ -203,6 +208,26 @@ public class FeedProvider {
 	public FeedInfo getFeedInfo() {
 		return this.feedInfo;
 	}
+	
+	public String getDownloadDirectory() {
+		String baseDir = null;
+		
+		// default download directory
+		if (StringUtils.isNotBlank(getFeedInfo().getDownloadDirectory())) {
+			baseDir = getFeedInfo().getDownloadDirectory();
+		}
+		// HD download directory if HD media - not implemented
+		/*if (mediaInfo.hd && feedProvider.getFeedInfo().getDownloadDirectoryHd() != null && !feedProvider.getFeedInfo().getDownloadDirectoryHd().isEmpty()) {
+			baseDir = feedProvider.getFeedInfo().getDownloadDirectoryHd();
+		}*/
+		
+		if (baseDir != null && !baseDir.endsWith(System.getProperty("file.separator"))) {
+			baseDir += System.getProperty("file.separator");
+		}
+		
+		return baseDir;
+	}
+	
 	public List<TorrentInfo> getTorrentsFromFeed() { // return only whats in the xml feed
 		return this.torrentsFromFeed;
 	}
@@ -286,31 +311,30 @@ public class FeedProvider {
         	
     		// set http configuration
         	RequestConfig requestConfig = RequestConfig.custom()
-        		    .setSocketTimeout(120000)
+        		    .setSocketTimeout(120000) // possible socket timeout bug https://bugs.openjdk.java.net/browse/JDK-8049846
         		    .setConnectTimeout(120000)
         		    .setConnectionRequestTimeout(120000)
         		    //.setLocalAddress(localAddress)
         		    .build();
     		httpGet = new HttpGet(feedInfo.getUrl());
     		httpGet.setConfig(requestConfig);
+    		log.log(Level.INFO, "Making request, httpGet: " + httpGet);
     		httpResponse = httpClient.execute(httpGet);
+    		log.log(Level.INFO, "Made request, httpResponse statusLine: " + httpResponse.getStatusLine());
     		
     		reader = new XmlReader(httpResponse.getEntity().getContent());
     		
 			SyndFeedInput in = new SyndFeedInput();
 			in.setPreserveWireFeed(true);
             feed = in.build(reader);
-    		log.log(Level.INFO, "[DEBUG] FeedProvider.getFeedXml() DONE.");
-        } catch (Exception ex) {
-			System.out.println("TEST - getFeedXml 1");
-        	ex.printStackTrace();
-			statusMessage = ex.toString();
+        } catch (IllegalStateException | IOException | IllegalArgumentException | FeedException | KeyManagementException | NoSuchAlgorithmException | KeyStoreException  e) {
+			statusMessage = e.toString();
+        	log.log(Level.WARNING, "Error making http request.", e);
         } finally {
 	        if (reader != null) {
 	        	try {
 	        		reader.close();
-				} catch (Exception e) {
-					System.out.println("TEST - getFeedXml 2");
+				} catch (IOException e) {
 					e.printStackTrace();
 				}
 	        }

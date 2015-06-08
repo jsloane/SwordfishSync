@@ -700,6 +700,18 @@ public class IndexController {
 		}
 		mav.addObject("systemErrors", systemErrors);
 		
+		List<String> warningMessages = new ArrayList<String>();
+		StringBuilder warningMessageString = new StringBuilder();
+    	for (FeedProvider feed : MediaManager.feedProviders) {
+	    	if (!feed.isFeedCurrent() && StringUtils.isNotEmpty(feed.getStatusMessage())) {
+	    		warningMessageString.append("<br/>" + feed.getFeedInfo().getName() + ". Cause: " + feed.getStatusMessage());
+	    	}
+    	}
+    	if (warningMessageString.length() > 0) {
+			warningMessages.add("Unable to fetch feed(s)." + warningMessageString.toString());
+			mav.addObject("warningMessages", warningMessages);
+    	}
+		
     	return mav;
     }
     
