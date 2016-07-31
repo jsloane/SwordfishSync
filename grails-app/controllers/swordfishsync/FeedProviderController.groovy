@@ -10,15 +10,19 @@ class FeedProviderController {
 
     def index(/*Integer max*/) {
         //params.max = Math.min(max ?: 10, 100)
-        respond FeedProvider.list(/*sort: 'name'*//*params*/)//, model: [
+        //respond FeedProvider.list(/*sort: 'name'*//*params*/)//, model: [
 			//feedProviderList: FeedProvider.list(/*params*/)
 			//,feedProviderCount: FeedProvider.count(),
 			//,feed: Feed.get(1)
 		//]
+        respond FeedProvider.list(), model: [
+			messages: Message.list()
+		]
     }
 
     def show(FeedProvider feedProvider) {
         respond feedProvider, model: [
+			messages: Message.list(),
 			addFilterAttributes: feedProvider?.filterAttributes.findAll { FeedProvider.FeedFilterAction.ADD.equals(it.filterType) },
 			ignoreFilterAttributes: feedProvider?.filterAttributes.findAll { FeedProvider.FeedFilterAction.IGNORE.equals(it.filterType) }
 		]
@@ -62,7 +66,9 @@ class FeedProviderController {
     }
 
     def edit(FeedProvider feedProvider) {
-        respond feedProvider
+        respond feedProvider, model: [
+			messages: Message.list()
+		]
     }
 
     @Transactional

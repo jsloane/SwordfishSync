@@ -37,7 +37,7 @@
 				<f:display bean="feedProvider" property="downloadDirectory"/>
 				<f:display bean="feedProvider" property="determineSubDirectory"/>
 				<f:display bean="feedProvider" property="skipDuplicates"/>
-				<f:display bean="feedProvider" property="skipPropersRepacks"/>
+				<f:display bean="feedProvider" property="skipPropersRepacksReals"/>
 				<f:display bean="feedProvider" property="extractRars"/>
 				<f:display bean="feedProvider" property="removeTorrentOnComplete"/>
 				<f:display bean="feedProvider" property="removeTorrentDataOnComplete"/>

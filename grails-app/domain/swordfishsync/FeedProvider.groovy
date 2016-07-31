@@ -63,7 +63,7 @@ class FeedProvider {
 		downloadDirectory			nullable: true
 		determineSubDirectory		nullable: false
 		skipDuplicates				nullable: false
-		skipPropersRepacks			nullable: false
+		skipPropersRepacksReals		nullable: false
 		extractRars					nullable: false
 		removeTorrentOnComplete		nullable: false
 		removeTorrentDataOnComplete	nullable: false

@@ -6,15 +6,25 @@ class Message {
 		SUCCESS, INFO, WARNING, DANGER
 	}
 	
+	public enum Category {
+		HTTP, TORRENT_CLIENT, SYSTEM
+	}
+	
 	Long	id
 	Date	dateCreated
 	
-	String	message
-	String	code
-	Type	type
+	Type		type
+	//String		code
+	Category	category
+	Feed		feed
+	Torrent		torrent
+	String		message
 	
     static constraints = {
-		code	nullable: true
+		//code		nullable: true
+		category	nullable: true
+		feed		nullable: true
+		torrent		nullable: true
     }
 	
 	static mapping = {

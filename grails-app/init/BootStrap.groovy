@@ -25,24 +25,21 @@ class BootStrap {
 		findOrCreateSetting(securityConfig, 'Accept untrusted SSL/TLS certificates', 'app.security.acceptUntrustedCertificates', 'boolean', 'false')
 		def mediaConfig = findOrCreateConfiguration(mainConfig, 'Media')
 		def tvdbConfig = findOrCreateConfiguration(mediaConfig, 'TVDB')
-		findOrCreateSetting(tvdbConfig, 'API Key', 'media.tvdb.apikey', 'string', 'C43C7180A2A8E155') // todo - remove
+		findOrCreateSetting(tvdbConfig, 'API Key', 'media.tvdb.apikey', 'string', '')
 		findOrCreateSetting(tvdbConfig, 'Notice', 'media.tvdb.notice', 'string', 'thetvdb.com')
 		def tmdbConfig = findOrCreateConfiguration(mediaConfig, 'TMDb')
-		findOrCreateSetting(tmdbConfig, 'API Key', 'media.tmdb.apikey', 'string', '5a1a77e2eba8984804586122754f969f') // todo - remove
+		findOrCreateSetting(tmdbConfig, 'API Key', 'media.tmdb.apikey', 'string', '')
 		findOrCreateSetting(tmdbConfig, 'Notice', 'media.tmdb.notice', 'string', 'This product uses the TMDb API but is not endorsed or certified by TMDb.')
-		def emailConfig = findOrCreateConfiguration(mainConfig, 'Email') // have to store this in grails config?
-		findOrCreateSetting(emailConfig, 'Hostname', 'email.host', 'string', '192.168.1.100')
+		def emailConfig = findOrCreateConfiguration(mainConfig, 'Email')
+		findOrCreateSetting(emailConfig, 'Hostname', 'email.host', 'string', 'localhost')
 		findOrCreateSetting(emailConfig, 'Port', 'email.port', 'integer', '25')
-		findOrCreateSetting(emailConfig, 'From address', 'email.from', 'string', 'SwordfishSync@sector101')
+		findOrCreateSetting(emailConfig, 'From address', 'email.from', 'string', 'SwordfishSync@localhost')
 		def torrentHostConfig = findOrCreateConfiguration(mainConfig, 'Torrent Server')
 		findOrCreateSetting(torrentHostConfig, 'Type', 'torrent.type', 'string', 'Transmission')
 		findOrCreateSetting(torrentHostConfig, 'Hostname', 'torrent.host', 'string', 'localhost')
 		findOrCreateSetting(torrentHostConfig, 'Port', 'torrent.port', 'integer', '25')
 		findOrCreateSetting(torrentHostConfig, 'Username', 'torrent.username', 'string', '')
 		findOrCreateSetting(torrentHostConfig, 'Password', 'torrent.password', 'string', '')
-		//findOrCreateSetting(emailConfig, 'Username', 'torrent.username', 'string', '')
-		//findOrCreateSetting(emailConfig, 'Password', 'torrent.password', 'string', '')
-		//def databaseConfig = findOrCreateConfiguration(mainConfig, 'Database')
 		
 		// set mail config
 		grailsApplication.config.grails.mail.host = Setting.valueFor('email.host')

@@ -15,11 +15,15 @@ class ConfigurationController {
 	static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
 	
     def index() {
-		respond Configuration.findByTitle('Configuration')
+		respond Configuration.findByTitle('Configuration'), model: [
+			messages: Message.list()
+		]
     }
 	
 	def edit() {
-		respond Configuration.findByTitle('Configuration')
+		respond Configuration.findByTitle('Configuration'), model: [
+			messages: Message.list()
+		]
 	}
 	
     @Transactional
@@ -53,17 +57,24 @@ class ConfigurationController {
 			}
 		}
 		
-		if (errors) {
+		if (errorMessages) {
 			flash.error = 'Error saving configuration'
-			respond Configuration.findByTitle('Configuration'), view: 'edit', model: [errorMessages: errorMessages]
+			respond Configuration.findByTitle('Configuration'), view: 'edit', model: [
+				messages: Message.list(),
+				errorMessages: errorMessages
+			]
 		} else {
 			flash.message = 'Configuration saved'
-			respond Configuration.findByTitle('Configuration'), view: 'index'
+			respond Configuration.findByTitle('Configuration'), view: 'index', model: [
+				messages: Message.list()
+			]
 		}
 	}
 	
     def show(Configuration configuration) {
-        respond configuration
+        respond configuration, model: [
+			messages: Message.list()
+		]
     }
 
     def create() {

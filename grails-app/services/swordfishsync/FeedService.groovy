@@ -56,12 +56,8 @@ import static grails.async.Promises.onError
 
 /**
  * 
- * 
  * todo: if proper/repack, delete prior managed download
  * 
- * 
- * @author James
- *
  */
 @Transactional
 @Slf4j
@@ -296,7 +292,8 @@ class FeedService {
 									// http://www.journaldev.com/855/how-to-set-file-permissions-in-java-easily-using-java-7-posixfilepermission
 								} catch (IOException e) {
 									// this is an error that needs to be reported to the user
-									//notifyError // manual cleanup may be required
+									// Message errorMessage = new Message()
+									//notifyError(message) // manual cleanup may be required
 									movedOrCopiedData = false
 									throw new ApplicationException('Error copying files', e);
 								}
@@ -844,8 +841,24 @@ class FeedService {
 			syndFeedInput.setPreserveWireFeed(true)
 			syndFeed = syndFeedInput.build(reader)
 		} catch (IllegalStateException | IOException | IllegalArgumentException | FeedException | KeyManagementException | NoSuchAlgorithmException | KeyStoreException  e) {
-			//statusMessage = e.toString()
 			log.warn('Error making http request.', e)
+			
+			// display error message in UI
+			Message httpError = Message.findWhere(
+				feed: feedProvider.feed,
+				type: Message.Type.DANGER,
+				category: Message.Category.HTTP
+			)
+			if (!httpError) {
+				httpError = new Message(
+					feed: feedProvider.feed,
+					type: Message.Type.DANGER,
+					category: Message.Category.HTTP
+				)
+			}
+			httpError.dateCreated = new Date()
+			httpError.message = e.toString()//e.message
+			httpError.save()
 		} finally {
 			if (reader != null) {
 				try {
