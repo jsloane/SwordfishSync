@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+.feed-active,
+.feed-status-current {
+    color: #008000;
+    font-weight: bold;
+}
+.feed-inactive,
+.feed-status-error {
+    color: #FF0000;
+    font-weight: bold;
+}
+
+input[type=text],
+input[type=url] {
+    width: 600px;
+}
