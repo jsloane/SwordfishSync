@@ -14,6 +14,7 @@ class TorrentDetails {
 	Status			status
 	String			downloadedToDirectory
 	String			hashString
+	Double			percentDone
 	List<String>	files = []
 	
 }

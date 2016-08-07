@@ -7,21 +7,19 @@ class Message {
 	}
 	
 	public enum Category {
-		HTTP, TORRENT_CLIENT, SYSTEM
+		HTTP, TORRENT_CLIENT, SYSTEM, FILE
 	}
 	
 	Long	id
 	Date	dateCreated
 	
 	Type		type
-	//String		code
 	Category	category
 	Feed		feed
 	Torrent		torrent
 	String		message
 	
     static constraints = {
-		//code		nullable: true
 		category	nullable: true
 		feed		nullable: true
 		torrent		nullable: true

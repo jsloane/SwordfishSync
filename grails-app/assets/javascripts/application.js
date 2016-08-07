@@ -71,10 +71,13 @@ if (typeof jQuery !== 'undefined') {
         		var helpText = {
         			'#systemCommand': 'Passed arguments: name=torrent name, directory=torrent download directory (if applicable). Needs to be executable for process owner.',
         			'#detailsUrlValueFromRegex': 'eg: http://localhost/(\d+)/.*',
-        			'#detailsUrlFormat': 'eg: http://localhost/details?id={regex-value}'
-        			// add filter help for Filter Action, etc
-        			// # example regex for filter values
-        			
+        			'#detailsUrlFormat': 'eg: http://localhost/details?id={regex-value}',
+        			'#removeAddFilterOnMatch': 'Removes the Add Entry when an entry is matched by the filter',
+        			'#filterAction': 'Ignore: Only add records matched by add regex. Add: Add all records, unless matched by ignore regex.',
+        			'#filterPrecedence': 'Ignore: Check ignore filter first. Add: check add filter first.',
+        			'#syncInterval': 'Sync interval in minutes.',
+            		'#deleteInterval': 'Delete interval in days.',
+            		'#uploadLimit': 'Upload limit in Kb/s.'
         		};
         		
         		$.each(helpText, function(selector, text) {

@@ -11,6 +11,7 @@ class ConfigurationController {
 	
     GrailsApplication grailsApplication
 	MailSender mailSender
+	TorrentClientService torrentClientService
 	
 	static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
 	
@@ -49,9 +50,14 @@ class ConfigurationController {
 					if (setting.code == 'email.host') {
 						grailsApplication.config.grails.mail.host = setting.valueObject
 						mailSender.setHost(grailsApplication.config.grails.mail.host)
-					} else if (setting.code == 'email.port') {
+					}
+					if (setting.code == 'email.port') {
 						grailsApplication.config.grails.mail.port = setting.valueObject
 						mailSender.setPort(grailsApplication.config.grails.mail.port)
+					}
+					if (['torrent.type', 'torrent.host', 'torrent.port', 'torrent.username', 'torrent.password'].contains(setting.code)) {
+						// torrent config changed
+						torrentClientService.init()
 					}
 				}
 			}

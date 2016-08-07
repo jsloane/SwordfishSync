@@ -9,6 +9,8 @@ import groovy.transform.ToString
 @EqualsAndHashCode(includes=['name','url','detailsUrl','datePublished'])
 class Torrent {
 	
+	def torrentClientService
+	
 	Long				id
 	Date				dateCreated
 	
@@ -22,6 +24,16 @@ class Torrent {
 	Boolean				inCurrentFeed
 	
 	Set<ExpandedData> expandedData = []
+	
+	TorrentDetails getClientDetails() {
+		return torrentClientService.getTorrentDetails(this, false)
+	}
+	
+	public TorrentState getTorrentState(FeedProvider feedProvider) {
+		return TorrentState.findByFeedProviderAndTorrent(feedProvider, this)
+	}
+	
+	static transients = ['clientDetails']
 	
 	static hasMany = [expandedData: ExpandedData, torrentStates: TorrentState]
 	
@@ -43,9 +55,4 @@ class Torrent {
 		expandedData	cascade: 'all-delete-orphan'
 		torrentStates	cascade: 'all-delete-orphan'
 	}
-	
-	public TorrentState getTorrentState(FeedProvider feedProvider) {
-		return TorrentState.findByFeedProviderAndTorrent(feedProvider, this)
-	}
-	
 }

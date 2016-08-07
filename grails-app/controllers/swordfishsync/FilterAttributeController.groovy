@@ -1,6 +1,7 @@
 package swordfishsync
 
 import static org.springframework.http.HttpStatus.*
+
 import grails.transaction.Transactional
 
 @Transactional(readOnly = true)
@@ -14,20 +15,53 @@ class FilterAttributeController {
     }
 
     def show(FilterAttribute filterAttribute) {
+		println 'params: ' + params
         respond filterAttribute, model: [params: params]
     }
 
     def create() {
-		def feedProvider = null
+		/*def feedProvider = null
 		if (params.feedProvider?.id) {
 			feedProvider = FeedProvider.get(params.feedProvider.id)
 		} else {
 			// error
+		}*/
+		
+        respond new FilterAttribute(params), model:[params: params]
+    }
+	
+	@Transactional
+	def bulkModify() {
+		FeedProvider feedProvider = FeedProvider.get(params.feedProvider.id)
+		
+		if (request.method == 'POST') {
+			// save all filter entries
+			String eol = System.lineSeparator()
+			
+			feedProvider.filterAttributes.clear()
+			params.filterAddEntries.split(eol).each { entry ->
+				if (entry.trim()) {
+					FilterAttribute filterAttribute = new FilterAttribute(filterType: FeedProvider.FeedFilterAction.ADD, filterRegex: entry)
+					feedProvider.addToFilterAttributes(filterAttribute)
+				}
+			}
+			params.filterIgnoreEntries.split(eol).each { entry ->
+				if (entry.trim()) {
+					FilterAttribute filterAttribute = new FilterAttribute(filterType: FeedProvider.FeedFilterAction.IGNORE, filterRegex: entry)
+					feedProvider.addToFilterAttributes(filterAttribute)
+				}
+			}
+			if (!feedProvider.save()) {
+				flash.errorMessages = ['Error saving filter entries']
+			}
 		}
 		
-        respond new FilterAttribute(params), model:[feedProvider: feedProvider, params: params]
-    }
-
+		render(view: 'bulkModify', model: [
+			'feedProvider': feedProvider
+		])
+		
+	}
+	
     @Transactional
     def save(FilterAttribute filterAttribute) {
         if (filterAttribute == null) {
@@ -49,8 +83,9 @@ class FilterAttributeController {
 			println 'feedProvider: ' + feedProvider
 			feedProvider.addToFilterAttributes(filterAttribute)
 			feedProvider.save flush: true
+			flash.successMessages = ['Filter entry added']
 		} else {
-			// error
+			// todo: error
 		}
 		
 		if ('true'.equals(params.returnToFeedProvider) && params.feedProvider.id) {
@@ -68,7 +103,7 @@ class FilterAttributeController {
     }
 
     def edit(FilterAttribute filterAttribute) {
-        respond filterAttribute
+        respond filterAttribute, model:[params: params]
     }
 
     @Transactional
@@ -86,14 +121,16 @@ class FilterAttributeController {
         }
 
         filterAttribute.save flush:true
+		flash.successMessages = ['Filter entry updated']
 		
+		println 'params: ' + params
 		if ('true'.equals(params.returnToFeedProvider) && params.feedProvider.id) {
 			chain(controller: 'feedProvider', action: 'show', params: [id: params.feedProvider.id])
 		} else {
 	        request.withFormat {
 	            form multipartForm {
 	                flash.message = message(code: 'default.updated.message', args: [message(code: 'filterAttribute.label', default: 'FilterAttribute'), filterAttribute.id])
-	                redirect filterAttribute
+	                redirect action: 'show', id: filterAttribute.id, params: ['feedProvider.id': params.feedProvider.id, 'returnToFeedProvider': true]
 	            }
 	            '*'{ respond filterAttribute, [status: OK] }
 	        }
@@ -121,6 +158,7 @@ class FilterAttributeController {
 		}
 
         filterAttribute.delete flush:true
+		flash.successMessages = ['Filter entry deleted']
 		
 		if ('true'.equals(params.returnToFeedProvider) && params.feedProvider.id) {
 			chain(controller: 'feedProvider', action: 'show', params: [id: params.feedProvider.id])

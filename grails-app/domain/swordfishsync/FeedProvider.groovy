@@ -50,12 +50,16 @@ class FeedProvider {
 	
 	static hasMany = [filterAttributes: FilterAttribute, torrentStates: TorrentState]
 	
+	def getTorrentDetailsUrl(torrent) {
+		// todo
+	}
+	
     static constraints = {
 		name						nullable: false
 		active						nullable: false
 		feed						nullable: false
 		feedAction					nullable: false
-		lastProcessed				nullable: true
+		lastProcessed				nullable: true, bindable: false, display: false
 		notifyEmail					nullable: true
 		syncInterval				min: 0
 		deleteInterval				min: 0

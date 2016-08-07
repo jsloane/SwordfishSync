@@ -24,7 +24,7 @@
             			<th class="default-sort default-sort-order-desc">Date Published</th>
             			<th>Date Added</th>
             			<th>Date Completed</th>
-            			<th>inCurrentFeed</th>
+            			<th>In Current Feed</th>
             			<th>Client ID</th>
             			<th>Hash</th>
             		</tr>
@@ -34,10 +34,22 @@
             			<g:if test="${!feedProvider || (feedProvider && torrent.getTorrentState(feedProvider))}">
 	            			<tr>
 	            				<td style="white-space:nowrap;">
-	            					<span>Details</span>
-	            					<span>Download</span>
+	            					<span>
+	            						<g:set var="detailsUrl" value="${torrent.detailsUrl}" />
+	            						<g:if test="${!detailsUrl}">
+	            							<g:set var="detailsUrl" value="${feedProvider.getTorrentDetailsUrl(torrent)}" />
+	            						</g:if>
+	            						<g:if test="${detailsUrl}">
+	            							<a href="${detailsUrl}" target="_blank">Details</a>
+	            						</g:if>
+	            					</span>
+	            					<span>
+		            					<g:link controller="torrent" action="download" id="${torrent.id}" params="[feedProviderId: feedProvider.id]">Download</g:link>
+		            				</span>
 	            				</td>
-	            				<td><a href="<g:createLink controller="torrent" action="show" id="${torrent.id}" />">${torrent.name}</a></td>
+	            				<td>
+		            				<g:link controller="torrent" action="show" id="${torrent.id}">${torrent.name}</g:link>
+	            				</td>
 	            				<g:if test="${feedProvider}">
 	            					<td>${torrent.getTorrentState(feedProvider)?.status}</td>
 	            				</g:if>

@@ -56,7 +56,7 @@ import static grails.async.Promises.onError
 
 /**
  * 
- * todo: if proper/repack, delete prior managed download
+ * todo: if proper/repack, delete prior managed download? - only log for now
  * 
  */
 @Transactional
@@ -167,6 +167,9 @@ class FeedService {
 				break;
 		}
 		if (torrent && torrent.isDirty()) {
+			//println 'saving torrent'
+			//println 'torrent.hashString: ' + torrent.hashString
+			
 			torrent.save(flush: true)
 		}
 	}
@@ -274,7 +277,7 @@ class FeedService {
 							torrentClientService.moveTorrent(torrent, downloadDirectory)
 						} else {
 							// copy torrent files to downloadDir
-							log.info 'Copying torrent files... From ' + torrentDownloadedToDirectory + ' to ' + downloadDirectory
+							log.info 'Copying torrent files... From [' + torrentDownloadedToDirectory + '] to [' + downloadDirectory + ']'
 							File downloadDirectoryFile = new File(downloadDirectory)
 							torrentDetails.files.each { filename ->
 								log.info 'Copying file: ' + filename
@@ -321,10 +324,29 @@ class FeedService {
 				runSystemCommand(feedProvider, torrent, torrentContent)
 				
 			} catch (ApplicationException | TorrentClientException e) {
-				// todo: this is an error that needs to be reported/notified to the user
-				//notifyError // manual cleanup may be required
-				// todo: render error message
 				log.error('An error occurred completing torrent: ' + torrent.name, e)
+
+				// display error message in UI
+				Message fileError = Message.findWhere(
+					feed: feedProvider.feed,
+					torrent: torrent,
+					type: Message.Type.DANGER,
+					category: Message.Category.FILE
+				)
+				if (!fileError) {
+					fileError = new Message(
+						feed: feedProvider.feed,
+						torrent: torrent,
+						type: Message.Type.DANGER,
+						category: Message.Category.FILE
+					)
+				}
+				fileError.dateCreated = new Date()
+				fileError.message = 'Error completing torrent. File cleanup may be required. Exception: ' + e.toString()
+				fileError.save()
+				
+				// todo: this is an error that needs to be reported/notified to the user
+				//notifyError(fileError)
 			}
 		}
 	}
@@ -485,12 +507,10 @@ class FeedService {
 	}
 	
 	def addTorrent(FeedProvider feedProvider, Torrent torrent) {
-		log.info 'Adding torrent name[' + torrent.name + '], url[' + torrent.url + ']'
 		try {
 			torrentClientService.addTorrent(feedProvider, torrent)
 		} catch (TorrentClientException e) {
 			// todo: error message handling
-			log.error('Error adding torrent: ' + torrent.name, e)
 		}
 	}
 	
@@ -689,7 +709,6 @@ class FeedService {
 					}
 				}
 				
-				boolean testAddded = false // FOR TESTING
 				for (Iterator<?> i = syndFeed.getEntries().iterator(); i.hasNext();) {
 					SyndEntry entry = (SyndEntry) i.next();
 					
@@ -721,12 +740,6 @@ class FeedService {
 							url = enclosure.url
 						}
 					}
-					
-					// FOR TESTING
-					//if (!testAddded || "Ghost Adventures S12E09 The Domes 720p HDTV x264-ERR0R".equals(entry.getTitle())) {
-					//	torrentStatus = Torrent.Status.NOT_ADDED
-					//	testAddded = true
-					//}
 					
 					// check torrent doesn't already exist, by checking the url
 					//Torrent existingTorrent = feedProvider.feed.torrents.find { it.url.equals(url) }
@@ -857,7 +870,7 @@ class FeedService {
 				)
 			}
 			httpError.dateCreated = new Date()
-			httpError.message = e.toString()//e.message
+			httpError.message = e.toString()
 			httpError.save()
 		} finally {
 			if (reader != null) {

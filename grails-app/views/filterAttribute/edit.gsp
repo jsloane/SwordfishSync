@@ -9,16 +9,13 @@
         <a href="#edit-filterAttribute" class="skip" tabindex="-1"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
         <div class="nav" role="navigation">
             <ul>
-                <li><a class="home" href="${createLink(uri: '/')}"><g:message code="default.home.label"/></a></li>
-                <li><g:link class="list" action="index"><g:message code="default.list.label" args="[entityName]" /></g:link></li>
-                <li><g:link class="create" action="create"><g:message code="default.new.label" args="[entityName]" /></g:link></li>
+            	<g:if test="${params.returnToFeedProvider}">
+                	<li><g:link class="list" controller="feedProvider" action="show" id="${params.feedProvider.id}">Return to Feed</g:link></li>
+                </g:if>
             </ul>
         </div>
         <div id="edit-filterAttribute" class="content scaffold-edit" role="main">
             <h1><g:message code="default.edit.label" args="[entityName]" /></h1>
-            <g:if test="${flash.message}">
-            <div class="message" role="status">${flash.message}</div>
-            </g:if>
             <g:hasErrors bean="${this.filterAttribute}">
             <ul class="errors" role="alert">
                 <g:eachError bean="${this.filterAttribute}" var="error">
@@ -28,6 +25,8 @@
             </g:hasErrors>
             <g:form resource="${this.filterAttribute}" method="PUT">
                 <g:hiddenField name="version" value="${this.filterAttribute?.version}" />
+            	<g:hiddenField name="returnToFeedProvider" value="${params.returnToFeedProvider}" />
+            	<g:hiddenField name="feedProvider.id" value="${params.feedProvider.id}" />
                 <fieldset class="form">
                     <f:all bean="filterAttribute"/>
                 </fieldset>

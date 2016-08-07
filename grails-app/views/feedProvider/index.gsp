@@ -22,7 +22,7 @@
             			<th>Status</th>
             			<th>Last Fetched</th>
             			<th>Last Processed</th>
-            			<%-- <th>Download Directory</th> --%>
+            			<th>Download Directory</th>
             		</tr>
             	</thead>
             	<tbody>
@@ -54,7 +54,7 @@
             				</td>
             				<td>${feedProvider.feed.lastUpdated}</td>
             				<td>${feedProvider.lastProcessed}</td>
-            				<%-- <td>${feedProvider.downloadDirectory}</td> --%>
+            				<td>${feedProvider.downloadDirectory}</td>
             			</tr>
             		</g:each>
             	</tbody>
@@ -65,7 +65,6 @@
 	                <li><g:link class="create" action="create"><g:message code="default.new.label" args="[entityName]" /></g:link></li>
 	            </ul>
 	        </div>
-            
             
             <%-- <f:table collection="${feedProviderList}" properties="['name', 'downloadDirectory', 'uploadLimit']" />
             

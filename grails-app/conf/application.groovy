@@ -1,8 +1,7 @@
+
 grails.cache.config = {
 	cache {
 		name 'torrentClient'
-	}
-	defaults {
 		eternal: false
 		overflowToDisk: false
 		maxElementsInMemory: 100

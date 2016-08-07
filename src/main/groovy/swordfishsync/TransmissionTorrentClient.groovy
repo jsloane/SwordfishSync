@@ -23,6 +23,7 @@ class TransmissionTorrentClient implements TorrentClient {
 	
 	GrailsCacheManager grailsCacheManager
 	TransmissionClient transmissionClient
+	FeedService feedService
 	
 	def addTorrent(FeedProvider feedProvider, Torrent torrent) throws TorrentClientException {
 		AddTorrentParameters newTorrentParameters = new AddTorrentParameters(torrent.url)
@@ -33,7 +34,7 @@ class TransmissionTorrentClient implements TorrentClient {
 			// set torrent details
 			torrent.hashString = ati.getHashString()
 			torrent.clientTorrentId = ati.getId()
-			torrent.status = Torrent.Status.IN_PROGRESS
+			feedService.setTorrentStatus(feedProvider, torrent, TorrentState.Status.IN_PROGRESS)
 			
 			if (feedProvider.uploadLimit > 0) {
 				// set upload limit
@@ -64,22 +65,21 @@ class TransmissionTorrentClient implements TorrentClient {
 	
 	TorrentDetails getTorrentDetails(Torrent torrent, Boolean includeFiles) throws TorrentClientException {
 		TorrentDetails torrentDetails = new TorrentDetails(status: TorrentDetails.Status.UNKNOWN)
-		//TorrentClientService.TorrentStatus foundTorrentStatus = TorrentClientService.TorrentStatus.UNKNOWN
 		List<TorrentStatus> torrentStatuses = []
 		
 		// store torrent data in short term cache
-		String cacheKey = 'transmissionClientData-' + 'hostname:port' //todo: get hostname + port
-		Cache torrentClientCache = grailsCacheManager.getCache('torrentClient')
+		String cacheKey = 'transmissionClientData-' + Setting.valueFor('torrent.host') + ':' + Setting.valueFor('torrent.port').toString()
+		
+		Cache torrentClientCache = grailsCacheManager.getCache('torrentClient') // todo: test time to live
 		if (torrentClientCache) {
 			Cache.ValueWrapper cachedData = torrentClientCache.get(cacheKey)
 			if (cachedData) {
-				println '############## GETTING torrentStatus from cache'
 				torrentStatuses = (List<TorrentStatus>) cachedData.get()
 			}
 		}
+		torrentStatuses = null
 		
 		if (!torrentStatuses) {
-			println '############## GETTING torrentStatus from TRANSMISSION'
 			try {
 				torrentStatuses = transmissionClient.getAllTorrents(
 					(TorrentStatus.TorrentField[]) [
@@ -103,9 +103,15 @@ class TransmissionTorrentClient implements TorrentClient {
 			}
 		}
 		
+		println 'torrent.hashString: ' + torrent.hashString
+		// hashstring being deleted by quartz job
 		for (TorrentStatus torrentStatus : torrentStatuses) {
+			//println 'torrentStatus.getField(TorrentStatus.TorrentField.hashString): ' + torrentStatus.getField(TorrentStatus.TorrentField.hashString)
+			
 			if (torrentStatus != null && GrailsStringUtils.isNotBlank(torrent.hashString) && torrent.hashString.equals(torrentStatus.getField(TorrentStatus.TorrentField.hashString))) {
 				// set status
+				println 'FOUND TORRENT STATUS: ' + torrentStatus
+				
 				switch(torrentStatus.getStatus()) {
 					case TorrentStatus.StatusField.seeding:
 						torrentDetails.status = TorrentDetails.Status.SEEDING
@@ -120,6 +126,9 @@ class TransmissionTorrentClient implements TorrentClient {
 				
 				// set downloaded directory
 				torrentDetails.downloadedToDirectory = torrentStatus.getField(TorrentStatus.TorrentField.downloadDir).toString()
+				
+				// set percent done
+				torrentDetails.percentDone = torrentStatus.getPercentDone()
 				
 				// set files
 				if (includeFiles) {

@@ -2,7 +2,6 @@
 <html>
     <head>
         <meta name="layout" content="main" />
-        <title>--app title--</title>
     </head>
     <body>
     
@@ -26,7 +25,7 @@
            					<g:link controller="torrent" action="show" id="${downloadingTorrent.torrent.id}">${downloadingTorrent.torrent.name}</g:link>
            				</td>
            				<td>${downloadingTorrent.torrent.dateCreated}</td>
-           				<td></td>
+           				<td>${downloadingTorrent.torrent.clientDetails}</td>
            			</tr>
            		</g:each>
            	</tbody>

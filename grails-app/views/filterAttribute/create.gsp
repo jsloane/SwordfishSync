@@ -27,7 +27,7 @@
             </g:hasErrors>
             <g:form action="save">
             	<g:hiddenField name="returnToFeedProvider" value="${params.returnToFeedProvider}" />
-            	<g:hiddenField name="feedProvider.id" value="${feedProvider?.id}" />
+            	<g:hiddenField name="feedProvider.id" value="${params.feedProvider.id}" />
                 <fieldset class="form">
                     <f:all bean="filterAttribute"/>
                 </fieldset>

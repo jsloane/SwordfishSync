@@ -14,19 +14,55 @@ class TorrentClientService {
 	
 	GrailsCacheManager grailsCacheManager
 	TorrentClient torrentClient
+	FeedService feedService
 	
-	@PostConstruct
 	void init() {
-		// todo: if transmission set in settings, and get other config
-		// try catch
-		torrentClient = new TransmissionTorrentClient(
-			grailsCacheManager: grailsCacheManager,
-			transmissionClient: new TransmissionClient('192.168.1.100', 9091, 'transmission', 'transmission')
-		)
-		// todo: log error if unable to connect
+		if (Setting.valueFor('torrent.type') == 'Transmission') {
+			// transmission client
+			
+			torrentClient = null
+			
+			TransmissionClient transmissionClient = new TransmissionClient(
+				Setting.valueFor('torrent.host'),
+				Setting.valueFor('torrent.port'),
+				Setting.valueFor('torrent.username'),
+				Setting.valueFor('torrent.password')
+			)
+			
+			if (transmissionClient.rpcVersion != 0) {
+				torrentClient = new TransmissionTorrentClient(
+					grailsCacheManager: grailsCacheManager,
+					transmissionClient: transmissionClient,
+					feedService: feedService
+				)
+			} else {
+				String errorMessage = 'Error setting Torrent Client.'
+				log.error(errorMessage)
+				
+				Message torrentClientError = Message.findWhere(
+					type: Message.Type.DANGER,
+					category: Message.Category.TORRENT_CLIENT
+				)
+				if (!torrentClientError) {
+					torrentClientError = new Message(
+						type: Message.Type.DANGER,
+						category: Message.Category.TORRENT_CLIENT
+					)
+				}
+				torrentClientError.dateCreated = new Date()
+				torrentClientError.message = errorMessage
+				torrentClientError.save()
+			}
+		}
 	}
 	
     def addTorrent(FeedProvider feedProvider, Torrent torrent) throws TorrentClientException {
+		if (!torrentClient) {
+			throw new TorrentClientException('Torrent Client not set')
+		}
+		
+		log.info 'Adding torrent name[' + torrent.name + '], url[' + torrent.url + ']'
+		
 		try {
 			torrentClient.addTorrent(feedProvider, torrent)
 		} catch (IOException e) {
@@ -35,6 +71,10 @@ class TorrentClientService {
     }
 	
     def moveTorrent(Torrent torrent, String directory) throws TorrentClientException {
+		if (!torrentClient) {
+			throw new TorrentClientException('Torrent Client not set')
+		}
+		
 		try {
 			torrentClient.moveTorrent(torrent, directory)
 		} catch (IOException e) {
@@ -43,6 +83,10 @@ class TorrentClientService {
     }
 	
     def removeTorrent(Torrent torrent, Boolean deleteData) throws TorrentClientException {
+		if (!torrentClient) {
+			throw new TorrentClientException('Torrent Client not set')
+		}
+		
 		try {
 			torrentClient.removeTorrent(torrent, deleteData)
 		} catch (IOException e) {
@@ -51,6 +95,10 @@ class TorrentClientService {
     }
 	
 	TorrentDetails getTorrentDetails(Torrent torrent, Boolean includeFiles) {
+		if (!torrentClient) {
+			throw new TorrentClientException('Torrent Client not set')
+		}
+		
 		TorrentDetails details = null
 		try {
 			details = torrentClient.getTorrentDetails(torrent, includeFiles)

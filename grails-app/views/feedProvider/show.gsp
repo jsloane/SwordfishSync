@@ -69,7 +69,13 @@
 						<span class="property-label"></span>
 						<div class="property-value">
 							<g:link controller="filterAttribute" action="create" params="${['feedProvider.id': feedProvider.id, 'returnToFeedProvider': true]}">
-								Add filter entry (todo: returnToFeedProvider)
+								Add filter entry
+							</g:link>
+						</div>
+						<span class="property-label"></span>
+						<div class="property-value">
+							<g:link controller="filterAttribute" action="bulkModify" params="${['feedProvider.id': feedProvider.id, 'returnToFeedProvider': true]}">
+								Bulk modify filter entries
 							</g:link>
 						</div>
 					</li>

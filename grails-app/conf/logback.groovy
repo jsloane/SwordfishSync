@@ -22,7 +22,7 @@ if (Environment.isDevelopmentMode() && targetDir) {
     }
     logger("StackTrace", ERROR, ['FULL_STACKTRACE'], false)
 }
-//if (Environment.currentEnvironment != Environment.DEVELOPMENT && Environment.currentEnvironment != Environment.TEST) {
+if (Environment.currentEnvironment != Environment.DEVELOPMENT && Environment.currentEnvironment != Environment.TEST) {
 	def currentDay = timestamp("yyyyMMdd")
 	// todo: get log file directory from system, or log to ~/.swordfishsync/log/
 	// log everything
@@ -61,4 +61,4 @@ if (Environment.isDevelopmentMode() && targetDir) {
 	}
     logger("swordfishsync", ERROR, ['ROLLING_FILE_STACKTRACE'], false)
     logger("ca.benow.transmission", ERROR, ['ROLLING_FILE_STACKTRACE'], false)*/
-//}
+}
