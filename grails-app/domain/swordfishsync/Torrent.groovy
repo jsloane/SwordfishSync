@@ -22,6 +22,7 @@ class Torrent {
 	String				hashString
 	Integer				clientTorrentId
 	Boolean				inCurrentFeed
+	Boolean				addedToTorrentClient
 	
 	Set<ExpandedData> expandedData = []
 	
@@ -40,18 +41,19 @@ class Torrent {
 	static belongsTo = [feed: Feed]
 	
     static constraints = {
-		url				maxSize: 1000
-		name			nullable: true
-		detailsUrl		maxSize: 1000, nullable: true
-		datePublished	nullable: true
-		dateCompleted	nullable: true
-		hashString		nullable: true, maxSize: 1000
-		clientTorrentId	nullable: true
-		expandedData	nullable: true
+		url						maxSize: 1000
+		name					nullable: true
+		detailsUrl				nullable: true, maxSize: 1000
+		datePublished			nullable: true
+		dateCompleted			nullable: true
+		hashString				nullable: true, maxSize: 1000
+		clientTorrentId			nullable: true
+		expandedData			nullable: true
+		addedToTorrentClient	nullable: true
     }
 	
 	static mapping = {
-		version			false
+		//version			false
 		expandedData	cascade: 'all-delete-orphan'
 		torrentStates	cascade: 'all-delete-orphan'
 	}

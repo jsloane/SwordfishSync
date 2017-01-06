@@ -1,5 +1,7 @@
 package swordfishsync
 
+import swordfishsync.exceptions.TorrentClientException
+
 import grails.core.GrailsApplication
 import grails.transaction.Transactional
 import org.springframework.mail.MailSender
@@ -57,7 +59,7 @@ class ConfigurationController {
 					}
 					if (['torrent.type', 'torrent.host', 'torrent.port', 'torrent.username', 'torrent.password'].contains(setting.code)) {
 						// torrent config changed
-						torrentClientService.init()
+						torrentClientService.setTorrentClient()
 					}
 				}
 			}
@@ -140,27 +142,58 @@ class ConfigurationController {
             '*'{ respond configuration, [status: OK] }
         }
     }
+	
+	@Transactional
+	def delete(Configuration configuration) {
 
+		if (configuration == null) {
+			transactionStatus.setRollbackOnly()
+			notFound()
+			return
+		}
+
+		configuration.delete flush:true
+
+		request.withFormat {
+			form multipartForm {
+				flash.message = message(code: 'default.deleted.message', args: [message(code: 'configuration.label', default: 'Configuration'), configuration.id])
+				redirect action:"index", method:"GET"
+			}
+			'*'{ render status: NO_CONTENT }
+		}
+	}
+	
     @Transactional
-    def delete(Configuration configuration) {
-
-        if (configuration == null) {
-            transactionStatus.setRollbackOnly()
-            notFound()
-            return
-        }
-
-        configuration.delete flush:true
-
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.deleted.message', args: [message(code: 'configuration.label', default: 'Configuration'), configuration.id])
-                redirect action:"index", method:"GET"
-            }
-            '*'{ render status: NO_CONTENT }
-        }
+    def purgeInprogressTorrents() {
+		
+		flash.successMessages = []
+		flash.warningMessages = []
+		flash.errorMessages = []
+		
+		def torrentStatesInProgress = TorrentState.findAllByStatus(TorrentState.Status.IN_PROGRESS)
+		
+		torrentStatesInProgress.each { TorrentState torrentState ->
+			try {
+				TorrentDetails torrentDetails = torrentClientService.getTorrentDetails(torrentState.torrent, false)
+				
+				if (!torrentDetails || TorrentDetails.Status.UNKNOWN.equals(torrentDetails?.status)) {
+					// torrent details not returned from torrent client
+					torrentState.status = TorrentState.Status.SKIPPED
+					torrentState.save()
+					flash.successMessages.add('Purged torrent [' + torrentState.torrent.name + ']')
+				}
+			} catch (TorrentClientException e) {
+				flash.errorMessages.add('Error retrieving torrent details for torrent [' + torrentState.torrent.name + ']. Error: ' + e.toString())
+			}
+		}
+		
+		if (!flash.successMessages && !flash.errorMessages) {
+			flash.warningMessages.add('No torrents purged')
+		}
+		
+        redirect(action: 'index')
     }
-
+	
     protected void notFound() {
         request.withFormat {
             form multipartForm {

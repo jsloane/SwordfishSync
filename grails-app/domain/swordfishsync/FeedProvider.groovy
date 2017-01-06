@@ -1,6 +1,10 @@
 package swordfishsync
 
 import java.util.Set
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Date
 import java.util.List
@@ -41,18 +45,34 @@ class FeedProvider {
 	Boolean					skipPropersRepacksReals = false
 	Boolean					removeTorrentOnComplete = false
 	Boolean					removeTorrentDataOnComplete = false
-	Boolean					filterEnabled = false
+	Boolean					filterEnabled = true
 	Boolean					removeAddFilterOnMatch = false
 	Date					lastProcessed
 	FeedFilterAction		filterAction = FeedFilterAction.IGNORE
 	FeedFilterAction		filterPrecedence = FeedFilterAction.IGNORE
-	Set<FilterAttribute>	filterAttributes = []
+	
+	def getTorrentDetailsUrl(Torrent torrent) {
+		if (!torrent) {
+			return null
+		}
+		
+		String url = torrent.detailsUrl
+		
+		// check if feed has custom notification link url defined
+		if (this.detailsUrlValueFromRegex && this.detailsUrlFormat) {
+			Pattern pUrl = Pattern.compile(this.detailsUrlValueFromRegex)
+			if (pUrl && torrent.url) {
+				Matcher mUrl = pUrl.matcher(torrent.url)
+				if (mUrl.matches()) {
+					url = this.detailsUrlFormat.replace("{regex-value}", mUrl.group(1))
+				}
+			}
+		}
+		
+		return url
+	}
 	
 	static hasMany = [filterAttributes: FilterAttribute, torrentStates: TorrentState]
-	
-	def getTorrentDetailsUrl(torrent) {
-		// todo
-	}
 	
     static constraints = {
 		name						nullable: false
@@ -82,9 +102,10 @@ class FeedProvider {
     }
 	
 	static mapping = {
-		version				false
-		filterAttributes	cascade: 'all-delete-orphan'
-		torrentStates		cascade: 'all-delete-orphan'
+		//version				false
+		feed				cascade: 'all-delete-orphan'
+		filterAttributes	cascade: 'all-delete-orphan', fetch: 'join'
+		torrentStates		cascade: 'all-delete-orphan', fetch: 'join'
 	}
 	
 }

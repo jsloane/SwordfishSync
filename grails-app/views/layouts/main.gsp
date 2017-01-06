@@ -42,7 +42,8 @@
             <ul>
                 <li><a class="home" href="${createLink(uri: '/')}"><g:message code="default.home.label"/></a></li>
                 <li><g:link class="list" controller="feedProvider" action="index">Feeds</g:link></li>
-                <li><g:link class="list" controller="configuration" action="index">Configuration</g:link></li>
+                <li><g:link class="list" controller="index" action="clientTorrents">Client Torrents</g:link></li>
+                <li><g:link class="list" controller="configuration" action="index">Settings</g:link></li>
             </ul>
         </div>
         <div id="#content" class="content" role="main">
@@ -72,9 +73,9 @@
 								<div class="alert alert-danger">
 									<a href="#" class="close" data-id="${message.id}" data-dismiss="alert" aria-label="close">&times;</a>
 									<strong>Error! [<g:formatDate date="${message.dateCreated}" type="datetime" style="MEDIUM"/>]</strong>
-									<g:if test="${message.feed && message.feed.feedProviders}">
+									<g:if test="${message.feedProvider}">
 										<strong>
-											[${message.feed.feedProviders.first().name}<g:if test="${message.torrent}"> : ${message.torrent.name}</g:if>]:
+											[${message.feedProvider.name}<g:if test="${message.torrent}"> : ${message.torrent.name}</g:if>]:
 										</strong>
 									</g:if>
 									${message.message}
@@ -85,7 +86,13 @@
 			           		<g:each in="${it}" var="message">
 								<div class="alert alert-warning">
 									<a href="#" class="close" data-id="${message.id}" data-dismiss="alert" aria-label="close">&times;</a>
-									<strong>Warning! [<g:formatDate date="${message.dateCreated}" type="datetime" style="MEDIUM"/>]</strong> ${message.message}
+									<strong>Warning! [<g:formatDate date="${message.dateCreated}" type="datetime" style="MEDIUM"/>]</strong>
+									<g:if test="${message.feedProvider}">
+										<strong>
+											[${message.feedProvider.name}<g:if test="${message.torrent}"> : ${message.torrent.name}</g:if>]:
+										</strong>
+									</g:if>
+									${message.message}
 								</div>
 			          		</g:each>
 		            	</g:findAll>
@@ -93,7 +100,13 @@
 			           		<g:each in="${it}" var="message">
 								<div class="alert alert-success">
 									<a href="#" class="close" data-id="${message.id}" data-dismiss="alert" aria-label="close">&times;</a>
-									<strong>Success! [<g:formatDate date="${message.dateCreated}" type="datetime" style="MEDIUM"/>]</strong> ${message.message}
+									<strong>Success! [<g:formatDate date="${message.dateCreated}" type="datetime" style="MEDIUM"/>]</strong>
+									<g:if test="${message.feedProvider}">
+										<strong>
+											[${message.feedProvider.name}<g:if test="${message.torrent}"> : ${message.torrent.name}</g:if>]:
+										</strong>
+									</g:if>
+									${message.message}
 								</div>
 			          		</g:each>
 		            	</g:findAll>
@@ -101,16 +114,18 @@
 			           		<g:each in="${it}" var="message">
 								<div class="alert alert-info">
 									<a href="#" class="close" data-id="${message.id}" data-dismiss="alert" aria-label="close">&times;</a>
-									<strong>Info!</strong> ${message.message}
+									<strong>Info!</strong>
+									<g:if test="${message.feedProvider}">
+										<strong>
+											[${message.feedProvider.name}<g:if test="${message.torrent}"> : ${message.torrent.name}</g:if>]:
+										</strong>
+									</g:if>
+									${message.message}
 								</div>
 			          		</g:each>
 		            	</g:findAll>
 		            </g:if>
-		            <g:else>
-		            	<%-- get and render from api. ? --%>
-		            </g:else>
 	            </div>
-	            
 	            
 	            <g:if test="${flash.errorMessages}">
 					<div class="alert alert-danger">
@@ -124,7 +139,7 @@
 					<div class="alert alert-warning">
 						<strong>Warning!</strong>
 		           		<g:each in="${flash.warningMessages}" var="warningMessage">
-							<p>${"warningMessage"}</p>
+							<p>${warningMessage}</p>
 		          		</g:each>
 					</div>
 	            </g:if>

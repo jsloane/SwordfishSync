@@ -5,8 +5,8 @@ import java.util.Date
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 
-@ToString(excludes=['feedProviders'])
-@EqualsAndHashCode(excludes=['feedProviders'])
+@ToString(excludes=['feedProviders', 'torrents'])
+@EqualsAndHashCode(excludes=['feedProviders', 'torrents'])
 class Feed {
 	
 	Long					id
@@ -20,20 +20,18 @@ class Feed {
 	Date					lastPurged
 	Integer					ttl = 0
 	Boolean					isCurrent = false // use this to check if an exception occurred (connection timeout, etc) when checking completed torrents to remove
-	String					errorMessage
 	
 	static hasMany = [torrents: Torrent, feedProviders: FeedProvider]
 	
     static constraints = {
-		url				unique: true, maxSize: 1000, url: true
+		url				unique: true, maxSize: 750
 		torrents		nullable: true
 		lastFetched		nullable: true
 		lastPurged		nullable: true
-		errorMessage	nullable: true
     }
 	
 	static mapping = {
-		version		false
+		//version		false
 		torrents	cascade: 'all-delete-orphan'
 	}
 	

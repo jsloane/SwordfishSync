@@ -23,7 +23,7 @@ class TorrentState {
     }
 	
 	static mapping = {
-		version	false
+		//version	false
 	}
 	
 }

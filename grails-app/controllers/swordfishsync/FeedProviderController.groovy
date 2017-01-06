@@ -1,11 +1,24 @@
 package swordfishsync
 
-import static org.springframework.http.HttpStatus.*
-import grails.transaction.Transactional
+import java.io.IOException
+import java.util.ArrayList
+import java.util.Date
+import java.util.List
 
+import org.apache.commons.lang3.StringUtils
+
+import swordfishsync.exceptions.TorrentClientException
+
+import ca.benow.transmission.model.AddedTorrentInfo;
+import grails.transaction.Transactional
+import groovy.util.logging.Slf4j
+
+@Slf4j
 @Transactional(readOnly = true)
 class FeedProviderController {
-
+	
+	TorrentClientService torrentClientService
+	
     static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
 
     def index(/*Integer max*/) {
@@ -31,6 +44,55 @@ class FeedProviderController {
     def create() {
         respond new FeedProvider(params)
     }
+	
+	@Transactional
+	def addTorrent(FeedProvider feedProvider) {
+		if (feedProvider.id && params.torrentUrls) {
+			flash.errorMessages = []
+			flash.successMessages = []
+			
+			for (String torrentUrl : params.torrentUrls.split("\\n")) {
+				torrentUrl = torrentUrl.trim();
+				if (StringUtils.isNotBlank(torrentUrl)) {
+					Torrent newTorrent = Torrent.findByUrl(torrentUrl)
+					if (!newTorrent) {
+						newTorrent = new Torrent(
+							feed:					feedProvider.feed,
+							inCurrentFeed:			false,
+							addedToTorrentClient:	false,
+							url:					torrentUrl
+						).save()
+					}
+					
+					if (newTorrent && newTorrent.addedToTorrentClient) {
+						flash.successMessages.add('Torrent [' + newTorrent.name + '] already added')
+					} else {
+						try {
+							torrentClientService.addTorrent(feedProvider, newTorrent)
+							flash.successMessages.add('Added torrent [' + newTorrent.name + ']')
+							newTorrent.save()
+						} catch (TorrentClientException e) {
+							log.error('Error adding manual torrent', e)
+							newTorrent.discard()
+							flash.errorMessages.add('Error adding torrent [' + torrentUrl + "]. Error: " + e.getMessage());
+						}
+					}
+				}
+			}
+			
+			if (flash.successMessages && !flash.errorMessages) {
+				redirect feedProvider
+			} else {
+				respond feedProvider, model: [
+					messages: Message.list()
+				]
+			}
+		} else {
+			respond feedProvider, model: [
+				messages: Message.list()
+			]
+		}
+	}
 
     @Transactional
     def save(FeedProvider feedProvider) {
@@ -44,6 +106,12 @@ class FeedProviderController {
 		if (!feed) {
 			feed = new Feed(url: params.url)
 			feed.save()
+
+	        if (feed.hasErrors()) {
+	            transactionStatus.setRollbackOnly()
+	            respond feed.errors, view:'create'
+	            return
+	        }
 		}
 		feedProvider.feed = feed
 		feedProvider.save()

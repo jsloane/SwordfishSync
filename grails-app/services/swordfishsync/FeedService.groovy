@@ -59,32 +59,106 @@ import static grails.async.Promises.onError
  * todo: if proper/repack, delete prior managed download? - only log for now
  * 
  */
-@Transactional
+//@Transactional
 @Slf4j
 class FeedService {
 	
 	ContentLookupService contentLookupService
 	TorrentClientService torrentClientService
 	NotificationService notificationService
+	//def sessionFactory
+	
 	// todo in controller - on demand: SyncJob.triggerNow()
 	
-    def doSync() {
-		List<FeedProvider> feedProviders = FeedProvider.findAllByActive(true)
-		log.info 'Starting sync for ' + feedProviders?.size() + ' feed(s)'
-		feedProviders.each { feedProvider ->
-			log.info 'Syncing feed: ' + feedProvider.name
-			try {
-				syncFeedProvider(feedProvider)
-			} catch (Exception e) {
-				// todo: report error
-				log.error('An error occurred syncing feed: ' + feedProvider.name, e)
-			}
+	def logError(Boolean report, Message.Type type, Message.Category category, FeedProvider feedProvider, Torrent torrent, String messageString) {
+		/*if (feedProvider) {
+			feedProvider.refresh()
 		}
-		log.info 'Finished syncing feed(s)'
+		if (torrent) {
+			torrent.refresh()
+		}*/
+		Message message = Message.findWhere(
+			feedProvider: feedProvider,
+			torrent: torrent,
+			type: type,
+			category: category
+		)
+		if (!message) {
+			message = new Message(
+				dateCreated: new Date(),
+				feedProvider: feedProvider,
+				torrent: torrent,
+				type: type,
+				category: category,
+				reported: false
+			)
+		}
+		message.dateUpdated = new Date()
+		message.message = messageString?.take(1024)
+		message.save()
+		
+		if (!message.reported && report) {
+			// todo: email error
+			
+			message.reported = true
+			message.save()
+		}
+	}
+	
+	//@Transactional
+    def doSync() {
+		// clear cache to address hibernate issues with using refresh on collections that are deleted
+		// http://stackoverflow.com/questions/3054121/refresh-of-an-entity-with-a-colllection-throws-a-unresolvableobjectexception-whe
+		// doesn't fix error
+		/*
+		sessionFactory.cache.evictEntityRegion(FeedProvider.name)
+		sessionFactory.cache.evictEntityRegion(FilterAttribute.name)
+		sessionFactory.cache.evictEntityRegion(Torrent.name)
+		sessionFactory.cache.evictEntityRegion(ExpandedData.name)
+		sessionFactory.cache.evictEntityRegion(TorrentState.name)
+		sessionFactory.cache.evictEntityRegion(Feed.name)
+		*/
+		
+		def feedProviders = FeedProvider.findAllByActive(true)
+		if (feedProviders) {
+			log.info 'Starting sync for ' + feedProviders?.size() + ' feed(s)'
+			feedProviders.each { FeedProvider feedProvider ->
+				log.info 'Syncing feed: ' + feedProvider.name
+				try {
+					// todo - merge before save? to avoid errors when saving from the ui as well as quartz job
+					syncFeedProvider(feedProvider)
+				} catch (Exception e) {
+					log.error('An error occurred syncing feed: ' + feedProvider.name, e)
+					
+					// display error message in UI
+					Message.withTransaction { status ->
+						def feedProviderToLog = FeedProvider.findById(feedProvider.id)
+						logError(true, Message.Type.DANGER, Message.Category.SYNC, feedProviderToLog, null, e.toString())
+					}
+				}
+			}
+			log.info 'Finished syncing feed(s)'
+		} else {
+			log.debug 'No active feeds to sync'
+		}
     }
 	
+	def deleteFeedProvider(FeedProvider feedProvider) {
+		
+		// todo
+		
+		// delete torrent status first
+		
+		//feedProvider.delete()
+		
+	}
+	
+	@Transactional
 	def syncFeedProvider(FeedProvider feedProvider) {
-		getTorrentsFromFeedSourceAndUpdate(feedProvider)
+		//FeedProvider.withTransaction { status ->
+		//	def feedProvider = FeedProvider.findById(feedProviderToSync.id)
+			getTorrentsFromFeedSourceAndUpdate(feedProvider)
+		//}
 		
 		def finishedTorrentStatus = [
 			TorrentState.Status.NOTIFIED_NOT_ADDED,
@@ -92,61 +166,72 @@ class FeedService {
 			TorrentState.Status.COMPLETED
 		]
 		
-		def torrentsToCheck = getFeedTorrentsByStatuses(feedProvider, finishedTorrentStatus, false)
-		//println 'torrentsToCheck: ' + torrentsToCheck
-		torrentsToCheck.each { torrent ->
-			try {
-				checkTorrent(feedProvider, torrent)
-			} catch (Exception e) {
-				// todo: report error
-				log.error('An error occurred checking torrent: ' + torrent.name, e)
-			}
-		}
-		
-		if (!feedProvider.feed.lastPurged || feedProvider.feed.lastPurged < (new Date() - 1)) {
-			// check torrents to purge
-			def torrentIdsToPurge = []
-			def torrentsToCheckToPurge = getFeedTorrentsByStatuses(feedProvider, finishedTorrentStatus, true)
-			torrentsToCheckToPurge.each { torrent ->
+		//Torrent.withTransaction { status ->
+		//	def feedProvider = FeedProvider.findById(feedProviderToSync.id)
+			def torrentsToCheck = getFeedTorrentsByStatuses(feedProvider, finishedTorrentStatus, false) // find torrents not finished
+			//println 'torrentsToCheck: ' + torrentsToCheck
+			torrentsToCheck.each { torrent ->
 				try {
-					Long torrentToPurgeId = checkTorrentToPurge(feedProvider, torrent)
-					if (torrentToPurgeId) {
-						torrentIdsToPurge.add(torrentToPurgeId)
-					}
+					checkTorrent(feedProvider, torrent)
 				} catch (Exception e) {
-					// todo: report error
-					log.error('An error occurred checking torrent for purging: ' + torrent.name, e)
+					log.error('An error occurred checking torrent: ' + torrent.name, e)
+	
+					// display error message in UI
+					logError(true, Message.Type.DANGER, Message.Category.SYNC, feedProvider, null, e.toString())
 				}
 			}
+			feedProvider.save()
+		//}
+		
+		//FeedProvider.withTransaction { status ->
+			// error happening in here:
+			// org.hibernate.StaleStateException: Batch update returned unexpected row count from update [0]; actual row count: 0; expected: 1
 			
-			log.info 'Purging ' + torrentIdsToPurge.size() + ' torrent(s)'
-			Torrent.where {
-				id in torrentIdsToPurge
-			}.deleteAll()
-			//feedProvider.feed.torrents.removeAll(torrentsToPurge)
-			feedProvider.feed.lastPurged = new Date()
-		}
-		
-		feedProvider.lastProcessed = new Date()
-		
-		if (feedProvider.isDirty()) {
-			feedProvider.save(flush: true)
-		}
+		//	def feedProvider = FeedProvider.findById(feedProviderToSync.id)
+			if (!feedProvider.feed.lastPurged || feedProvider.feed.lastPurged < (new Date() - 1)) {
+				// check torrents to purge
+				def torrentsToPurge = []
+				def torrentsToCheckToPurge = getFeedTorrentsByStatuses(feedProvider, finishedTorrentStatus, true) // find torrents that are finished
+				
+				torrentsToCheckToPurge.each { torrentToPurge ->
+					try {
+						if (checkTorrentToPurge(feedProvider, torrentToPurge)) {
+							torrentsToPurge.add(torrentToPurge)
+						}
+					} catch (Exception e) {
+						// todo: report error
+						log.error('An error occurred checking torrent for purging: ' + torrentToPurge.name, e)
+					}
+				}
+				
+				if (torrentsToPurge) {
+					log.info 'Purging ' + torrentsToPurge.size() + ' torrent(s)'
+					
+					def torrentStates = TorrentState.findAllByTorrentInList(torrentsToPurge)
+					
+					TorrentState.where {
+						id in torrentStates*.id
+					}.deleteAll()
+					Torrent.where {
+						id in torrentsToPurge*.id
+					}.deleteAll()
+				}
+				
+				feedProvider.feed.lastPurged = new Date()
+			}
+			
+			feedProvider.lastProcessed = new Date()
+			//feedProvider = feedProvider.merge()
+			feedProvider.save()
+		//}
 	}
 	
-	def deleteFeedProvider(FeedProvider feedProvider) {
-		// if feed has no other feed providers
-		def otherFeedProviders = FeedProvider.findAllByFeedAndNotId(feedProvider.feed, feedProvider.id)
-		
-		
-	}
-	
-	Long checkTorrentToPurge(FeedProvider feedProvider, Torrent torrent) {
+	def checkTorrentToPurge(FeedProvider feedProvider, Torrent torrent) {
 		Boolean purgeTorrent = checkToRemove(feedProvider, torrent)
 		if (purgeTorrent) {
-			return torrent.id
+			return true
 		}
-		return null
+		return false
 	}
 	
 	def checkTorrent(FeedProvider feedProvider, Torrent torrent) {
@@ -169,8 +254,9 @@ class FeedService {
 		if (torrent && torrent.isDirty()) {
 			//println 'saving torrent'
 			//println 'torrent.hashString: ' + torrent.hashString
-			
-			torrent.save(flush: true)
+			//torrent.refresh()
+			//torrent = torrent.merge()
+			torrent.save()
 		}
 	}
 	
@@ -200,12 +286,17 @@ class FeedService {
 				torrent: torrent,
 				status: status
 			)
+			//torrentState.save()
 		} else {
 			torrentState.status = status
+			//torrentState.refresh()
+			//torrentState = torrentState.merge()
 		}
-		torrentState.save(flush: true)
+		torrentState.save()
+		//feedProvider.merge()
 	}
 	
+	//@Transactional
 	def checkAndAdd(FeedProvider feedProvider, Torrent torrent) {
 		if (shouldAddTorrent(feedProvider, torrent) && !FeedProvider.FeedAction.SKIP.equals(feedProvider.feedAction)) {
 			TorrentContent torrentContent = contentLookupService.getTorrentContentInfo(feedProvider, torrent, torrent.name)
@@ -220,33 +311,46 @@ class FeedService {
 						//torrent.status = Torrent.Status.NOTIFIED_NOT_ADDED
 						setTorrentStatus(feedProvider, torrent, TorrentState.Status.NOTIFIED_NOT_ADDED)
 					} catch (ApplicationException e) {
-						// todo: use NotificationException
-						log.error('Error sending notification for torrent: ' + torrent.name, e)
+						log.error('Error sending notification for torrent [' + torrent.name + ']', e)
+						logError(false, Message.Type.WARNING, Message.Category.SYNC, feedProvider, torrent, e.toString())
 					}
 				}
 			} else {
 				// torrent already downloaded, set to skipped
-				log.info 'Duplicate torrent detected, not adding.'
-				//torrent.status = Torrent.Status.SKIPPED
+				log.info 'Duplicate torrent detected, skipping [' + torrent.name + '].'
 				setTorrentStatus(feedProvider, torrent, TorrentState.Status.SKIPPED)
 			}
 		} else {
 			// not interested in this torrent, set to skipped
-			//torrent.status = Torrent.Status.SKIPPED
 			setTorrentStatus(feedProvider, torrent, TorrentState.Status.SKIPPED)
 		}
 	}
 	
 	private def checkAndComplete(FeedProvider feedProvider, Torrent torrent) {
-		TorrentDetails torrentDetails = torrentClientService.getTorrentDetails(torrent, feedProvider.extractRars)
+		TorrentDetails torrentDetails = null
+		
+		try {
+			torrentDetails = torrentClientService.getTorrentDetails(torrent, feedProvider.extractRars)
+		} catch (TorrentClientException e) {
+			log.error('An error occurred retrieving torrent details: ' + torrent.name, e)
+			
+			// display error message in UI and notify user
+			logError(false, Message.Type.DANGER, Message.Category.TORRENT_CLIENT, feedProvider, torrent, 'Error retrieving torrent details. Exception: ' + e.toString())
+		}
+		
+		if (!torrentDetails) {
+			return
+		}
+		
 		if (TorrentDetails.Status.SEEDING.equals(torrentDetails.status) ||
 			TorrentDetails.Status.SEEDWAIT.equals(torrentDetails.status) ||
 			TorrentDetails.Status.FINISHED.equals(torrentDetails.status))
 		{
-			log.info 'Torrent download completed for: ' + torrent.name
+			log.info 'Torrent download completed for [' + torrent.name + ']'
 			TorrentContent torrentContent = contentLookupService.getTorrentContentInfo(feedProvider, torrent, torrent.name)
 			
 			try {
+				Boolean successfullyCompleted = true
 				Boolean movedOrCopiedData = false
 				String downloadDirectory = torrentContent.downloadDirectory
 				if (downloadDirectory) {
@@ -271,13 +375,13 @@ class FeedService {
 					// if not a rar archive, just copy the entire torrent
 					if (!movedOrCopiedData) {
 						movedOrCopiedData = true
-						if (feedProvider.removeTorrentOnComplete) {
+						if (false) {//feedProvider.removeTorrentOnComplete) { // todo: fix this (does not move data, data loss)
 							// just move torrent files using transmission
 							log.info 'Moving torrent to: ' + downloadDirectory
-							torrentClientService.moveTorrent(torrent, downloadDirectory)
+							//torrentClientService.moveTorrent(torrent, downloadDirectory)
 						} else {
 							// copy torrent files to downloadDir
-							log.info 'Copying torrent files... From [' + torrentDownloadedToDirectory + '] to [' + downloadDirectory + ']'
+							log.info 'Copying torrent files from [' + torrentDownloadedToDirectory + '] to [' + downloadDirectory + ']...'
 							File downloadDirectoryFile = new File(downloadDirectory)
 							torrentDetails.files.each { filename ->
 								log.info 'Copying file: ' + filename
@@ -295,9 +399,6 @@ class FeedService {
 									// http://www.journaldev.com/855/how-to-set-file-permissions-in-java-easily-using-java-7-posixfilepermission
 								} catch (IOException e) {
 									// this is an error that needs to be reported to the user
-									// Message errorMessage = new Message()
-									//notifyError(message) // manual cleanup may be required
-									movedOrCopiedData = false
 									throw new ApplicationException('Error copying files', e);
 								}
 							}
@@ -317,36 +418,19 @@ class FeedService {
 				}
 				
 				//torrent.status = Torrent.Status.NOTIFY_COMPLETED
-				setTorrentStatus(feedProvider, torrent, TorrentState.Status.NOTIFY_COMPLETED)
-				torrent.dateCompleted = new Date()
-				
-				notifyComplete(feedProvider, torrent, torrentContent)
-				runSystemCommand(feedProvider, torrent, torrentContent)
+				if (successfullyCompleted) {
+					setTorrentStatus(feedProvider, torrent, TorrentState.Status.NOTIFY_COMPLETED)
+					torrent.dateCompleted = new Date()
+
+					notifyComplete(feedProvider, torrent, torrentContent)
+					runSystemCommand(feedProvider, torrent, torrentContent)
+				}
 				
 			} catch (ApplicationException | TorrentClientException e) {
 				log.error('An error occurred completing torrent: ' + torrent.name, e)
 
-				// display error message in UI
-				Message fileError = Message.findWhere(
-					feed: feedProvider.feed,
-					torrent: torrent,
-					type: Message.Type.DANGER,
-					category: Message.Category.FILE
-				)
-				if (!fileError) {
-					fileError = new Message(
-						feed: feedProvider.feed,
-						torrent: torrent,
-						type: Message.Type.DANGER,
-						category: Message.Category.FILE
-					)
-				}
-				fileError.dateCreated = new Date()
-				fileError.message = 'Error completing torrent. File cleanup may be required. Exception: ' + e.toString()
-				fileError.save()
-				
-				// todo: this is an error that needs to be reported/notified to the user
-				//notifyError(fileError)
+				// display error message in UI and notify user
+				logError(true, Message.Type.DANGER, Message.Category.FILE, feedProvider, torrent, 'Error completing torrent. File cleanup may be required. Exception: ' + e.toString())
 			}
 		}
 	}
@@ -368,9 +452,9 @@ class FeedService {
 				process.waitForProcessOutput(outputStringBuilder, errorStringBuilder)
 				process.waitFor()
 				int exitValue = process.exitValue()
-				log.info 'System command finished with exit value: [' + exitValue + '] output: [' + output + '], error output: [' + errorStringBuilder + ']'
+				log.info 'System command finished with exit value: [' + exitValue + '] output: [' + outputStringBuilder + '], error output: [' + errorStringBuilder + ']'
 				if (exitValue != 0) {
-					throw new ApplicationException('Error executing system command: ', errorStringBuilder);
+					throw new ApplicationException('Error executing system command: ' + errorStringBuilder);
 				}
 			}
 			
@@ -404,10 +488,10 @@ class FeedService {
 			// group write permission on extracted to directory and files - note this makes the directory/files writable to everyone
 			File extractedToDirectory = new File(destinationDirectory)
 			if (extractedToDirectory.exists() && extractedToDirectory.isDirectory()) {
-				log.info 'Setting writable permissions on extracted directory: ' + extractedToDirectory
+				log.info 'Setting file permissions on extracted directory: ' + extractedToDirectory
 				setFilePermissions(extractedToDirectory)
 				extractedToDirectory.listFiles()?.each { extractedFile ->
-					log.info 'Setting writable permissions on extracted file: ' + extractedFile
+					log.info 'Setting file permissions on extracted file: ' + extractedFile
 					setFilePermissions(extractedFile)
 				}
 			}
@@ -416,6 +500,7 @@ class FeedService {
 		} catch (IOException | RarException e) {
 			throw new ApplicationException('Error extracting rar file', e);
 		}
+		// finally... close...
 	}
 	
 	private def setFilePermissions(File file) {
@@ -454,7 +539,7 @@ class FeedService {
 			boolean createdDir = false
 			try {
 				createdDir = saveDir.mkdirs()
-				log.info 'Setting writable permissions on created directory: ' + downloadDirectory
+				log.info 'Setting file permissions on created directory: ' + downloadDirectory
 				setFilePermissions(saveDir)
 			} catch (Exception e) {
 				throw new ApplicationException('Unable to create directory: ' + downloadDirectory, e)
@@ -501,8 +586,8 @@ class FeedService {
 			//torrent.status = Torrent.Status.COMPLETED
 			setTorrentStatus(feedProvider, torrent, TorrentState.Status.COMPLETED)
 		} catch (ApplicationException e) {
-			// todo: render error
 			log.error('An error occurred sending notification', e)
+			logError(false, Message.Type.WARNING, Message.Category.SYNC, feedProvider, torrent, e.toString())
 		}
 	}
 	
@@ -595,7 +680,11 @@ class FeedService {
 	}
 	
 	private Boolean shouldAddTorrent(FeedProvider feedProvider, Torrent torrent) {
-		return !feedProvider.filterEnabled || checkFilterMatch(feedProvider, torrent);
+		//println 'shouldAddTorrent'
+		//println 'feedProvider.filterEnabled: ' + feedProvider.filterEnabled
+		//println 'checkFilterMatch(feedProvider, torrent): ' + checkFilterMatch(feedProvider, torrent)
+		//println '(!feedProvider.filterEnabled || checkFilterMatch(feedProvider, torrent)): ' + (!feedProvider.filterEnabled || checkFilterMatch(feedProvider, torrent))
+		return (!feedProvider.filterEnabled || checkFilterMatch(feedProvider, torrent));
 	}
 	
 	private Boolean checkFilterMatch(FeedProvider feedProvider, Torrent torrent) {
@@ -613,8 +702,8 @@ class FeedService {
 			filter precedence add/ignore (ignore) - matchFirst
 		 */
 		
-		String matchFirst = feedProvider.filterPrecedence
-		String matchSecond = null
+		FeedProvider.FeedFilterAction matchFirst = feedProvider.filterPrecedence
+		FeedProvider.FeedFilterAction matchSecond = null
 		if (matchFirst == null) {
 			matchFirst = FeedProvider.FeedFilterAction.IGNORE
 		}
@@ -673,8 +762,9 @@ class FeedService {
 			for (FilterAttribute filterAttribute : removeList) {
 				feedProvider.filterAttributes.remove(filterAttribute);
 			}
-			//feedProvider = feedProvider.merge() //?
-			//feedProvider.save(flush: true)
+			//feedProvider.refresh()
+			//feedProvider = feedProvider.merge()
+			feedProvider.save()
 		}
 		
 		return match
@@ -684,17 +774,19 @@ class FeedService {
 		log.info 'Fetching feed: ' + feedProvider.name
 		
 		if (isItTimeToUpdateFeed(feedProvider)) {
-			feedProvider.feed.isCurrent = false
+			//FeedProvider.withTransaction { status ->
+			//	def feedProvider = FeedProvider.get(feedProviderToSync.id)
+				//Feed feed = feedProvider.feed
+				feedProvider.feed.isCurrent = false
+				//feedProvider.feed.save()
+				//feedProvider.save()
+				//feedProvider.refresh()
+				//feedProvider = feedProvider.merge()
+			//}
 			
-			def torrentsInCurrentFeed = Torrent.findAllByFeedAndInCurrentFeed(feedProvider.feed, true)
-			torrentsInCurrentFeed.each { torrentInCurrentFeed ->
-				/*println ''
-				println '### setting torrentInCurrentFeed.inCurrentFeed = false'
-				println '###         torrentInCurrentFeed.name: ' + torrentInCurrentFeed.name
-				println '###         torrentInCurrentFeed.id:   ' + torrentInCurrentFeed.id*/
-				torrentInCurrentFeed.inCurrentFeed = false
-				torrentInCurrentFeed.save(flush: true)
-			}
+			boolean feedIsCurrent = false
+			
+			//feedProvider = feedProvider.merge()
 			
 			SyndFeed syndFeed = getFeedXml(feedProvider)
 			
@@ -707,6 +799,18 @@ class FeedService {
 					if (feedProvider.feed.ttl != ttl) {
 						feedProvider.feed.ttl = ttl
 					}
+				}
+				
+				def torrentsInCurrentFeed = Torrent.findAllByFeedAndInCurrentFeed(feedProvider.feed, true)
+				torrentsInCurrentFeed.each { Torrent torrentInCurrentFeed ->
+					//println ''
+					//println '### setting torrentInCurrentFeed.inCurrentFeed = false'
+					//println '###         torrentInCurrentFeed.name: ' + torrentInCurrentFeed.name
+					//println '###         torrentInCurrentFeed.id:   ' + torrentInCurrentFeed.id
+					//torrentInCurrentFeed.refresh() // refresh to avoid org.hibernate.StaleObjectStateException
+					torrentInCurrentFeed.inCurrentFeed = false
+					torrentInCurrentFeed.save()
+					//torrentInCurrentFeed = torrentInCurrentFeed.merge()
 				}
 				
 				for (Iterator<?> i = syndFeed.getEntries().iterator(); i.hasNext();) {
@@ -727,9 +831,9 @@ class FeedService {
 						datePublished = new Date()
 					}
 					
-					TorrentState.Status torrentStatus = TorrentState.Status.NOT_ADDED
+					TorrentState.Status newTorrentStatus = TorrentState.Status.NOT_ADDED
 					if (!feedProvider.feed.initilised) {
-						torrentStatus = TorrentState.Status.SKIPPED // skip existing feed entries when adding feed
+						newTorrentStatus = TorrentState.Status.SKIPPED // skip existing feed entries when adding feed
 					}
 					
 					String url = entry.getLink()
@@ -742,55 +846,89 @@ class FeedService {
 					}
 					
 					// check torrent doesn't already exist, by checking the url
-					//Torrent existingTorrent = feedProvider.feed.torrents.find { it.url.equals(url) }
+					//Torrent existingTorrent = feed.torrents.find { it.url.equals(url) }
+					
+					//feed.lastFetched = new Date()
+					//feed.save()
+					//Torrent existingTorrent = Torrent.findByFeedAndUrl(feed, url)
 					Torrent existingTorrent = Torrent.findByFeedAndUrl(feedProvider.feed, url)
+					//Torrent existingTorrent = Torrent.findByFeedAndUrl(Feed.get(feedProvider.feed.id), url)
+					//println '### existingTorrent: ' + existingTorrent
 					
 					if (!existingTorrent) {
+						//println '### SAVE NEW TORRENT ###'
 						// new torrent, add it
 						Torrent newTorrent = new Torrent(
-							feed:			feedProvider.feed,
-							inCurrentFeed:	true,
-							url:			url,
-							//status:			torrentStatus,
-							name:			entry.getTitle(),
-							detailsUrl:		detailsUrl,
-							datePublished:	datePublished,
-							expandedData:	expandedData
-						).save(flush: true, failOnError: true)
+							feed:					feedProvider.feed,
+							inCurrentFeed:			true,
+							addedToTorrentClient:	false,
+							url:					url,
+							name:					entry.getTitle(),
+							detailsUrl:				detailsUrl,
+							datePublished:			datePublished,
+							expandedData:			expandedData
+						).save(failOnError: true)
 						//println 'newTorrent: ' + newTorrent
-						setTorrentStatus(feedProvider, newTorrent, torrentStatus)
-						//feedProvider.feed.addToTorrents(newTorrent)
-						feedProvider.save(flush: true)
-						/*println ''
-						println '### NEW TORRENT'
-						println '###         newTorrent.name: ' + newTorrent.name
-						println '###         newTorrent.id: ' + newTorrent.id*/
+						
+						def feedFeedProviders = FeedProvider.findAllByFeed(feedProvider.feed)
+						feedFeedProviders.each { FeedProvider feedFeedProvider ->
+							setTorrentStatus(feedFeedProvider, newTorrent, newTorrentStatus)
+						}
+						
+						//feed.addToTorrents(newTorrent)
+						//feedProvider.save(flush: true)
+						//println ''
+						//println '### NEW TORRENT'
+						//println '###         newTorrent.name: ' + newTorrent.name
+						//println '###         newTorrent.id: ' + newTorrent.id
+						//feedProvider = feedProvider.merge()
 					} else if (existingTorrent && !existingTorrent.inCurrentFeed) {
+						//println '### update exisitng torrent ###'
 						// torrent already exists, mark as still in current feed
-						/*println ''
-						println '### setting existingTorrent.inCurrentFeed = true'
-						println '###         existingTorrent.name: ' + existingTorrent.name
-						println '###         existingTorrent.id: ' + existingTorrent.id*/
+						//println ''
+						//println '### setting existingTorrent.inCurrentFeed = true'
+						//println '###         existingTorrent.name: ' + existingTorrent.name
+						//println '###         existingTorrent.id: ' + existingTorrent.id
+						//existingTorrent.refresh()
 						existingTorrent.inCurrentFeed = true
-						existingTorrent.save(flush: true)
+						existingTorrent.save()
+						//existingTorrent = existingTorrent.merge()
+						//feedProvider = feedProvider.merge()
 					}
 					
-					feedProvider.feed.isCurrent = true
-					feedProvider.feed.lastFetched = new Date()
+					feedIsCurrent = true
 				}
+			}
+			
+			feedProvider.feed.isCurrent = feedIsCurrent
+			if (feedIsCurrent) {
+				feedProvider.feed.lastFetched = new Date()
 				
 				if (!feedProvider.feed.initilised) {
 					feedProvider.feed.initilised = true
 				}
 			}
 			
-			feedProvider.save(flush: true)
+			//feedProvider.feed.save()
+			feedProvider.save()
+			//feedProvider.refresh()
+			//feedProvider = feedProvider.merge()
+			
+			// rely on calling method to save feed
+			//def savedFeedProvider = feedProvider.save()
+			//if (savedFeedProvider) {
+			////	feedProvider = savedFeedProvider
+			//}
+			//def savedfeed = feed.save()
+			//if (savedfeed) {
+			//	feedProvider.feed = savedfeed
+			//}
 		}
 	}
 	
 	private Boolean isItTimeToUpdateFeed(FeedProvider feedProvider) {
 		Boolean refreshFeed = false
-		if (feedProvider.syncInterval != 0 || feedProvider.feed.ttl != 0) {
+		if (feedProvider.feed.lastFetched && (feedProvider.syncInterval != 0 || feedProvider.feed.ttl != 0)) {
 			Double fetchedInterval = Math.ceil((double)(new Date().getTime() - feedProvider.feed.lastFetched.getTime()) / 1000 / 60); // round up to the nearest minute
 			if (feedProvider.syncInterval != 0) {
 				if (fetchedInterval >= feedProvider.syncInterval) {
@@ -844,9 +982,9 @@ class FeedService {
 					.build()
 			httpGet = new HttpGet(feedProvider.feed.url)
 			httpGet.setConfig(requestConfig)
-			log.info 'Making request, httpGet: ' + httpGet
+			log.info('Making request, httpGet: ' + httpGet)
 			httpResponse = httpClient.execute(httpGet)
-			log.info 'Made request, httpResponse statusLine: ' + httpResponse.getStatusLine()
+			log.info('Made request, httpResponse statusLine: ' + httpResponse.getStatusLine())
 			
 			reader = new XmlReader(httpResponse.getEntity().getContent())
 			
@@ -857,21 +995,7 @@ class FeedService {
 			log.warn('Error making http request.', e)
 			
 			// display error message in UI
-			Message httpError = Message.findWhere(
-				feed: feedProvider.feed,
-				type: Message.Type.DANGER,
-				category: Message.Category.HTTP
-			)
-			if (!httpError) {
-				httpError = new Message(
-					feed: feedProvider.feed,
-					type: Message.Type.DANGER,
-					category: Message.Category.HTTP
-				)
-			}
-			httpError.dateCreated = new Date()
-			httpError.message = e.toString()
-			httpError.save()
+			logError(false, Message.Type.DANGER, Message.Category.HTTP, feedProvider, null, e.toString())
 		} finally {
 			if (reader != null) {
 				try {

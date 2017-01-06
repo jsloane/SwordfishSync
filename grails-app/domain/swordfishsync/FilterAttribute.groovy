@@ -7,6 +7,8 @@ import groovy.transform.EqualsAndHashCode
 @EqualsAndHashCode
 class FilterAttribute {
 	
+	Long	id
+	
 	FeedProvider.FeedFilterAction	filterType
 	String							filterRegex
 	
@@ -17,7 +19,7 @@ class FilterAttribute {
     }
 	
 	static mapping = {
-		version	false
+		//version	false
 	}
 	
 	@Override

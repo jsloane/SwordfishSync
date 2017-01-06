@@ -12,7 +12,7 @@
                 <div class="message" role="status">${flash.message}</div>
             </g:if>
             
-            <table class="do-data-table">
+            <table class="do-data-table" data-searching="false">
             	<thead>
             		<tr>
             			<th>Enabled</th>
@@ -20,6 +20,7 @@
             			<th class="default-sort">Name</th>
             			<th>Action</th>
             			<th>Status</th>
+            			<th>TTL</th>
             			<th>Last Fetched</th>
             			<th>Last Processed</th>
             			<th>Download Directory</th>
@@ -41,17 +42,18 @@
             				<td>${feedProvider.feedAction}</td>
             				<td>
             					<g:if test="${feedProvider.active}">
-	            					<g:if test="${feedProvider.feed.isCurrent}">
+	            					<g:if test="${feedProvider.feed.isCurrent && feedProvider.feed.initilised}">
 	            						<span class="feed-status-current">Up To Date</span>
 	            					</g:if>
 	            					<g:else>
-	            						<span class="feed-status-error">${feedProvider.feed.errorMessage}</span>
+	            						<span class="feed-status-error">Error</span>
 	            					</g:else>
             					</g:if>
             					<g:else>
             						Disabled
             					</g:else>
             				</td>
+            				<td>${feedProvider.feed.ttl}</td>
             				<td>${feedProvider.feed.lastUpdated}</td>
             				<td>${feedProvider.lastProcessed}</td>
             				<td>${feedProvider.downloadDirectory}</td>

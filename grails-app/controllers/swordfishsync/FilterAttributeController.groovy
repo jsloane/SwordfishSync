@@ -20,12 +20,9 @@ class FilterAttributeController {
     }
 
     def create() {
-		/*def feedProvider = null
-		if (params.feedProvider?.id) {
-			feedProvider = FeedProvider.get(params.feedProvider.id)
-		} else {
+		//if (!params.feedProvider?.id) {
 			// error
-		}*/
+		//}
 		
         respond new FilterAttribute(params), model:[params: params]
     }

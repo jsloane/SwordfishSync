@@ -1,64 +1,82 @@
 import grails.util.BuildSettings
 import grails.util.Environment
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder
+import ch.qos.logback.core.rolling.TimeBasedRollingPolicy
 
 // See http://logback.qos.ch/manual/groovy.html for details on configuration
+
+def logPattern = "%date [%thread] %level %logger - %msg%n"
+
 appender('STDOUT', ConsoleAppender) {
-    encoder(PatternLayoutEncoder) {
-        pattern = "%level %date %logger - %msg%n"
-    }
+	encoder(PatternLayoutEncoder) {
+		pattern = logPattern
+	}
 }
 
 root(ERROR, ['STDOUT'])
-logger("swordfishsync", ALL, ['STDOUT'], false)
 
 def targetDir = BuildSettings.TARGET_DIR
 if (Environment.isDevelopmentMode() && targetDir) {
-    appender("FULL_STACKTRACE", FileAppender) {
-        file = "${targetDir}/stacktrace.log"
-        append = true
-        encoder(PatternLayoutEncoder) {
-            pattern = "%level %date %logger - %msg%n"
-        }
-    }
-    logger("StackTrace", ERROR, ['FULL_STACKTRACE'], false)
-}
-if (Environment.currentEnvironment != Environment.DEVELOPMENT && Environment.currentEnvironment != Environment.TEST) {
-	def currentDay = timestamp("yyyyMMdd")
-	// todo: get log file directory from system, or log to ~/.swordfishsync/log/
-	// log everything
-	appender("ROLLING_FILE_ALL", RollingFileAppender) {
-		file = "/var/logs/tomcat7/swordfishsync_${currentDay}.log"
+	// local development config
+	// stacktrace log
+    logger("swordfishsync", ALL)
+    logger("ca.benow.transmission", ALL)
+	appender("FULL_STACKTRACE", RollingFileAppender) {
+		file = "${targetDir}/sfs-stacktrace.log"
+		append = true
+		encoder(PatternLayoutEncoder) {
+			pattern = logPattern
+		}
 		rollingPolicy(TimeBasedRollingPolicy) {
-			fileNamePattern = "/var/logs/tomcat7/swordfishsync.%d.log"
-			maxHistory = 21
-			//totalSizeCap = "1GB"
+			fileNamePattern = "${targetDir}/sfs-stacktrace.%d{yyyy-MM-dd}.log"
 		}
-		/*triggeringPolicy(SizeBasedTriggeringPolicy) {
-			maxFileSize = "100MB"
-		}*/
-		encoder(PatternLayoutEncoder) {
-			pattern = "%level %date %logger - %msg%n"
-		}
-		append = true
 	}
-    logger("swordfishsync", ALL, ['ROLLING_FILE_ALL'], false)
-    logger("ca.benow.transmission", ALL, ['ROLLING_FILE_ALL'], false)
-	// log errors
-	/*appender("ROLLING_FILE_STACKTRACE", RollingFileAppender) {
-		file = "/var/logs/tomcat7/swordfishsync-stacktrace_${currentDay}.log"
-		rollingPolicy(FixedWindowRollingPolicy) {
-			fileNamePattern = "/var/logs/tomcat7/swordfishsync-stacktrace_${currentDay}.%i.log"
-			minIndex = 1
-			maxIndex = 9
-		}
-		triggeringPolicy(SizeBasedTriggeringPolicy) {
-			maxFileSize = "100MB"
-		}
-		encoder(PatternLayoutEncoder) {
-			pattern = "%level %date %logger - %msg%n"
-		}
+	logger("StackTrace", ERROR, ['FULL_STACKTRACE'], false)
+	// sfs log
+	appender("FILE", RollingFileAppender) {
+		file = "${targetDir}/sfs.log"
 		append = true
+		encoder(PatternLayoutEncoder) {
+			pattern = logPattern
+		}
+		rollingPolicy(TimeBasedRollingPolicy) {
+			fileNamePattern = "${targetDir}/sfs.%d{yyyy-MM-dd}.log"
+		}
 	}
-    logger("swordfishsync", ERROR, ['ROLLING_FILE_STACKTRACE'], false)
-    logger("ca.benow.transmission", ERROR, ['ROLLING_FILE_STACKTRACE'], false)*/
+	logger("swordfishsync", DEBUG, ['FILE'], true)
+}
+
+
+if (Environment.current != Environment.DEVELOPMENT && Environment.current != Environment.TEST) {
+	// configure the tomcat7 server logs
+
+	def appLogLevel = INFO
+	if (Environment.current == Environment.PRODUCTION) {
+		appLogLevel = INFO
+	}
+
+	// stacktrace log
+	appender("FULL_STACKTRACE", RollingFileAppender) {
+		file = "/var/log/tomcat7/sfs-stacktrace.log"
+		append = true
+		encoder(PatternLayoutEncoder) {
+			pattern = logPattern
+		}
+		rollingPolicy(TimeBasedRollingPolicy) {
+			fileNamePattern = "/var/log/tomcat7/sfs-stacktrace.%d{yyyy-MM-dd}.log"
+		}
+	}
+	logger("StackTrace", ERROR, ['FULL_STACKTRACE'], false)
+	// sfs log
+	appender("FILE", RollingFileAppender) {
+		file = "/var/log/tomcat7/sfs.log"
+		append = true
+		encoder(PatternLayoutEncoder) {
+			pattern = logPattern
+		}
+		rollingPolicy(TimeBasedRollingPolicy) {
+			fileNamePattern = "/var/log/tomcat7/sfs.%d{yyyy-MM-dd}.log"
+		}
+	}
+	logger("swordfishsync", appLogLevel, ['FILE'], false)
 }

@@ -32,7 +32,7 @@ class TorrentController {
 		
 		TorrentState.Status torrentStatus = feedService.getTorrentStatus(feedProvider, torrent)
 		
-		//if (torrentStatus != TorrentState.Status.IN_PROGRESS && torrentStatus != TorrentState.Status.COMPLETED && torrentStatus != TorrentState.Status.NOTIFY_COMPLETED) {
+		if (feedProvider && torrentStatus != TorrentState.Status.IN_PROGRESS && torrentStatus != TorrentState.Status.COMPLETED && torrentStatus != TorrentState.Status.NOTIFY_COMPLETED) {
 			try {
 				torrentClientService.addTorrent(feedProvider, torrent)
 				flash.successMessages = ['Downloading ' + torrent.name]
@@ -40,9 +40,9 @@ class TorrentController {
 				log.error('Error adding torrent: ' + torrent.name, e)
 				flash.errorMessages = ['Error adding torrent: ' + e.toString()]
 			}
-		//} else {
-		//	flash.errorMessages = ['Torrent is already downloading or completed']
-		//}
+		} else {
+			flash.errorMessages = ['Torrent is already downloading or completed']
+		}
 		
 		
 		redirect action: 'index', params: ['feedProviderId': feedProvider.id]

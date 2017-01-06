@@ -1,9 +1,12 @@
 package swordfishsync
 
+import java.util.List;
+
 import javax.annotation.PostConstruct
 import swordfishsync.exceptions.TorrentClientException
 
 import ca.benow.transmission.TransmissionClient
+import ca.benow.transmission.model.TorrentStatus;
 import grails.plugin.cache.GrailsCacheManager;
 import grails.transaction.Transactional
 import groovy.util.logging.Slf4j
@@ -16,7 +19,20 @@ class TorrentClientService {
 	TorrentClient torrentClient
 	FeedService feedService
 	
-	void init() {
+	/*void init() {
+		setTorrentClient()
+	}*/
+	TorrentClient getTorrentClient() throws TorrentClientException {
+		if (!torrentClient) {
+			setTorrentClient()
+		}
+		if (!torrentClient) {
+			 throw new TorrentClientException('Torrent client not available')
+		}
+		return torrentClient
+	}
+	
+	void setTorrentClient() {
 		if (Setting.valueFor('torrent.type') == 'Transmission') {
 			// transmission client
 			
@@ -57,56 +73,73 @@ class TorrentClientService {
 	}
 	
     def addTorrent(FeedProvider feedProvider, Torrent torrent) throws TorrentClientException {
-		if (!torrentClient) {
-			throw new TorrentClientException('Torrent Client not set')
-		}
+		//if (!getTorrentClient()) {
+		//	throw new TorrentClientException('Torrent Client not set')
+		//}
 		
-		log.info 'Adding torrent name[' + torrent.name + '], url[' + torrent.url + ']'
+		log.info('Adding torrent [' + torrent.name + ']')
 		
 		try {
-			torrentClient.addTorrent(feedProvider, torrent)
+			// check that torrent is not already added to torrent client
+			if (!torrent.addedToTorrentClient) {
+				getTorrentClient().addTorrent(feedProvider, torrent)
+				torrent.addedToTorrentClient = true
+			}
+			feedService.setTorrentStatus(feedProvider, torrent, TorrentState.Status.IN_PROGRESS)
 		} catch (IOException e) {
 			throw new TorrentClientException('Error adding torrent', e)
 		}
     }
 	
     def moveTorrent(Torrent torrent, String directory) throws TorrentClientException {
-		if (!torrentClient) {
-			throw new TorrentClientException('Torrent Client not set')
-		}
+		//if (!torrentClient) {
+		//	throw new TorrentClientException('Torrent Client not set')
+		//}
+		log.info('Moving torrent [' + torrent.name + '] to directory [' + directory + ']')
 		
 		try {
-			torrentClient.moveTorrent(torrent, directory)
+			getTorrentClient().moveTorrent(torrent, directory)
 		} catch (IOException e) {
 			throw new TorrentClientException('Error moving torrent', e)
 		}
     }
 	
     def removeTorrent(Torrent torrent, Boolean deleteData) throws TorrentClientException {
-		if (!torrentClient) {
-			throw new TorrentClientException('Torrent Client not set')
-		}
+		//if (!torrentClient) {
+		//	throw new TorrentClientException('Torrent Client not set')
+		//}
+		log.info('Removing torrent [' + torrent.name + ']')
 		
 		try {
-			torrentClient.removeTorrent(torrent, deleteData)
+			getTorrentClient().removeTorrent(torrent, deleteData)
 		} catch (IOException e) {
 			throw new TorrentClientException('Error removing torrent', e)
 		}
     }
 	
-	TorrentDetails getTorrentDetails(Torrent torrent, Boolean includeFiles) {
-		if (!torrentClient) {
-			throw new TorrentClientException('Torrent Client not set')
-		}
+	TorrentDetails getTorrentDetails(Torrent torrent, Boolean includeFiles) throws TorrentClientException {
+		//if (!torrentClient) {
+		//	throw new TorrentClientException('Torrent Client not set')
+		//}
 		
 		TorrentDetails details = null
 		try {
-			details = torrentClient.getTorrentDetails(torrent, includeFiles)
-		} catch (TorrentClientException | IOException e) {
-			log.error('Error getting torrent status', e)
-			// set error message field
+			details = getTorrentClient().getTorrentDetails(torrent, includeFiles)
+		} catch (IOException e) {
+			throw new TorrentClientException('Error getting torrent details for torrent [' + torrent.name + ']', e)
 		}
 		return details
+	}
+	
+	List<TorrentStatus> getAllTorrents() {
+		List<TorrentStatus> allTorrentStatus = null
+		try {
+			allTorrentStatus = getTorrentClient().getAllTorrents()
+		} catch (TorrentClientException | IOException e) {
+			log.error('Error getting all torrent status', e)
+			// todo: throw exception
+		}
+		return allTorrentStatus
 	}
 	
 }

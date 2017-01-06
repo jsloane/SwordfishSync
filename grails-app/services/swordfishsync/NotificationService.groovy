@@ -25,6 +25,7 @@ class NotificationService {
 			
 			try {
 				def content = groovyPageRenderer.render(view: '/email/notify', model: [
+					torrent: torrent,
 					torrentContent: torrentContent,
 					type: type,
 					tmdbNotice: Setting.valueFor('media.tmdb.notice'),

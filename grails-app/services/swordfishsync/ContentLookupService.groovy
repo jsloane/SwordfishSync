@@ -125,12 +125,15 @@ class ContentLookupService {
 					TheTVDBApi tvDB = new TheTVDBApi(tvdbApiKey);
 					
 					String showId = null;
-					for (Series series : tvDB.searchSeries(torrentContent.name, null)) {
-						torrentContent.posterUrl = series.getBanner()
-						torrentContent.extraInfo = series.getOverview()
-						showId = series.getId()
-						break; // need to handle multiple results, only using the first one...
-						// fix this, eg cops - https://kat.cr/cops-s24e15-hdtv-xvid-avi-t12325426.html
+					List<Series> searchResults = tvDB.searchSeries(torrentContent.name, null)
+					if (searchResults) {
+						for (Series series : searchResults) {
+							torrentContent.posterUrl = series.getBanner()
+							torrentContent.extraInfo = series.getOverview()
+							showId = series.getId()
+							break; // need to handle multiple results, only using the first one...
+							// fix this, eg cops - https://kat.cr/cops-s24e15-hdtv-xvid-avi-t12325426.html
+						}
 					}
 					
 					if (GrailsStringUtils.isNotBlank(showId) && GrailsStringUtils.isNotBlank(torrentContent.seasonNumber) && GrailsStringUtils.isNotBlank(torrentContent.episodeNumber)) {
@@ -151,7 +154,7 @@ class ContentLookupService {
 						}
 					}
 				} catch (Exception e) {
-					log.error('Error fetching TV show details', e)
+					log.error('Error fetching TV show details for [' + torrentContent.name + ']', e)
 				}
 			}
 		}
@@ -171,24 +174,27 @@ class ContentLookupService {
 					TheMovieDbApi tmdb = new TheMovieDbApi(tmdbApiKey);
 					
 					int movieId;
-					
-					List<MovieDb> searchResults = tmdb.searchMovie(torrentContent.name, Integer.parseInt(torrentContent.year), null, true, 0).getResults()
-					
-					for (MovieDb searchResult : searchResults) {
-						// some image width sizes: w185, w342, w1280
-						if (GrailsStringUtils.isNotBlank(searchResult.getBackdropPath())) {
-							torrentContent.backdropUrl = 'http://cf2.imgobject.com/t/p/w342/' + searchResult.getBackdropPath() // todo: save this url in properties
+					def tmdbResultsList = tmdb.searchMovie(torrentContent.name, Integer.parseInt(torrentContent.year), null, true, 0)
+					if (tmdbResultsList) {
+						List<MovieDb> searchResults = tmdbResultsList.getResults()
+						if (searchResults) {
+							for (MovieDb searchResult : searchResults) {
+								// some image width sizes: w185, w342, w1280
+								if (GrailsStringUtils.isNotBlank(searchResult.getBackdropPath())) {
+									torrentContent.backdropUrl = 'http://cf2.imgobject.com/t/p/w342/' + searchResult.getBackdropPath() // todo: save this url in properties
+								}
+								if (GrailsStringUtils.isNotBlank(searchResult.getPosterPath())) {
+									torrentContent.posterUrl = 'http://cf2.imgobject.com/t/p/w342/' + searchResult.getPosterPath()
+								}
+								if (torrentContent.backdropUrl && torrentContent.backdropUrl.equalsIgnoreCase(torrentContent.posterUrl)) {
+									torrentContent.posterUrl = ''
+								}
+								movieId = searchResult.getId()
+								MovieDb movieInfo = tmdb.getMovieInfo(movieId, null)
+								torrentContent.extraInfo = movieInfo.getOverview()
+								break // need to handle multiple results, only using the first one...
+							}
 						}
-						if (GrailsStringUtils.isNotBlank(searchResult.getPosterPath())) {
-							torrentContent.posterUrl = 'http://cf2.imgobject.com/t/p/w342/' + searchResult.getPosterPath()
-						}
-						if (torrentContent.backdropUrl.equalsIgnoreCase(torrentContent.posterUrl)) {
-							torrentContent.posterUrl = ''
-						}
-						movieId = searchResult.getId()
-						MovieDb movieInfo = tmdb.getMovieInfo(movieId, null)
-						torrentContent.extraInfo = movieInfo.getOverview()
-						break // need to handle multiple results, only using the first one...
 					}
 				} catch (Exception e) {
 					log.error('Error fetching Movie details', e)

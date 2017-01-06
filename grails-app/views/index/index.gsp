@@ -25,7 +25,9 @@
            					<g:link controller="torrent" action="show" id="${downloadingTorrent.torrent.id}">${downloadingTorrent.torrent.name}</g:link>
            				</td>
            				<td>${downloadingTorrent.torrent.dateCreated}</td>
-           				<td>${downloadingTorrent.torrent.clientDetails}</td>
+           				<td>
+           					<progress value="${downloadingTorrent.torrent.clientDetails.percentDone}" max="1"></progress>
+           				</td>
            			</tr>
            		</g:each>
            	</tbody>
@@ -50,8 +52,21 @@
            				<td>
            					<g:link controller="torrent" action="show" id="${notifiedTorrent.torrent.id}">${notifiedTorrent.torrent.name}</g:link>
            				</td>
+           				<td style="white-space:nowrap;">
+           					<span>
+           						<g:set var="detailsUrl" value="${notifiedTorrent.torrent.detailsUrl}" />
+           						<g:if test="${!detailsUrl}">
+           							<g:set var="detailsUrl" value="${notifiedTorrent.feedProvider.getTorrentDetailsUrl(notifiedTorrent.torrent)}" />
+           						</g:if>
+           						<g:if test="${detailsUrl}">
+           							<a href="${detailsUrl}" target="_blank">Details</a>
+           						</g:if>
+           					</span>
+           					<span>
+            					<g:link controller="torrent" action="download" id="${notifiedTorrent.torrent.id}" params="[feedProviderId: notifiedTorrent.feedProvider.id]">Download</g:link>
+            				</span>
+           				</td>
            				<td>${notifiedTorrent.torrent.dateCreated}</td>
-           				<td></td>
            			</tr>
            		</g:each>
            	</tbody>

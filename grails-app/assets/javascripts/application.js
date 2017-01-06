@@ -89,9 +89,6 @@ if (typeof jQuery !== 'undefined') {
         	};
         	renderInputHelperText();
         	
-        	
-        	
-        	
         });
         
     })(jQuery);

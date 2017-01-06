@@ -16,17 +16,25 @@
         </div>
         <div id="edit-filterAttribute" class="content scaffold-edit" role="main">
             <h1>Bulk modify filter entries</h1>
-                <fieldset class="form">
-                	<div class="fieldcontain"><label for="filter-helper-text">Simple</label>
-                		<select id="filter-helper-type">
-                			<option selected="selected" value="add">Add filter</option>
-							<option value="ignore">Ignore filter</option>
-						</select>
-                		<g:field type="text" name="filter-helper-text" value=""/>
-                		<button id="filter-helper-add">Add to filter</button>
-                	</div>
-                </fieldset>
-                
+            <fieldset class="form">
+            	<div class="fieldcontain"><label for="filter-helper-text">Simple</label>
+               		<select id="filter-helper-type">
+               			<option selected="selected" value="add">Add filter</option>
+						<option value="ignore">Ignore filter</option>
+					</select>
+               		<g:field type="text" name="filter-helper-text" value=""/>
+               		<button id="filter-helper-add">Add to filter</button>
+            	</div>
+            </fieldset>
+            
+            <p>
+            	Example regex:
+            	<br/>
+            	(?i).*Movie.*Title.*1080p.*
+            	<br/>
+            	(?i).*TV.*Show.*Title.*S?([0-9]+)E([0-9]+).*720p.*
+            </p>
+            
             <g:form action="bulkModify" method="POST">
                 <g:hiddenField name="version" value="${this.filterAttribute?.version}" />
             	<g:hiddenField name="returnToFeedProvider" value="${params.returnToFeedProvider}" />

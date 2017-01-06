@@ -33,11 +33,11 @@ class Setting {
     }
 	
 	static mapping = {
-		version	false
+		//version	false
 		columns {
 			code index: 'setting_value_code_idx'
 		}
-		cache(true)
+		cache(false)//(true)
 	}
 	
 	static valueFor(String code) {

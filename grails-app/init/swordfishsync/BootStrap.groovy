@@ -1,3 +1,5 @@
+package swordfishsync
+
 import grails.core.GrailsApplication
 import org.springframework.mail.MailSender
 import swordfishsync.Configuration
@@ -13,7 +15,7 @@ class BootStrap {
 	
     def init = { servletContext ->
 		
-		grailsCacheManager.getCache('torrentClient').nativeCache.cacheConfiguration.timeToLiveSeconds = 60
+		//grailsCacheManager.getCache('torrentClient').nativeCache.cacheConfiguration.timeToLiveSeconds = 60
 		
 		///////////////////////
 		// Initilise settings
@@ -51,9 +53,6 @@ class BootStrap {
 		grailsApplication.config.grails.mail.port = Setting.valueFor('email.port')
 		mailSender.setHost(grailsApplication.config.grails.mail.host)
 		mailSender.setPort(grailsApplication.config.grails.mail.port)
-		
-		// start torrent client service
-		torrentClientService.init()
 		
     }
     def destroy = {

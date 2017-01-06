@@ -20,7 +20,7 @@ class Configuration {
     }
 	
 	static mapping = {
-		version	false
+		//version	false
 	}
 	
 }

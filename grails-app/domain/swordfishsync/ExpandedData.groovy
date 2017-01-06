@@ -17,7 +17,7 @@ class ExpandedData {
     }
 	
 	static mapping = {
-		version	false
+		//version	false
 	}
 	
 }
