@@ -1,0 +1,126 @@
+<mat-toolbar>
+    <span>
+        <button mat-button [routerLink]="['/feedProviders/create']">Create Feed</button>
+    </span>
+</mat-toolbar>
+
+
+<div class="example-container mat-elevation-z8">
+
+
+	<div class="example-header">
+	  <mat-form-field>
+	    <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Filter">
+	  </mat-form-field>
+	</div>
+
+
+	<div class="example-loading-shade" *ngIf="isLoadingData || apiError">
+		<mat-spinner *ngIf="isLoadingData"></mat-spinner>
+		<div class="example-rate-limit-reached" *ngIf="apiError">
+			An error occurred.
+		</div>
+	</div>
+
+  <mat-table #table [dataSource]="dataSource" class="example-table" matSort matSortActive="name" matSortDisableClear matSortDirection="asc">
+
+    <!--- Note that these columns can be defined in any order.
+          The actual rendered columns are set as a property on the row definition" -->
+          
+          
+
+    <!-- Enabled Column -->
+    <ng-container matColumnDef="enabled">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>Enabled</mat-header-cell>
+        <mat-cell *matCellDef="let row">
+                <span *ngIf="row.active" style="color: #008000;font-weight: bold;">✔</span>
+                <span *ngIf="!row.active" color="primary" style="color: #FF0000;font-weight: bold;">✘</span>
+        </mat-cell>
+    </ng-container>
+
+    <!-- Actions Column -->
+    <ng-container matColumnDef="actions">
+        <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+        <mat-cell *matCellDef="let row">
+        	<a [routerLink]="['/feedProviders/view/', row.id]">View</a>
+        	<a [routerLink]="['/feedProviders/torrents/', row.id]">Torrents</a>
+		</mat-cell>
+    </ng-container>
+
+    <!-- Name Column -->
+    <ng-container matColumnDef="name">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>Name</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.name }}</mat-cell>
+    </ng-container>
+
+    <!-- Action Column -->
+    <ng-container matColumnDef="action">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>Action</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.action }}</mat-cell>
+    </ng-container>
+
+    <!-- Status Column -->
+    <ng-container matColumnDef="status">
+        <mat-header-cell *matHeaderCellDef>State</mat-header-cell>
+        <mat-cell *matCellDef="let row">
+            <span *ngIf="row.active">
+                <span *ngIf="row.feedIsCurrent && row.feedInitilised">
+                    <span class="feed-status-current">Up To Date</span>
+                </span>
+                <span *ngIf="!row.feedInitilised">
+                    <span class="feed-status-new">New</span>
+                </span>
+                <span *ngIf="!row.feedIsCurrent && row.feedInitilised)">
+                    <span class="feed-status-error">Error</span>
+                </span>
+            </span>
+            <span *ngIf="!row.active">
+                Disabled
+            </span>
+        </mat-cell>
+    </ng-container>
+
+    <!-- TTL Column -->
+    <ng-container matColumnDef="feedTtl">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>TTL</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.feedTtl }}</mat-cell>
+    </ng-container>
+
+    <!-- Last Fetched Column -->
+    <ng-container matColumnDef="feedLastFetched">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>Last Fetched</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.feedLastFetched | date: 'dd/MM/yyyy h:mm a' }}</mat-cell>
+    </ng-container>
+
+    <!-- Last Processed Column -->
+    <ng-container matColumnDef="lastProcessed">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>Last Processed</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.lastProcessed | date: 'dd/MM/yyyy h:mm a'  }}</mat-cell>
+    </ng-container>
+
+    <!-- Download Directory Column -->
+    <ng-container matColumnDef="downloadDirectory">
+        <mat-header-cell *matHeaderCellDef>Download Directory</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.downloadDirectory }}</mat-cell>
+    </ng-container>
+          
+          
+
+
+    <!-- Created Column -->
+    <ng-container matColumnDef="created">
+      <mat-header-cell *matHeaderCellDef
+                       mat-sort-header
+                       disableClear="true">
+        Created
+      </mat-header-cell>
+      <mat-cell *matCellDef="let row">{{ row.dateCreated }}</mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+  </mat-table>
+
+  <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" [pageSize]="10" [length]="resultsLength">
+  </mat-paginator>
+</div>

@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>swordfishsync</groupId>
+	<artifactId>sfs-client</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>war</packaging>
+	<name>SwordfishSync client</name>
+
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.target>1.8</maven.compiler.target>
+	</properties>
+
+	<profiles>
+		<!-- use maven profiles for environment specific configuration -->
+		<profile>
+			<id>local</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<env.name>local</env.name>
+				<ng.build.target>dev</ng.build.target>
+			</properties>
+		</profile>
+		<profile>
+			<!-- profile for local builds using default angular-cli dev flags (aot=false) -->
+			<id>local-dev-build</id>
+			<properties>
+				<env.name>local</env.name>
+				<ng.build.target>build</ng.build.target>
+			</properties>
+		</profile>
+		<profile>
+			<id>devel</id>
+			<properties>
+				<env.name>devel</env.name>
+				<ng.build.target>prod</ng.build.target>
+			</properties>
+		</profile>
+		<profile>
+			<id>qa</id>
+			<properties>
+				<env.name>qa</env.name>
+				<ng.build.target>prod</ng.build.target>
+			</properties>
+		</profile>
+		<profile>
+			<id>prod</id>
+			<properties>
+				<env.name>prod</env.name>
+				<ng.build.target>prod</ng.build.target>
+			</properties>
+		</profile>
+	</profiles>
+
+	<build>
+		<finalName>sfs-client</finalName>
+		<plugins>
+			<!-- make sure we use a recent version of maven -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>1.4.1</version>
+				<executions>
+					<execution>
+						<id>enforce-maven</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<requireMavenVersion>
+									<version>3.3.3</version>
+								</requireMavenVersion>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- controls what version of java is used to compile this code, not requied 
+				for this javascript project, but prevents eclipse warning about jdk1.5 can't 
+				be found -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.6.1</version>
+				<configuration>
+					<source>${maven.compiler.target}</source>
+					<target>${maven.compiler.target}</target>
+				</configuration>
+			</plugin>
+			<!-- remove contents of /dist directory when "mvn clean" command is run -->
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>3.0.0</version>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>src/main/javascript/angular/client/dist</directory>
+						</fileset>
+					</filesets>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.github.eirslett</groupId>
+				<artifactId>frontend-maven-plugin</artifactId>
+				<!-- Use the latest released version: https://repo1.maven.org/maven2/com/github/eirslett/frontend-maven-plugin/ -->
+				<version>1.5</version>
+				<configuration>
+					<workingDirectory>src/main/javascript/angular/client</workingDirectory>
+				</configuration>
+				<executions>
+					<!-- It will install nodejs and npm -->
+					<execution>
+						<id>install node and npm</id>
+						<goals>
+							<goal>install-node-and-npm</goal>
+						</goals>
+						<phase>generate-resources</phase>
+						<configuration>
+							<nodeVersion>v6.11.2</nodeVersion>
+						</configuration>
+					</execution>
+					<!-- It will execute command "npm install" inside "/angular" directory -->
+					<execution>
+						<id>npm install</id>
+						<goals>
+							<goal>npm</goal>
+						</goals>
+						<phase>generate-resources</phase>
+					</execution>
+					<!-- It will execute command "npm update", all npm packages will be updated -->
+					<execution>
+						<id>npm update</id>
+						<goals>
+							<goal>npm</goal>
+						</goals>
+						<phase>generate-resources</phase>
+						<configuration>
+							<arguments>update</arguments>
+						</configuration>
+					</execution>
+					<!-- It will execute command "npm build" inside "/angular" directory 
+						to clean and create "/dist" directory -->
+					<execution>
+						<id>npm build</id>
+						<goals>
+							<goal>npm</goal>
+						</goals>
+						<phase>generate-resources</phase>
+						<configuration>
+							<!-- <arguments>run build</arguments> -->
+							<!-- <arguments>run-script build</arguments> -->
+							<arguments>run-script ${ng.build.target}</arguments>
+							<!-- <arguments>run-script version</arguments> -->   <!-- works - angular-cli: 1.0.0-beta.28.3 -->
+						</configuration>
+					</execution>
+					<!-- lint checking using angular codelyzer -->
+					<execution>
+						<id>npm lint (codelyzer)</id>
+						<goals>
+							<goal>npm</goal>
+						</goals>
+						<phase>generate-resources</phase>
+						<configuration>
+							<arguments>run-script lint</arguments>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Plugin to copy the content of /angular/dist/ directory to output 
+				directory (ie/ /target/transactionManager-1.0/) -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.0.2</version>
+				<executions>
+					<execution>
+						<id>default-copy-resources</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<overwrite>true</overwrite>
+							<outputDirectory>${project.build.directory}/${project.artifactId}/</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${project.basedir}/src/main/javascript/angular/client/dist</directory>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- deploy war file to tomcat -->
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>pre-integration-test</phase>
+						<configuration>
+							<tasks>
+								<copy file="target/${project.build.finalName}.war" tofile="${deployFolder}/${project.build.finalName}.war" />
+							</tasks>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+	<reporting>
+		<plugins>
+			<!-- | this plugin stops the following error | [WARNING] Report plugin 
+				org.apache.maven.plugins:maven-project-info-reports-plugin has an empty version. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-project-info-reports-plugin</artifactId>
+				<version>2.9</version>
+				<!-- | The following prevents "Plugin Management" report from running 
+					| on jenkins machine as "Plugin Management" report fails to work with proxy. -->
+				<reportSets>
+					<reportSet>
+						<configuration>
+							<skip>true</skip>
+						</configuration>
+					</reportSet>
+				</reportSets>
+			</plugin>
+			<!-- any further custom report here -->
+		</plugins>
+	</reporting>
+</project>

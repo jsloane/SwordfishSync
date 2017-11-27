@@ -1,0 +1,47 @@
+
+
+
+    <div>
+
+
+        <mat-form-field>
+            <input matInput placeholder="Simple entry" [(ngModel)]="simpleValue">
+        </mat-form-field>
+        <mat-form-field class="simple-filter-select">
+            <mat-select placeholder="Filter" [(ngModel)]="simpleFilter">
+                <mat-option value="add">
+                    Add
+                </mat-option>
+                <mat-option value="ignore">
+                    Ignore
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+        <button mat-raised-button (click)="addSimpleValue()" [disabled]="mode === 'view'">Add to filter</button>
+    </div>
+
+    <div class="example-regex">
+        <p>Example regex:</p>
+        <pre>(?i).*Movie.*Title.*1080p.*</pre>
+        <pre>(?i).*TV.*Show.*Title.*S?([0-9]+)E([0-9]+).*720p.*</pre>
+    </div>
+    
+    <div style="column-count: 2; column-width: auto; column-gap: 40px; column-rule: 4px outset #0011ff;">
+        <div class="attributes-add">
+            <mat-form-field style="width: 100%;">
+                <textarea matInput [readonly]="mode === 'view'" matTextareaAutosize matAutosizeMinRows="25" matAutosizeMaxRows="100" placeholder="Add regex" [(ngModel)]="textareaAdd"></textarea>
+                <mat-hint>Enter each regex entry on a new line</mat-hint>
+            </mat-form-field>
+        </div>
+
+        <div class="attributes-ignore">
+            <mat-form-field style="width: 100%;">
+                <textarea matInput [readonly]="mode === 'view'" matTextareaAutosize matAutosizeMinRows="25" matAutosizeMaxRows="100" placeholder="Ignore regex" [(ngModel)]="textareaIgnore"></textarea>
+                <mat-hint>Enter each regex entry on a new line</mat-hint>
+            </mat-form-field>
+        </div>
+    </div>
+
+    <button *ngIf="mode === 'edit'" type="button" mat-raised-button (click)="updateMode('view')">Cancel</button>
+    <button *ngIf="mode === 'view'" type="button" mat-raised-button (click)="updateMode('edit')">Edit</button>
+    <button *ngIf="mode === 'edit'" type="button" mat-raised-button (click)="updateFilterAttributes()" color="primary">Update</button>

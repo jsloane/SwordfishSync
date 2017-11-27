@@ -1,0 +1,21 @@
+<mat-sidenav-container >
+	<mat-sidenav #sidenav mode="side" opened="true" class="app-sidenav">
+		<mat-nav-list>
+			<a mat-list-item routerLink="/">Home</a>
+			<a mat-list-item routerLink="/feedProviders">Feeds</a>
+			<a mat-list-item routerLink="/clientTorrents">Client Torrents</a>
+			<a mat-list-item routerLink="/admin">Admin</a>
+			<!-- create feed provider link? -->
+		</mat-nav-list>
+	</mat-sidenav>
+	<mat-toolbar color="primary">
+		<button mat-icon-button (click)="sidenav.toggle()">
+			<mat-icon class="md-24" >menu</mat-icon>
+		</button>
+		<h1>SwordfishSync</h1>
+	</mat-toolbar>
+	<!--<app-breadcrumbs></app-breadcrumbs>-->
+	<div id="page">
+		<router-outlet></router-outlet>
+	</div>
+</mat-sidenav-container>

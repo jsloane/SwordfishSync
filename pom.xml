@@ -1,0 +1,78 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>swordfishsync</groupId>
+    <artifactId>sfs</artifactId>
+    <packaging>pom</packaging>
+    <version>1.0</version>
+    <name>SwordfishSync Project</name>
+
+    <modules>
+        <module>sfs-client</module> 
+        <module>sfs-server</module> 
+    </modules>
+
+  <reporting>
+	<plugins>
+		<!--
+		    | this plugin stops the following error
+		    | [WARNING] Report plugin org.apache.maven.plugins:maven-project-info-reports-plugin has an empty version.
+		    -->
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-project-info-reports-plugin</artifactId>
+			<version>2.9</version>
+			<!--
+			   | The following prevents "Plugin Management" report from running
+			   | on jenkins machine as "Plugin Management" report fails
+			   | to work with proxy. 
+			   -->
+			<reportSets>
+				<reportSet>
+					<configuration>
+						<skip>true</skip>
+					</configuration>
+				</reportSet>
+			</reportSets>
+		</plugin>
+		<!-- any further custom report here -->
+                <!-- add multi module reports to top level site
+		   | Note only a few report plugins can do this.
+		   -->
+		<!-- check test code coverage -->
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-checkstyle-plugin</artifactId>
+			<version>2.17</version>
+			<reportSets>
+				<reportSet>
+					<id>aggregate</id>
+					<inherited>false</inherited>
+					<reports>
+						<report>checkstyle-aggregate</report>
+					</reports>
+				</reportSet>
+			</reportSets>
+		</plugin>
+		<!-- generate java docs -->
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-javadoc-plugin</artifactId>
+			<version>2.10.4</version>
+			<reportSets>
+				<reportSet>
+					<id>aggregate</id>
+					<inherited>false</inherited>
+					<reports>
+						<report>aggregate</report>
+					</reports>
+				</reportSet>
+			</reportSets>
+		</plugin>
+	</plugins>
+  </reporting>
+
+</project>

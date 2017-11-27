@@ -1,0 +1,110 @@
+
+<!-- TODO list feed name heading -->
+
+<div class="example-container mat-elevation-z8">
+  
+  
+    <div class="example-header">
+      <mat-form-field>
+        <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Filter">
+      </mat-form-field>
+    </div>
+  
+  
+    <div class="example-loading-shade" *ngIf="isLoadingData || apiError">
+      <mat-spinner *ngIf="isLoadingData"></mat-spinner>
+      <div class="example-rate-limit-reached" *ngIf="apiError">
+        An error occurred.
+      </div>
+    </div>
+  
+    <mat-table #table [dataSource]="dataSource" class="example-table" matSort matSortActive="torrentDatePublished" matSortDisableClear matSortDirection="desc">
+  
+      <!--- Note that these columns can be defined in any order.
+            The actual rendered columns are set as a property on the row definition" -->
+            
+            
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+          <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+          <mat-cell *matCellDef="let row">
+              <a *ngIf="row.detailsUrl"[href]="row.detailsUrl">Details</a>
+              <button mat-button *ngIf="row.status !== 'IN_PROGRESS' && row.status !== 'COMPLETED' && row.status !== 'NOTIFY_COMPLETED'" (click)="downloadTorrent(row)">
+                  Download
+              </button>
+          </mat-cell>
+      </ng-container>
+  
+      <!-- Name Column -->
+      <ng-container matColumnDef="torrentName">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Name</mat-header-cell>
+          <mat-cell *matCellDef="let row">{{ row.torrentName }}</mat-cell>
+      </ng-container>
+  
+      <!-- Status Column -->
+      <ng-container matColumnDef="status">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Status</mat-header-cell>
+          <mat-cell *matCellDef="let row">{{ row.status }}</mat-cell>
+      </ng-container>
+  
+      <!-- Date Published Column -->
+      <ng-container matColumnDef="torrentDatePublished">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Date Published</mat-header-cell>
+          <mat-cell *matCellDef="let row">{{ row.torrentDatePublished | date: 'dd/MM/yyyy h:mm a' }}</mat-cell>
+      </ng-container>
+  
+      <!-- Date Added Column -->
+      <ng-container matColumnDef="torrentDateAdded">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Date Added</mat-header-cell>
+          <mat-cell *matCellDef="let row">{{ row.torrentDateAdded | date: 'dd/MM/yyyy h:mm a' }}</mat-cell>
+      </ng-container>
+  
+      <!-- Date Completed Column -->
+      <ng-container matColumnDef="torrentDateCompleted">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Date Completed</mat-header-cell>
+          <mat-cell *matCellDef="let row">{{ row.torrentDateCompleted | date: 'dd/MM/yyyy h:mm a' }}</mat-cell>
+      </ng-container>
+      
+      <!-- In Current Feed Column -->
+      <ng-container matColumnDef="torrentInCurrentFeed">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>In Current Feed</mat-header-cell>
+          <mat-cell *matCellDef="let row">{{ row.torrentInCurrentFeed }}</mat-cell>
+      </ng-container>
+      
+      <!-- Client ID Column -->
+      <ng-container matColumnDef="torrentClientTorrentId">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Client ID</mat-header-cell>
+          <mat-cell *matCellDef="let row">{{ row.torrentClientTorrentId }}</mat-cell>
+      </ng-container>
+      
+      <!-- Client Hash Column -->
+      <ng-container matColumnDef="torrentHashString">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Client Hash</mat-header-cell>
+          <mat-cell *matCellDef="let row">{{ row.torrentHashString }}</mat-cell>
+      </ng-container>
+
+      
+
+
+<!--
+disableClear ?? disabled sort clear?
+ -->
+      
+  
+  
+      <!-- Created Column -->
+      <ng-container matColumnDef="created">
+        <mat-header-cell *matHeaderCellDef
+                         mat-sort-header
+                         disableClear="true">
+          Created
+        </mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.dateCreated }}</mat-cell>
+      </ng-container>
+  
+      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+    </mat-table>
+  
+    <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" [pageSize]="10" [length]="resultsLength"></mat-paginator>
+</div>

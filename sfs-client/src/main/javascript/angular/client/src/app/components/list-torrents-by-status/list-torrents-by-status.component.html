@@ -1,0 +1,76 @@
+
+<div class="example-container mat-elevation-z8">
+    
+    
+      <!--<div class="example-header">
+        <mat-form-field>
+          <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Filter">
+        </mat-form-field>
+      </div>-->
+    
+    
+      <div class="example-loading-shade" *ngIf="isLoadingData || apiError">
+        <mat-spinner *ngIf="isLoadingData"></mat-spinner>
+        <div class="example-rate-limit-reached" *ngIf="apiError">
+          An error occurred.
+        </div>
+      </div>
+    
+      <mat-table #table [dataSource]="dataSource" class="example-table" matSort matSortActive="torrentDatePublished" matSortDisableClear matSortDirection="desc">
+    
+        <!--- Note that these columns can be defined in any order.
+              The actual rendered columns are set as a property on the row definition" -->
+              
+              
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+            <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+            <mat-cell *matCellDef="let row">
+                <a *ngIf="row.detailsUrl"[href]="row.detailsUrl">Details</a>
+                <button mat-button *ngIf="row.status !== 'IN_PROGRESS' && row.status !== 'COMPLETED' && row.status !== 'NOTIFY_COMPLETED'" (click)="downloadTorrent(row)">
+                    Download
+                </button>
+            </mat-cell>
+        </ng-container>
+        
+        <!-- Feed Name Column -->
+        <ng-container matColumnDef="feedName">
+            <mat-header-cell *matHeaderCellDef mat-sort-header>Feed</mat-header-cell>
+            <mat-cell *matCellDef="let row">
+                <a [routerLink]="['/feedProviders/view/', row.feedProviderId]">{{ row.feedName }}</a>
+            </mat-cell>
+        </ng-container>
+    
+        <!-- Name Column -->
+        <ng-container matColumnDef="torrentName">
+            <mat-header-cell *matHeaderCellDef mat-sort-header>Torrent</mat-header-cell>
+            <mat-cell *matCellDef="let row">{{ row.torrentName }}</mat-cell>
+        </ng-container>
+        
+        <!-- Date Added Column -->
+        <ng-container matColumnDef="torrentDateAdded">
+            <mat-header-cell *matHeaderCellDef mat-sort-header>Date Added</mat-header-cell>
+            <mat-cell *matCellDef="let row">{{ row.torrentDateAdded | date: 'dd/MM/yyyy h:mm a' }}</mat-cell>
+        </ng-container>
+        
+        <!-- Activity Date Column -->
+        <ng-container matColumnDef="clientActivityDate">
+            <mat-header-cell *matHeaderCellDef>Activity Date</mat-header-cell>
+            <mat-cell *matCellDef="let row">{{ row.clientActivityDate | date: 'dd/MM/yyyy h:mm a' }}</mat-cell>
+        </ng-container>
+            
+        <!-- Progress Column -->
+        <ng-container matColumnDef="clientPercentDone">
+            <mat-header-cell *matHeaderCellDef>Progress</mat-header-cell>
+            <mat-cell *matCellDef="let row">
+                <progress [value]="row.clientPercentDone" max="1"></progress>
+            </mat-cell>
+        </ng-container>
+
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+      </mat-table>
+    
+      <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" [pageSize]="10" [length]="resultsLength"></mat-paginator>
+  </div>
+  

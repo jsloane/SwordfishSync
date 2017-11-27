@@ -1,0 +1,25 @@
+.breadcrumb-toolbar.mat-toolbar {
+    min-height: 0;
+}
+
+.breadcrumb-toolbar.mat-toolbar .mat-toolbar-row {
+    border-top: 1px #EEEEEE solid;
+    border-bottom: 1px #EEEEEE solid;
+    height: auto;
+}
+
+.breadcrumb-toolbar button {
+	min-width: 0;
+	text-decoration: underline;
+}
+
+.breadcrumb-toolbar span.breadcrumb-title-last,
+.breadcrumb-toolbar span.breadcrumb-separator {
+	vertical-align: middle;
+	font-size: 14px;
+    font-weight: 500;
+}
+
+.breadcrumb-toolbar span.breadcrumb-title-last {
+	margin-left: 10px;
+}

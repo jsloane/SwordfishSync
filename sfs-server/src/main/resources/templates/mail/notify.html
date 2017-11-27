@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+	<head>
+		<title>Notification</title>
+	</head>
+	<body>
+	
+	
+	
+			<!-- TODO use fragments -->
+	
+	
+		<div th:if="${T(swordfishsync.service.NotificationService.Type).AVAILABLE == type}">
+			<div th:if="${T(swordfishsync.model.TorrentContent.Type).TV == torrentContent.type}">
+			
+				<p>
+					<b th:text="${torrent.name}"></b> is available to download.
+					<span th:if="${torrentContent.detailsUrl} != null">
+						Details: <span th:text="${torrentContent.detailsUrl}"></span>
+					</span>
+				</p>
+				<img th:if="${torrentContent.backdropUrl} != null" th:attr="src=${torrentContent.backdropUrl}" />
+				<p th:if="${torrentContent.episodeTitle} != null" th:text="${torrentContent.episodeTitle}"></p>
+				<p th:if="${torrentContent.episodeDescription} != null" th:text="${torrentContent.episodeDescription}"></p>
+				<img th:if="${torrentContent.posterUrl} != null" th:attr="src=${torrentContent.posterUrl}" />
+				<p th:if="${torrentContent.extraInfo} != null" th:text="${torrentContent.extraInfo}"></p>
+				<p th:if="${tvdbNotice} != null" th:text="${tvdbNotice}" style="color:#FFFFFF;"></p>
+			
+			</div>
+			<div th:if="${T(swordfishsync.model.TorrentContent.Type).MOVIE == torrentContent.type}">
+			
+				<p>
+					<b th:text="${torrent.name}"></b> is available to download.
+					<span th:if="${torrentContent.detailsUrl} != null">
+						Details: <span th:text="${torrentContent.detailsUrl}"></span>
+					</span>
+				</p>
+				<img th:if="${torrentContent.backdropUrl} != null" th:attr="src=${torrentContent.backdropUrl}" />
+				<p th:if="${torrentContent.extraInfo} != null" th:text="${torrentContent.extraInfo}"></p>
+				<img th:if="${torrentContent.posterUrl} != null" th:attr="src=${torrentContent.posterUrl}" />
+				<p th:if="${torrentContent.notice} != null" th:text="${torrentContent.notice}" style="color:#FFFFFF;"></p>
+			
+			</div>
+			<div th:if="${T(swordfishsync.model.TorrentContent.Type).TV != torrentContent.type and T(swordfishsync.model.TorrentContent.Type).MOVIE != torrentContent.type}">
+				<p>
+					<b th:text="${torrent.name}"></b> is available to download.
+					<span th:if="${torrentContent.detailsUrl} != null">
+						Details: <span th:text="${torrentContent.detailsUrl}"></span>
+					</span>
+				</p>
+			</div>
+		</div>
+		<div th:if="${T(swordfishsync.service.NotificationService.Type).COMPLETED == type}">
+			<div th:if="${T(swordfishsync.model.TorrentContent.Type).TV == torrentContent.type}">
+			
+				<p>
+					<b th:text="${torrent.name}"></b> has finished downloading to <i th:text="${torrentContent.downloadDirectory}"></i>
+				</p>
+				<img th:if="${torrentContent.backdropUrl} != null" th:attr="src=${torrentContent.backdropUrl}" />
+				<p th:if="${torrentContent.episodeTitle} != null" th:text="${torrentContent.episodeTitle}"></p>
+				<p th:if="${torrentContent.episodeDescription} != null" th:text="${torrentContent.episodeDescription}"></p>
+				<img th:if="${torrentContent.posterUrl} != null" th:attr="src=${torrentContent.posterUrl}" />
+				<p th:if="${torrentContent.extraInfo} != null" th:text="${torrentContent.extraInfo}"></p>
+				<p th:if="${tvdbNotice} != null" th:text="${tvdbNotice}" style="color:#FFFFFF;"></p>
+			
+			
+			</div>
+			<div th:if="${T(swordfishsync.model.TorrentContent.Type).MOVIE == torrentContent.type}">
+			
+			
+			
+				<p>
+					<b th:text="${torrent.name}"></b> has finished downloading to <i th:text="${torrentContent.downloadDirectory}"></i>
+				</p>
+				<img th:if="${torrentContent.backdropUrl} != null" th:attr="src=${torrentContent.backdropUrl}" />
+				<p th:if="${torrentContent.extraInfo} != null" th:text="${torrentContent.extraInfo}"></p>
+				<img th:if="${torrentContent.posterUrl} != null" th:attr="src=${torrentContent.posterUrl}" />
+				<p th:if="${torrentContent.notice} != null" th:text="${torrentContent.notice}" style="color:#FFFFFF;"></p>
+			
+			
+			
+			
+			</div>
+			<div th:if="${T(swordfishsync.model.TorrentContent.Type).TV != torrentContent.type and T(swordfishsync.model.TorrentContent.Type).MOVIE != torrentContent.type}">
+				<p>
+					<b th:text="${torrent.name}"></b> has finished downloading to <i th:text="${torrentContent.downloadDirectory}"></i>
+				</p>
+			</div>
+			
+			
+		</div>
+
+	</body>
+</html>

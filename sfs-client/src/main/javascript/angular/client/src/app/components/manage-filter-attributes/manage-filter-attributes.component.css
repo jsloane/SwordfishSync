@@ -1,0 +1,11 @@
+.example-regex {
+    margin: 1em 0;    
+}
+.example-regex p,
+.example-regex pre {
+    margin: 0;
+}
+
+.simple-filter-select {
+    width: 60px;
+}

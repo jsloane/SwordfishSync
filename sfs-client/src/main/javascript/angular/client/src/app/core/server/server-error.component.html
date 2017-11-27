@@ -1,0 +1,12 @@
+<h1 mat-dialog-title>An Error Occurred</h1>
+<div mat-dialog-content>
+	<p>
+		Error: {{data.userMessage}}
+	</p>
+	<p *ngIf="data.errorReference">
+		Reference: {{data.errorReference}}
+	</p>
+</div>
+<div mat-dialog-actions>
+	<button mat-raised-button mat-dialog-close>Close</button>
+</div>

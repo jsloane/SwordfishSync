@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+    <groupId>swordfishsync</groupId>
+	<artifactId>sfs-server</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>war</packaging>
+
+	<name>SwordfishSync server</name>
+	<description>SwordfishSync server</description>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<maven.compiler.target>1.8</maven.compiler.target>
+
+		<checkstyle.version>2.17</checkstyle.version>
+		<findbugs.version>3.0.4</findbugs.version>
+		<jacoco.version>0.7.9</jacoco.version>
+
+		<!-- Spring IO version -->
+		<io.spring.platform-version>Brussels-SR5</io.spring.platform-version>
+	</properties>
+
+	<!-- Use Spring IO version management. Refer to http://docs.spring.io/platform/docs/Brussels-SR5/reference/htmlsingle/ -->
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>io.spring.platform</groupId>
+				<artifactId>platform-bom</artifactId>
+				<version>${io.spring.platform-version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- tomcat servlet api -->
+		<dependency>
+			<groupId>org.apache.tomcat</groupId>
+			<artifactId>tomcat-servlet-api</artifactId>
+			<version>7.0.76</version><!-- todo - update this? use java api? remove this? -->
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- LogBack dependencies -->
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+		</dependency>
+
+		<!-- Spring -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-web</artifactId>
+		</dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+		<!-- JPA Provider (Hibernate) -->
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-entitymanager</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-validator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-validator-annotation-processor</artifactId>
+		</dependency>
+		<!-- Spring Data JPA -->
+		<dependency>
+			<groupId>org.springframework.data</groupId>
+			<artifactId>spring-data-jpa</artifactId>
+		</dependency>
+        
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-rest-webmvc</artifactId>
+        </dependency>
+        
+
+        
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+        </dependency>
+        
+<dependency>
+    <groupId>javax.validation</groupId>
+    <artifactId>validation-api</artifactId>
+</dependency>
+        
+        
+		<dependency>
+			<groupId>com.rometools</groupId>
+			<artifactId>rome</artifactId>
+		</dependency>
+		
+		
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+        
+<dependency>
+    <groupId>commons-io</groupId>
+    <artifactId>commons-io</artifactId>
+</dependency>
+
+
+
+
+
+        <!-- <dependency>
+            <groupId>org.thymeleaf</groupId>
+            <artifactId>thymeleaf</artifactId>
+        </dependency> -->
+        <dependency>
+            <groupId>org.thymeleaf</groupId>
+            <artifactId>thymeleaf-spring4</artifactId>
+        </dependency>
+        <!-- <dependency>
+            <groupId>nz.net.ultraq.thymeleaf</groupId>
+            <artifactId>thymeleaf-layout-dialect</artifactId>
+        </dependency> -->
+
+
+
+
+<dependency>
+    <groupId>org.springframework.integration</groupId>
+    <artifactId>spring-integration-mail</artifactId>
+</dependency>
+
+<dependency>
+    <groupId>com.sun.mail</groupId>
+    <artifactId>javax.mail</artifactId>
+</dependency>
+<dependency>
+    <groupId>javax.mail</groupId>
+    <artifactId>javax.mail-api</artifactId>
+</dependency>
+<dependency>
+    <groupId>javax.activation</groupId>
+    <artifactId>activation</artifactId>
+</dependency>
+
+
+        <!-- API for TheTVDB.com website -->
+        <dependency>
+            <groupId>com.omertron</groupId>
+            <artifactId>thetvdbapi</artifactId>
+			<version>1.9</version>
+        </dependency>
+        <!-- API for TheMovieDb.org website -->
+        <dependency>
+            <groupId>com.omertron</groupId>
+            <artifactId>themoviedbapi</artifactId>
+			<version>4.3</version>
+        </dependency>
+        
+        <!-- RAR library -->
+		<dependency>
+			<groupId>com.github.junrar</groupId>
+			<artifactId>junrar</artifactId>
+			<version>0.7</version>
+		</dependency>
+        
+        
+		<!-- json library required for transmission client -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+			<!-- <version>20140107</version> -->
+        </dependency>
+        
+        
+		<dependency>
+			<groupId>javax.cache</groupId>
+			<artifactId>cache-api</artifactId>
+		</dependency>
+        <dependency>
+            <groupId>org.ehcache</groupId>
+            <artifactId>ehcache</artifactId>
+        </dependency>
+        
+        
+        
+<!-- <dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+</dependency> -->
+        
+		<!-- JDBC driver
+		<dependency>
+			...TODO...
+			<scope>provided</scope>
+		</dependency> -->
+		<!-- DataSource -->
+		<dependency>
+			<groupId>commons-dbcp</groupId>
+			<artifactId>commons-dbcp</artifactId>
+		</dependency>
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+</dependency>
+
+
+
+
+
+
+
+		<!-- JSON parsing library -->
+		<!-- <dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+		</dependency> -->
+		
+		
+		
+<!-- <dependency>
+	<groupId>org.modelmapper</groupId>
+	<artifactId>modelmapper</artifactId>
+	<version>1.1.0</version>
+</dependency> -->
+		
+		
+	</dependencies>
+
+	<profiles>
+		<!-- use maven profiles for environment specific configuration -->
+		<!-- <profile>
+			<id>local</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<env.name>local</env.name>
+			</properties>
+		</profile>
+		<profile>
+			<id>devel</id>
+			<properties>
+				<env.name>devel</env.name>
+			</properties>
+		</profile>
+		<profile>
+			<id>qa</id>
+			<properties>
+				<env.name>qa</env.name>
+			</properties>
+		</profile>
+		<profile>
+			<id>prod</id>
+			<properties>
+				<env.name>prod</env.name>
+			</properties>
+		</profile> -->
+	</profiles>
+
+	<build>
+		<finalName>sfs-server</finalName>
+		<resources>
+			<!-- use environment specific config -->
+			<!-- <resource>
+				<directory>src/main/resources/${env.name}</directory>
+				<filtering>false</filtering>
+			</resource> -->
+		</resources>
+		<plugins>
+			<!-- specify maven version -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>1.4.1</version>
+				<executions>
+					<execution>
+						<id>enforce-maven</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<requireMavenVersion>
+									<version>3.3.3</version>
+								</requireMavenVersion>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- specify version of java used to compile -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.6.1</version>
+				<configuration>
+					<source>${maven.compiler.target}</source>
+					<target>${maven.compiler.target}</target>
+				</configuration>
+			</plugin>
+			<!-- deploy war file to tomcat -->
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>integration-test</phase>
+						<configuration>
+							<tasks>
+								<copy file="target/${project.build.finalName}.war" tofile="${deployFolder}/${project.build.finalName}.war" />
+							</tasks>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<execution>
+						<id>jacoco-initialize</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>jacoco-site</id>
+						<phase>package</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-project-info-reports-plugin</artifactId>
+				<version>2.9</version>
+				<!-- | The following prevents "Plugin Management" report from running 
+					| on jenkins machine as "Plugin Management" report fails | to work with proxy. -->
+				<!-- keep this? <reportSets>
+					<reportSet>
+						<reports>
+							<report>index</report>
+						</reports>
+					</reportSet>
+				</reportSets>-->
+			</plugin>
+
+			<!-- java static code analysis - bytecode level -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>${findbugs.version}</version>
+			</plugin>
+			<!-- java static code analysis - source code level -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>${checkstyle.version}</version>
+				<configuration>
+					<configLocation>${basedir}/dev-resources/checkstyle.xml</configLocation>
+				</configuration>
+			</plugin>
+			<!-- java static code analysis - source code level -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-pmd-plugin</artifactId>
+				<version>3.7</version>
+				<configuration>
+					<targetJdk>${maven.compiler.target}</targetJdk>
+					<skipEmptyReport>false</skipEmptyReport>
+				</configuration>
+			</plugin>
+			<!-- unit test report -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-report-plugin</artifactId>
+				<version>2.20</version>
+			</plugin>
+			<!-- code coverage report -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<reportSets>
+					<reportSet>
+						<reports>
+							<!-- select non-aggregate reports -->
+							<report>report</report>
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+			<!-- generate java docs -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.10.4</version>
+			</plugin>
+			<!-- java code cross reference (code to html page), for use with checkstyle, allows clicking on line number to view source code -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jxr-plugin</artifactId>
+				<version>2.5</version>
+			</plugin>
+		</plugins>
+	</reporting>
+</project>

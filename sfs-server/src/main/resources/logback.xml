@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<Pattern>%date [%thread] %-5level %logger{36} - %msg %n</Pattern>
+		</encoder>
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>TRACE</level>
+		</filter>
+	</appender>
+
+	<appender name="dailyRollingFileAppender"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<File>${catalina.base}/logs/sfs-server.log</File>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- daily rollover -->
+			<FileNamePattern>${catalina.base}/logs/sfs-server.%d{yyyy-MM-dd}.log</FileNamePattern>
+		</rollingPolicy>
+
+		<encoder>
+			<Pattern>%date [%thread] %-5level %logger{36} - %msg %n</Pattern>
+		</encoder>
+	</appender>
+
+	<logger name="swordfishsync" additivity="false" level="DEBUG">
+		<appender-ref ref="dailyRollingFileAppender" />
+	</logger>
+
+	<root level="INFO">
+		<appender-ref ref="dailyRollingFileAppender" />
+	</root>
+</configuration>

@@ -1,0 +1,42 @@
+<mat-toolbar>
+    <span>
+        <button mat-button [routerLink]="['/feedProviders']">Return to Feeds</button>
+    </span>
+    <span *ngIf="id">
+        <button mat-button [routerLink]="['/feedProviders/torrents/', id]">Torrents</button>
+    </span>
+    <span *ngIf="id">
+        <button mat-button>Add Torrents (dialog?)</button>
+    </span>
+</mat-toolbar>
+
+<form (ngSubmit)="onSubmit()" [formGroup]="formGroup">
+
+    <dynamic-material-form [group]="formGroup" [model]="formModel"></dynamic-material-form>
+
+    <!-- button row? -->
+    <button *ngIf="mode === 'edit'" type="button" mat-raised-button (click)="updateMode('view')">Cancel</button>
+    <button *ngIf="mode === 'view'" type="button" mat-raised-button (click)="updateMode('edit')">Edit Feed</button>
+    <button *ngIf="mode === 'create' || mode === 'edit'" type="submit" mat-raised-button color="primary">
+    	<span *ngIf="mode === 'create'">Create Feed</span>
+    	<span *ngIf="mode === 'edit'">Update Feed</span>
+    </button>
+    <button *ngIf="mode === 'view'" type="button" mat-raised-button (click)="deleteFeedProvider()" color="warn">
+        <mat-icon>delete_forever</mat-icon>
+        Delete Feed (todo confirmation)
+    </button>
+
+</form>
+
+<mat-expansion-panel *ngIf="id" [expanded]="true">
+    <mat-expansion-panel-header>
+        <mat-panel-title>
+            Filter Attributes
+        </mat-panel-title>
+        <mat-panel-description>
+        </mat-panel-description>
+    </mat-expansion-panel-header>
+
+    <app-manage-filter-attributes [feedProviderId]="id"></app-manage-filter-attributes>
+
+</mat-expansion-panel>

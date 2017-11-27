@@ -1,0 +1,14 @@
+<mat-toolbar class="breadcrumb-toolbar">
+	<span>
+		<button mat-button [routerLink]="homeRouterLink">Home</button>
+	</span>
+	<span *ngFor="let breadcrumb of breadcrumbs; let last = last">
+		<span *ngIf="breadcrumb.label">
+			<span class="breadcrumb-separator">&gt;</span>
+			<span class="breadcrumb-title-last" *ngIf="last">{{breadcrumb.label}}</span>
+			<span *ngIf="!last">
+				<button mat-button routerLink="breadcrumb.url">{{breadcrumb.label}}</button>
+			</span>
+		</span>
+	</span>
+</mat-toolbar>
