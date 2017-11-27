@@ -39,6 +39,7 @@ export class ListTorrentsByStatusComponent implements OnInit, AfterViewInit {
   isLoadingData = false;
   apiError = false;
 
+  @Input() type: string;
   @Input() statuses: string[];
 
   @ViewChild(MatPaginator) paginator: MatPaginator;
@@ -47,6 +48,9 @@ export class ListTorrentsByStatusComponent implements OnInit, AfterViewInit {
   constructor(public torrentService: TorrentService) { }
 
   ngOnInit() {
+      if (this.type === 'notified' || this.type === 'completed') {
+          this.displayedColumns = ['actions', 'feedName', 'torrentName', 'torrentDateAdded'];
+      }
   }
 
   ngAfterViewInit() {

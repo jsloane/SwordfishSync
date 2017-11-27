@@ -12,6 +12,9 @@ export class ListClientTorrentsComponent implements AfterViewInit {
   displayedColumns = ['name', 'status', 'activityDate', 'percentDone'];
   dataSource = new MatTableDataSource();
 
+  isLoadingData: boolean;
+  apiError: boolean;
+
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
 
@@ -28,9 +31,21 @@ export class ListClientTorrentsComponent implements AfterViewInit {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
 
+    this.isLoadingData = true;
+    this.apiError = false;
+
     this.torrentService.getClientTorrents().subscribe(returnedClientTorrents => {
-      this.dataSource.data = returnedClientTorrents;
-    });
+        this.isLoadingData = false;
+        this.dataSource.data = returnedClientTorrents;
+      },
+      error => {
+        this.isLoadingData = false;
+        this.apiError = true;
+          // this.getErrorMessage = <any>error;
+          console.error(error);
+          // console.error('getErrorMessage=' + this.getErrorMessage);
+      }
+    );
 
   }
 

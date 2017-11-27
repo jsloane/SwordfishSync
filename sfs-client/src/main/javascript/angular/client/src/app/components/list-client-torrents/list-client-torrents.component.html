@@ -6,6 +6,13 @@
 
 <div class="example-container mat-elevation-z8">
 
+  <div class="example-loading-shade" *ngIf="isLoadingData || apiError">
+    <mat-spinner *ngIf="isLoadingData"></mat-spinner>
+    <div class="example-rate-limit-reached" *ngIf="apiError">
+      An error occurred.
+    </div>
+  </div>
+  
   <mat-table [dataSource]="dataSource" matSort matSortActive="activityDate" matSortDisableClear matSortDirection="desc">
 
     <!-- Name Column -->
