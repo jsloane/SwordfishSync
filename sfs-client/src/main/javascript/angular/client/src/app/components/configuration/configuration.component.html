@@ -1,0 +1,10 @@
+
+<form *ngIf="mainConfig" #settingsForm="ngForm" (ngSubmit)="onSubmit(settingsForm)">
+
+    <app-child-configuration [config]="mainConfig" [level]="1" [mode]="mode"></app-child-configuration>
+
+    <button *ngIf="mode === 'view'" type="button" mat-raised-button (click)="updateMode('edit')">Edit</button>
+    <button *ngIf="mode === 'edit'" type="button" mat-raised-button (click)="updateMode('view')">Cancel</button>
+    <button *ngIf="mode === 'edit'" type="submit" mat-raised-button color="primary" [disabled]="updateButtonDisabled">{{updateButtonText}}</button>
+
+</form>

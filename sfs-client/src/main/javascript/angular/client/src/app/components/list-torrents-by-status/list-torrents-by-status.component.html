@@ -34,10 +34,10 @@
         </ng-container>
         
         <!-- Feed Name Column -->
-        <ng-container matColumnDef="feedName">
+        <ng-container matColumnDef="feedProviderName">
             <mat-header-cell *matHeaderCellDef mat-sort-header>Feed</mat-header-cell>
             <mat-cell *matCellDef="let row">
-                <a [routerLink]="['/feedProviders/view/', row.feedProviderId]">{{ row.feedName }}</a>
+                <a [routerLink]="['/feedProviders/view/', row.feedProviderId]">{{ row.feedProviderName }}</a>
             </mat-cell>
         </ng-container>
     

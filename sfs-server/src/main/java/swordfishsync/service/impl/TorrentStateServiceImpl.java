@@ -45,14 +45,42 @@ public class TorrentStateServiceImpl implements TorrentStateService {
     	    	try {
 					torrentDetails = torrentClientService.getTorrentDetails(torrentState.getTorrent(), false);
 				} catch (TorrentClientException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					log.error("Error loading torrent details for torrent [" + torrentState.getTorrent().getName() + "]", e);
 				}
     	        return TorrentDto.convertToTorrentDto(torrentState, torrentDetails);
     	    }
     	});
 		
 		return torrentDtoPage;
+	}
+
+	@Override
+	public void purgeTorrentStates(List<Status> statuses) {
+
+    	/*
+    	 * 
+    	 * TODO:
+    	 * 
+    	 * 
+		def torrentStatesInProgress = TorrentState.findAllByStatus(TorrentState.Status.IN_PROGRESS)
+		
+		torrentStatesInProgress.each { TorrentState torrentState ->
+			try {
+				TorrentDetails torrentDetails = torrentClientService.getTorrentDetails(torrentState.torrent, false)
+				
+				if (!torrentDetails || TorrentDetails.Status.UNKNOWN.equals(torrentDetails?.status)) {
+					// torrent details not returned from torrent client
+					torrentState.status = TorrentState.Status.SKIPPED
+					torrentState.save()
+					flash.successMessages.add('Purged torrent [' + torrentState.torrent.name + ']')
+				}
+			} catch (TorrentClientException e) {
+				flash.errorMessages.add('Error retrieving torrent details for torrent [' + torrentState.torrent.name + ']. Error: ' + e.toString())
+			}
+		}
+    	 */
+    	
+    	
 	}
 
 }

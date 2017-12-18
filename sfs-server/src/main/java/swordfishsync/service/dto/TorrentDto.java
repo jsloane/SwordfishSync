@@ -47,39 +47,47 @@ public class TorrentDto {
 	// torrent details from client
 	Date				clientActivityDate;
 	Double				clientPercentDone;
+
+	public static TorrentDto convertToTorrentDto(Torrent torrent) {
+		TorrentDto torrentDto = new TorrentDto();
+
+		torrentDto.setTorrentId(torrent.getId());
+		torrentDto.setTorrentUrl(torrent.getUrl());
+		torrentDto.setTorrentDateAdded(torrent.getDateAdded());
+		torrentDto.setTorrentUrl(torrent.getUrl());
+		torrentDto.setTorrentName(torrent.getName());
+		torrentDto.setTorrentDetailsUrl(torrent.getDetailsUrl());
+		torrentDto.setTorrentDatePublished(torrent.getDatePublished());
+		torrentDto.setTorrentDateCompleted(torrent.getDateCompleted());
+		torrentDto.setTorrentHashString(torrent.getHashString());
+		torrentDto.setTorrentClientTorrentId(torrent.getClientTorrentId());
+		torrentDto.setTorrentInCurrentFeed(torrent.getInCurrentFeed());
+		torrentDto.setTorrentAddedToTorrentClient(torrent.getAddedToTorrentClient());
+
+		return torrentDto;
+	}
 	
 	public static TorrentDto convertToTorrentDto(TorrentState torrentState) {
-		TorrentDto torrentDto = new TorrentDto();
+		TorrentDto torrentDto = convertToTorrentDto(torrentState.getTorrent());
 		
 		torrentDto.setId(torrentState.getId());
 		torrentDto.setStatus(torrentState.getStatus());
 
-		torrentDto.setTorrentId(torrentState.getTorrent().getId());
-		torrentDto.setTorrentUrl(torrentState.getTorrent().getUrl());
-		torrentDto.setTorrentDateAdded(torrentState.getTorrent().getDateAdded());
-		torrentDto.setTorrentUrl(torrentState.getTorrent().getUrl());
-		torrentDto.setTorrentName(torrentState.getTorrent().getName());
-		torrentDto.setTorrentDetailsUrl(torrentState.getTorrent().getDetailsUrl());
-		torrentDto.setTorrentDatePublished(torrentState.getTorrent().getDatePublished());
-		torrentDto.setTorrentDateCompleted(torrentState.getTorrent().getDateCompleted());
-		torrentDto.setTorrentHashString(torrentState.getTorrent().getHashString());
-		torrentDto.setTorrentClientTorrentId(torrentState.getTorrent().getClientTorrentId());
-		torrentDto.setTorrentInCurrentFeed(torrentState.getTorrent().getInCurrentFeed());
-		torrentDto.setTorrentAddedToTorrentClient(torrentState.getTorrent().getAddedToTorrentClient());
-
 		torrentDto.setFeedProviderId(torrentState.getFeedProvider().getId());
 		torrentDto.setFeedProviderName(torrentState.getFeedProvider().getName());
-		
+
 		torrentDto.setDetailsUrl(FeedProviderUtils.getTorrentDetailsUrl(torrentState));
-		
+
 		return torrentDto;
 	}
 
 	public static TorrentDto convertToTorrentDto(TorrentState torrentState, TorrentDetails torrentDetails) {
 		TorrentDto torrentDto = convertToTorrentDto(torrentState);
 		
-		torrentDto.setClientActivityDate(torrentDetails.getActivityDate());
-		torrentDto.setClientPercentDone(torrentDetails.getPercentDone());
+		if (torrentDetails != null) {
+			torrentDto.setClientActivityDate(torrentDetails.getActivityDate());
+			torrentDto.setClientPercentDone(torrentDetails.getPercentDone());
+		}
 		
 		return torrentDto;
 	}

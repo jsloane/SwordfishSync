@@ -11,6 +11,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Version;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 @Entity
 public class Torrent {
@@ -25,13 +26,21 @@ public class Torrent {
 	Date				dateAdded;
 
 	@NotNull
+	@Size(max = 768)
 	String				url;
 
+	@Size(max = 256)
 	String				name;
+	
+	@Size(max = 768)
 	String				detailsUrl;
+	
 	Date				datePublished;
 	Date				dateCompleted;
+
+	@Size(max = 512)
 	String				hashString;
+	
 	Integer				clientTorrentId;
 	Boolean				inCurrentFeed;
 	Boolean				addedToTorrentClient;

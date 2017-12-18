@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 
-import { URLSearchParams } from '@angular/http';
+import { HttpParams } from '@angular/common/http';
 
 import { ServerService } from '../server/server.service';
 import { Api } from '../model/api';
@@ -16,18 +16,19 @@ export class TorrentService {
     constructor(private serverService: ServerService) { }
 
     getTorrentsByStatuses(statuses: string[], sort: string, order: string, page: number, size: number): Observable<Api<Torrent>> {
-        const urlSearchParams = new URLSearchParams();
+        let httpParams = new HttpParams();
         if (sort && order) {
-            urlSearchParams.append('sort', sort + ',' + order);
+            httpParams = httpParams.append('sort', sort + ',' + order);
         }
         if (page != null && size != null) {
-            urlSearchParams.append('page', String(page));
-            urlSearchParams.append('size', String(size));
+            httpParams = httpParams.append('page', String(page));
+            httpParams = httpParams.append('size', String(size));
         }
         for (const status of statuses) {
-            urlSearchParams.append('statuses', status);
+            httpParams = httpParams.append('statuses', status);
         }
-        return this.serverService.getRequest(this.restUrl + '/torrentStatesByStatus', urlSearchParams);
+
+        return this.serverService.getRequest(this.restUrl + '/torrentStatesByStatus', httpParams);
     }
 
     getClientTorrents(): Observable<Array<ClientTorrent>> {

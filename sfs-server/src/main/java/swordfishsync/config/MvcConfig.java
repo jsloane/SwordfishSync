@@ -1,9 +1,10 @@
-package swordfishsync;
+package swordfishsync.config;
 
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.data.rest.webmvc.config.RepositoryRestMvcConfiguration;
 import org.springframework.web.bind.WebDataBinder;
@@ -21,7 +22,8 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
 @EnableWebMvc
 @ControllerAdvice
 @ComponentScan(basePackages = { "swordfishsync.controllers" })
-public class MvcConfiguration extends RepositoryRestMvcConfiguration {
+@Import({ WebSecurityConfig.class })
+public class MvcConfig extends RepositoryRestMvcConfiguration {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {

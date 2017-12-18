@@ -1,8 +1,9 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, EventEmitter } from '@angular/core';
 import { FormGroup, FormControl, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MatDialog, MatDialogRef, MatDialogConfig } from '@angular/material';
+import { MatDialog, MatDialogRef, MatDialogConfig, MAT_DIALOG_DATA } from '@angular/material';
+
 
 import { DynamicFormControlModel, DynamicFormService } from '@ng-dynamic-forms/core';
 
@@ -13,6 +14,35 @@ import { FEED_PROVIDER_FORM_MODEL } from '../../core/model/feed-provider-form';
 
 import { ManageFilterAttributesComponent } from '../manage-filter-attributes/manage-filter-attributes.component';
 import { ConfirmationDialogComponent } from '../../core/components/confirmation-dialog/confirmation-dialog.component';
+
+@Component({
+    selector: 'app-add-torrents-dialog',
+    template: `<h2 mat-dialog-title>Add Torrent(s)</h2>
+    <mat-dialog-content>
+        <mat-form-field style="width: 100%;">
+            <textarea matInput matTextareaAutosize matAutosizeMinRows="25" matAutosizeMaxRows="100"
+                placeholder="Torrent URLs" [(ngModel)]="torrentUrls"></textarea>
+            <mat-hint>Enter each torrent URL on a new line</mat-hint>
+        </mat-form-field>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-raised-button mat-dialog-close>Cancel</button>
+        <button mat-raised-button color="primary" (click)="this.addTorrents()">Add Torrent(s)</button>
+    </mat-dialog-actions>`})
+export class AddTorrentsDialogComponent {
+
+    torrentUrls: string;
+
+    onAddTorrentsEvent = new EventEmitter();
+
+    constructor(
+        public dialogRef: MatDialogRef<AddTorrentsDialogComponent>,
+        @Inject(MAT_DIALOG_DATA) public data: any) { }
+
+    addTorrents() {
+        this.onAddTorrentsEvent.emit(this.torrentUrls);
+    }
+}
 
 @Component({
   selector: 'app-edit-feed-provider',
@@ -56,16 +86,13 @@ export class EditFeedProviderComponent implements OnInit, OnDestroy {
                 this.id = Number(params['id']);
 
                 if (isFinite(this.id)) {
-
-                this.feedProviderService.getFeedProvider(this.id).subscribe(feedProvider => {
-                        this.formGroup.patchValue(feedProvider);
-                    },
-                    error => {
-                        // this.getErrorMessage = <any>error;
-                        console.error(error);
-                        // console.error('getErrorMessage=' + this.getErrorMessage);
-                    }
-                );
+                    this.feedProviderService.getFeedProvider(this.id).subscribe(feedProvider => {
+                            this.formGroup.patchValue(feedProvider);
+                        },
+                        error => {
+                            console.error(error);
+                        }
+                    );
                 }
             });
         }
@@ -75,6 +102,37 @@ export class EditFeedProviderComponent implements OnInit, OnDestroy {
       if (this.routeSub) {
        this.routeSub.unsubscribe();
       }
+    }
+
+    addTorrentsDialog() {
+        if (this.id) {
+            const dialogRef = this.dialog.open(AddTorrentsDialogComponent, {
+                width: '75%',
+                data: { id: this.id }
+            });
+
+            const sub = dialogRef.componentInstance.onAddTorrentsEvent.subscribe(torrentsToAdd => {
+
+                const torrentUrlsToAdd = [];
+                if (torrentsToAdd) {
+                    const torrentUrls = torrentsToAdd.split('\n');
+                    torrentUrls.forEach(torrentUrl => {
+                        if (torrentUrl) {
+                            torrentUrlsToAdd.push(torrentUrl);
+                        }
+                    });
+
+                    this.feedProviderService.addTorrents(this.id, torrentUrlsToAdd).subscribe(response => {
+                            console.log(response);
+                            dialogRef.close();
+                        },
+                        error => {
+                            console.error(error);
+                        }
+                    );
+                }
+            });
+        }
     }
 
     updateMode(newMode: string) {
@@ -91,7 +149,7 @@ export class EditFeedProviderComponent implements OnInit, OnDestroy {
         // this.submitted = true;
         // TODO check if form is valid
         const formObj = this.formGroup.getRawValue();
-        const serializedForm = JSON.stringify(formObj);
+        // const serializedForm = JSON.stringify(formObj);
         if (this.mode === 'edit' && this.id) {
             this.feedProviderService.updateFeedProvider(this.id, formObj).subscribe(savedFeedProvider => {
                     console.log(savedFeedProvider);
@@ -100,9 +158,7 @@ export class EditFeedProviderComponent implements OnInit, OnDestroy {
                     this.updateMode('view');
                 },
                 error => {
-                    // this.getErrorMessage = <any>error;
                     console.error(error);
-                    // console.error('getErrorMessage=' + this.getErrorMessage);
                 }
             );
         } else if (this.mode === 'create') {
@@ -114,9 +170,7 @@ export class EditFeedProviderComponent implements OnInit, OnDestroy {
                     this.updateMode('view');
                 },
                 error => {
-                    // this.getErrorMessage = <any>error;
                     console.error(error);
-                    // console.error('getErrorMessage=' + this.getErrorMessage);
                 }
             );
         }
@@ -139,14 +193,10 @@ export class EditFeedProviderComponent implements OnInit, OnDestroy {
         const sub = deleteConfirmationDialogRef.componentInstance.onConfirm.subscribe(() => {
             this.feedProviderService.deleteFeedProvider(this.id).subscribe(response => {
                     console.log(response);
-                    // this.formGroup.reset();
-                    // this.updateMode('create');
                     this.router.navigateByUrl('/feedProviders');
                 },
                 error => {
-                    // this.getErrorMessage = <any>error;
                     console.error(error);
-                    // console.error('getErrorMessage=' + this.getErrorMessage);
                 }
             );
         });

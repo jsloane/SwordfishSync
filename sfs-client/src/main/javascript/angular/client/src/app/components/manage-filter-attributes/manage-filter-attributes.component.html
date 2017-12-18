@@ -42,6 +42,6 @@
         </div>
     </div>
 
-    <button *ngIf="mode === 'edit'" type="button" mat-raised-button (click)="updateMode('view')">Cancel</button>
     <button *ngIf="mode === 'view'" type="button" mat-raised-button (click)="updateMode('edit')">Edit</button>
+    <button *ngIf="mode === 'edit'" type="button" mat-raised-button (click)="updateMode('view')">Cancel</button>
     <button *ngIf="mode === 'edit'" type="button" mat-raised-button (click)="updateFilterAttributes()" color="primary">Update</button>

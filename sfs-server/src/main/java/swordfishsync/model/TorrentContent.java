@@ -17,7 +17,7 @@ public class TorrentContent {
 	String backdropUrl;
 	String extraInfo;
 	String detailsUrl; // this variable is used in the notification email
-	String notice;
+	//String notice;
 	
 	// tv
 	String episodeId;
@@ -81,12 +81,12 @@ public class TorrentContent {
 	public void setDetailsUrl(String detailsUrl) {
 		this.detailsUrl = detailsUrl;
 	}
-	public String getNotice() {
+	/*public String getNotice() {
 		return notice;
 	}
 	public void setNotice(String notice) {
 		this.notice = notice;
-	}
+	}*/
 	public String getEpisodeId() {
 		return episodeId;
 	}

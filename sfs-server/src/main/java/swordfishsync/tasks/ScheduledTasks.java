@@ -17,7 +17,7 @@ public class ScheduledTasks {
 
 	private static final Logger log = LoggerFactory.getLogger(ScheduledTasks.class);
 
-	@Scheduled(initialDelay = 5000, fixedDelay = (1000 * 60 * 3L)) // execute job every 3 minutes
+	@Scheduled(initialDelay = 5000, fixedDelay = (1000 * 60 * 2L)) // execute job every 2 minutes
 	// @Scheduled(initialDelay = 5000, fixedDelay = (3000 * 10L)) // every 10 seconds
 	public void syncTask() {
 		syncService.syncFeeds();

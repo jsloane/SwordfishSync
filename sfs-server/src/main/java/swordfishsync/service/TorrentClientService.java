@@ -28,21 +28,9 @@ public class TorrentClientService {
     
 	TorrentClient torrentClient;
 
-    @Value("${torrentclient.type}")
-    String torrentClientType;
-    
-    @Value("${torrentclient.host}")
-    String torrentClientHost;
-    
-    @Value("${torrentclient.port}")
-    Integer torrentClientPort;
-    
-    @Value("${torrentclient.username}")
-    String torrentClientUsername;
-    
-    @Value("${torrentclient.password}")
-    String torrentClientPassword;
-    
+	@Resource
+	SettingService settingService;
+	
 	@Resource
 	SyncService syncService;
 
@@ -59,19 +47,17 @@ public class TorrentClientService {
 		return torrentClient;
 	}
 	
-	private void setTorrentClient() {
-		// todo:
-		if ("Transmission".equals(torrentClientType)) {
+	public void setTorrentClient() {
+		if ("transmission".equals(settingService.getValue(SettingService.CODE_TORRENT_TYPE, String.class))) {
 			// transmission client
 			
 			torrentClient = null;
 			
 			TransmissionClient transmissionClient = new TransmissionClient(
-				/*Setting.valueFor("torrent.host"),
-				Setting.valueFor("torrent.port"),
-				Setting.valueFor("torrent.username"),
-				Setting.valueFor("torrent.password")*/
-				torrentClientHost, torrentClientPort, torrentClientUsername, torrentClientPassword
+				settingService.getValue(SettingService.CODE_TORRENT_HOST, String.class),
+				settingService.getValue(SettingService.CODE_TORRENT_PORT, Integer.class),
+				settingService.getValue(SettingService.CODE_TORRENT_USERNAME, String.class),
+				settingService.getValue(SettingService.CODE_TORRENT_PASSWORD, String.class)
 			);
 			
 			if (transmissionClient.getRpcVersion() > 0) {

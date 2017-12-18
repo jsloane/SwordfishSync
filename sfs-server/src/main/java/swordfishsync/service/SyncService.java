@@ -73,17 +73,12 @@ import swordfishsync.repository.TorrentRepository;
 import swordfishsync.repository.TorrentStateRepository;
 import swordfishsync.tasks.SystemCommandTask;
 
+@Transactional
 @Service("syncService")
 public class SyncService {
 
     private static final Logger log = LoggerFactory.getLogger(SyncService.class);
-    
-    //@Autowired
-    //Environment environment;
 
-    @Value("${app.debug}")
-    Boolean debug;
-    
 	@Resource
 	FeedProviderRepository feedProviderRepository;
 	
@@ -104,27 +99,22 @@ public class SyncService {
 
 	@Resource
 	NotificationService notificationService;
+	
+	@Resource
+	MessageService messageService;
 
+	@Resource
+	SettingService settingService;
+	
 	@Resource
 	TaskExecutor taskExecutor;
 
-    @Transactional
+    //@Transactional
 	public void syncFeeds() {
-		
-    	/*
-    	
-    	error: org.springframework.orm.ObjectOptimisticLockingFailureException: Batch update returned unexpected row count from update [0]; actual row count: 0; expected: 1; nested exception is org.hibernate.StaleStateException: Batch update returned unexpected row count from update
-    	
-    	 */
-		
-    	
-		List<FeedProvider> activeFeedProviders = feedProviderRepository.findAllByActive(true);
-		//System.out.println("testing: " + testing);
-		//System.out.println("activeFeedProviders.size(): " + activeFeedProviders.size());
-		
-		
 		boolean processedFeeds = false;
-		
+
+		List<FeedProvider> activeFeedProviders = feedProviderRepository.findAllByActive(true);
+
 		for (FeedProvider activeFeedProvider : activeFeedProviders) {
 			try {
 				syncFeedProvider(activeFeedProvider);
@@ -132,48 +122,23 @@ public class SyncService {
 			} catch (Exception e) {
 				processedFeeds = false;
 				log.error("An error occurred syncing feed: " + activeFeedProvider.getName(), e);
-				e.printStackTrace(); // TODO
 			}
 			
 		}
-		
 
 		if (processedFeeds) {
 			// delete feed torrents with no torrent states.
-			torrentRepository.deleteAllWithEmptyTorrentStates(); // TODO show SQL to fix
-			// ???
+			torrentRepository.deleteAllWithEmptyTorrentStates();
 		}
-		
-		
+
 		log.info("Finished syncing feed(s)");
 	}
 	
-	//@Transactional
+	////@Transactional
 	public void syncFeedProvider(FeedProvider feedProvider) {
-		
 		log.info(String.format("Syncing feed [%s]", feedProvider.getName()));
 
 		Feed feed = feedProvider.getFeed();
-		
-		//System.out.println("Syncing feed: " + feedProvider.getName());
-		//System.out.println("	fp.feed.getTorrents().size(): " + feedProvider.getFeed().getTorrents().size());
-		//System.out.println("	fp.getTorrentStates().size(): " + feedProvider.getTorrentStates().size());
-
-		if (debug) {
-			int i = 0;
-			/*for (TorrentState torrentState : feedProvider.getTorrentStates()) {
-				if (i == 0) {
-					TorrentContent torrentContent = contentLookupService.getTorrentContentInfo(feedProvider, torrentState.getTorrent());
-					try {
-						notificationService.sendNotification(feedProvider, torrentState.getTorrent(), torrentContent, NotificationService.Type.AVAILABLE);
-					} catch (ApplicationException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-				i++;
-			}*/
-		}
 
 		getTorrentsFromFeedSourceAndUpdate(feedProvider, feed);
 
@@ -197,15 +162,12 @@ public class SyncService {
 		feedProvider = feedProviderRepository.saveAndFlush(feedProvider);
 	}
 
-	@Transactional
+	//@Transactional
 	private void processTorrentState(FeedProvider feedProvider, TorrentState torrentState) {
-		
 
 		try {
-		//println 'torrentStatus: ' + torrentStatus
 			switch (torrentState.getStatus()) {
 				case NOT_ADDED: // new torrent, add to torrent client
-					//checkAndAdd(feedProvider, torrentState);
 					checkAndAdd(torrentState);
 					break;
 				case IN_PROGRESS: // downloading/seeding torrent, check if finished
@@ -217,24 +179,14 @@ public class SyncService {
 				default:
 					break;
 			}
-			/*if (torrent && torrent.isDirty()) {
-				torrent = torrent.saveAndFlush()
-			}*/
-			
-			
-			// torrentState = torrentState.saveAndFlush();
-			
 		} catch (Exception e) {
 			log.error("An error occurred checking torrent: " + torrentState.getTorrent().getName(), e);
 
 			// display error message in UI
-			// TODO - logError(true, Message.Type.DANGER, Message.Category.SYNC, feedProvider, null, e.toString())
-			// TODO - notify
+			messageService.logMessage(false, Message.Type.ERROR, Message.Category.SYNC, torrentState.getFeedProvider(), torrentState.getTorrent(),
+					String.format("Error processing torrent. Exception: [%s]", e.toString()));
 		}
 
-		//feedProvider = feedProviderRepository.saveAndFlush(feedProvider); ?
-		
-		
 	}
 
 	private void checkAndAdd(TorrentState torrentState) {
@@ -251,7 +203,8 @@ public class SyncService {
 						setTorrentStatus(torrentState.getFeedProvider(), torrentState.getTorrent(), TorrentState.Status.NOTIFIED_NOT_ADDED);
 					} catch (ApplicationException e) {
 						log.error("Error sending notification for torrent [" + torrentState.getTorrent().getName() + "]", e);
-						// TODO logError(false, Message.Type.WARNING, Message.Category.SYNC, torrentState.getFeedProvider(), torrentState.getTorrent(), e.toString());
+						messageService.logMessage(false, Message.Type.WARNING, Message.Category.SYNC, torrentState.getFeedProvider(), torrentState.getTorrent(),
+								String.format("Error sending notification. Exception: [%s]", e.toString()));
 					}
 				}
 			} else {
@@ -265,13 +218,14 @@ public class SyncService {
 		}
 	}
 
-	@Transactional
+	//@Transactional
 	private void addTorrent(TorrentState torrentState) {
 		try {
 			torrentClientService.addTorrent(torrentState);
 		} catch (TorrentClientException e) {
 			log.error("Error adding torrent", e);
-			// TODO: error message handling - display error in UI
+			messageService.logMessage(false, Message.Type.ERROR, Message.Category.TORRENT_CLIENT, torrentState.getFeedProvider(), torrentState.getTorrent(),
+					String.format("Error adding torrent. Exception: [%s]", e.toString()));
 		}
 	}
 
@@ -326,6 +280,8 @@ public class SyncService {
 			}
 		} catch (Exception e) {
 			log.error(String.format("Error determining duplicate torrent [%s]", torrent.getName()), e);
+			messageService.logMessage(true, Message.Type.ERROR, Message.Category.SYNC, feedProvider, torrent,
+					String.format("Error determining duplicate torrent [%s], Exception: [%s]", torrent.getName(), e.toString()));
 		}
 		
 		if (!feedProvider.getDetermineSubDirectory()) {
@@ -355,12 +311,12 @@ public class SyncService {
 		return false;
 	}
 
-	@Transactional
+	//@Transactional
 	private boolean shouldAddTorrent(TorrentState torrentState) {
 		return (!torrentState.getFeedProvider().getFilterEnabled() || checkFilterMatch(torrentState));
 	}
 
-	@Transactional
+	//@Transactional
 	private boolean checkFilterMatch(TorrentState torrentState) {
 		String value = torrentState.getTorrent().getName();
 		boolean defaultAction = false;
@@ -408,7 +364,7 @@ public class SyncService {
 		return defaultAction;
 	}
 
-	@Transactional
+	//@Transactional
 	private boolean checkFilter(FeedProvider feedProvider, FilterAction filterType, String value) {
 		boolean match = false;
 		boolean removeMatchedRegex = false;
@@ -455,7 +411,8 @@ public class SyncService {
 			log.error("An error occurred retrieving torrent details: " + torrentState.getTorrent().getName(), e);
 			
 			// display error message in UI and notify user
-			// TODO logError(false, Message.Type.DANGER, Message.Category.TORRENT_CLIENT, feedProvider, torrent, 'Error retrieving torrent details. Exception: ' + e.toString())
+			messageService.logMessage(false, Message.Type.ERROR, Message.Category.TORRENT_CLIENT, torrentState.getFeedProvider(), torrentState.getTorrent(),
+					"Error retrieving torrent details. Exception: " + e.toString());
 		}
 		
 		if (torrentDetails == null) {
@@ -550,7 +507,8 @@ public class SyncService {
 				log.error("An error occurred completing torrent: " + torrentState.getTorrent().getName(), e);
 
 				// display error message in UI and notify user
-				// TODO logError(true, Message.Type.DANGER, Message.Category.FILE, feedProvider, torrentState.getTorrent(), "Error completing torrent. File cleanup may be required. Exception: " + e.toString());
+				messageService.logMessage(true, Message.Type.ERROR, Message.Category.FILE, torrentState.getFeedProvider(), torrentState.getTorrent(),
+						"Error completing torrent. File cleanup may be required. Exception: " + e.toString());
 			}
 		}
 	}
@@ -619,7 +577,7 @@ public class SyncService {
 				log.info("Setting file permissions on created directory: " + downloadDirectory);
 				setFilePermissions(saveDir);
 			} catch (Exception e) {
-				throw new ApplicationException("Unable to create directory: " + downloadDirectory, e);
+				throw new ApplicationException("Unable to create directory: " + downloadDirectory + ". Exception: " + e.toString(), e);
 			}
 			if (!createdDir) {
 				throw new ApplicationException("Unable to create directory: " + downloadDirectory);
@@ -627,7 +585,7 @@ public class SyncService {
 		}
 	}
 
-	private void setFilePermissions(File file) {
+	private void setFilePermissions(File file) throws IOException {
 		// Use PosixFilePermission to set file permissions
 		Set<PosixFilePermission> perms = new HashSet<PosixFilePermission>();
 		//add owners permission
@@ -641,12 +599,7 @@ public class SyncService {
 		//add others permissions
 		perms.add(PosixFilePermission.OTHERS_READ);
 		
-		try {
-			Files.setPosixFilePermissions(file.toPath(), perms);
-		} catch (IOException e) {
-			log.error("Error setting file permissions for file: " + file, e);
-			// TODO: message error
-		}
+		Files.setPosixFilePermissions(file.toPath(), perms);
 	}
 
 	private void notifyComplete(FeedProvider feedProvider, TorrentState torrentState, TorrentContent torrentContent) {
@@ -713,7 +666,7 @@ public class SyncService {
 		return removeTorrentState;
 	}*/
 
-	@Transactional
+	//@Transactional
 	private List<TorrentState> getFeedProviderTorrentStatesByStatuses(FeedProvider feedProvider, List<TorrentState.Status> statuses, boolean inStatus) {
 		if (inStatus) {
 			return torrentStateRepository.findAllByFeedProviderAndStatusIn(feedProvider, statuses);
@@ -740,7 +693,7 @@ public class SyncService {
 		}
 	}*/
 
-	@Transactional // TODO - force new transaction?
+	//@Transactional // TODO - force new transaction?
 	private void getTorrentsFromFeedSourceAndUpdate(FeedProvider feedProvider, Feed feed) {
 		
 		if (isItTimeToUpdateFeed(feedProvider)) {
@@ -860,8 +813,8 @@ public class SyncService {
 		}
 	}
 
-	@Transactional
-	void setTorrentStatus(FeedProvider feedProvider, Torrent torrent, Status status) {
+	//@Transactional
+	void setTorrentStatus(FeedProvider feedProvider, Torrent torrent, Status status) { // TODO move to torrent state service setTorrentStateStatus
 		//TorrentState torrentState = TorrentState.findByFeedProviderAndTorrent(feedProvider, torrent)
 		TorrentState torrentState = torrentStateRepository.findByFeedProviderAndTorrent(feedProvider, torrent);
 		if (torrentState == null) {
@@ -875,7 +828,7 @@ public class SyncService {
 		torrentState = torrentStateRepository.saveAndFlush(torrentState);
 	}
 
-	@Transactional
+	//@Transactional
 	private boolean isItTimeToUpdateFeed(FeedProvider feedProvider) {
 		Boolean refreshFeed = false;
 		if (feedProvider.getFeed().getLastFetched() != null && (feedProvider.getSyncInterval() != 0 || feedProvider.getFeed().getTtl() != 0)) {
@@ -902,7 +855,7 @@ public class SyncService {
 		SyndFeed syndFeed = null;
 		HttpGet httpGet = null;
 		CloseableHttpResponse httpResponse = null;
-		Boolean acceptUntrustedSslCertificate = true; // TODO: get from settings
+		Boolean acceptUntrustedSslCertificate = settingService.getValue(SettingService.CODE_APP_SECURITY_ACCEPTUNTRUSTEDCERTS, Boolean.class);
 		
 		try {
 			CloseableHttpClient httpClient = null;
@@ -945,22 +898,20 @@ public class SyncService {
 			log.warn("Error making http request.", e);
 			
 			// display error message in UI
-			// TODO - logError(false, Message.Type.DANGER, Message.Category.HTTP, feedProvider, null, e.toString())
+			messageService.logMessage(false, Message.Type.ERROR, Message.Category.HTTP, feedProvider, null, e.toString());
 		} finally {
 			if (reader != null) {
 				try {
 					reader.close();
 				} catch (IOException e) {
-					e.printStackTrace();
-					// TODO - log error instead
+					log.error("Error closing XmlReader", e);
 				}
 			}
 			if (httpResponse != null) {
 				try {
 					httpResponse.close();
 				} catch (IOException e) {
-					e.printStackTrace();
-					// TODO - log error instead
+					log.error("Error closing CloseableHttpResponse", e);
 				}
 			}
 			if (httpGet != null) {
@@ -969,39 +920,6 @@ public class SyncService {
 		}
 		
 		return syndFeed;
-	}
-
-
-	private void logError(
-			Boolean report, Message.Type type, Message.Category category, FeedProvider feedProvider, Torrent torrent, String messageString
-		) {
-		// TODO
-		/*Message message = Message.findWhere(
-			feedProvider: feedProvider,
-			torrent: torrent,
-			type: type,
-			category: category
-		)
-		if (!message) {
-			message = new Message(
-				dateCreated: new Date(),
-				feedProvider: feedProvider,
-				torrent: torrent,
-				type: type,
-				category: category,
-				reported: false
-			)
-		}
-		message.dateUpdated = new Date()
-		message.message = messageString?.take(1024)
-		message = message.saveAndFlush()
-		
-		if (!message.reported && report) {
-			// todo: email error
-			
-			message.reported = true
-			message = message.saveAndFlush()
-		}*/
 	}
 	
 }

@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.Resource;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,17 +31,8 @@ public class ContentLookupService {
 
     private static final Logger log = LoggerFactory.getLogger(ContentLookupService.class);
 
-    @Value("${tvdb.key}")
-    String tvdbApiKey;
-    
-    @Value("${tvdb.notice}")
-    String tvdbApiNotice;
-    
-    @Value("${tmdb.key}")
-    String tmdbApiKey;
-    
-    @Value("${tmdb.notice}")
-    String tmdbApiNotice;
+	@Resource
+	SettingService settingService;
     
 	private static final String NAME_KEY = "showname";
 	private static final String EPISODE_ID_KEY = "episode";
@@ -129,8 +122,9 @@ public class ContentLookupService {
 
 	private void processTvShow(FeedProvider feedProvider, TorrentContent torrentContent, Torrent torrent, boolean fetchDetails) {
 		//println '### processTvShow ###'
+		String tvdbApiKey = settingService.getValue(SettingService.CODE_MEDIA_TVDB_APIKEY, String.class);
 		if (tvdbApiKey != null && !tvdbApiKey.isEmpty()) {
-			torrentContent.setNotice(tvdbApiNotice);
+			//torrentContent.setNotice(tvdbApiNotice);
 			
 			if (torrent != null && torrent.getExpandedData() != null) {
 				for (ExpandedData expandedData : torrent.getExpandedData()) {
@@ -195,8 +189,9 @@ public class ContentLookupService {
 
 	private void processMovie(FeedProvider feedProvider, TorrentContent torrentContent, boolean fetchDetails) {
 		//println '### processMovie ###'
+		String tmdbApiKey = settingService.getValue(SettingService.CODE_MEDIA_TMDB_APIKEY, String.class);
 		if (StringUtils.isNotBlank(tmdbApiKey) && StringUtils.isNotBlank(torrentContent.getName()) && StringUtils.isNotBlank(torrentContent.getYear())) {
-			torrentContent.setNotice(tmdbApiNotice);
+			//torrentContent.setNotice(tmdbApiNotice);
 			
 			if (fetchDetails) {
 				try {

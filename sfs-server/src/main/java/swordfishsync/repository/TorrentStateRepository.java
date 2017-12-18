@@ -22,12 +22,15 @@ public interface TorrentStateRepository extends JpaRepository<TorrentState, Long
 
 	TorrentState findByFeedProviderIdAndTorrentId(Long feedProviderId, Long torrentId);
 
+	TorrentState findByFeedProviderIdAndTorrentUrl(Long id, String torrentUrl);
+	
+	void deleteByFeedProviderAndStatusInAndTorrentDateAddedBeforeAndTorrentInCurrentFeed(
+			FeedProvider feedProvider, List<Status> statuses, Date dateAddedBefore, Boolean inCurrentFeed);
+
 	List<TorrentState> findAllByFeedProviderAndStatusInAndTorrentDateAddedBefore(FeedProvider feedProvider, List<Status> statuses, Date dateAddedBefore);
 
 	List<TorrentState> findAllByFeedProviderAndStatusNotInAndTorrentDateAddedBefore(FeedProvider feedProvider, List<Status> statuses, Date dateAddedBefore);
 
-	void deleteByFeedProviderAndStatusInAndTorrentDateAddedBeforeAndTorrentInCurrentFeed(
-			FeedProvider feedProvider, List<Status> statuses, Date dateAddedBefore, Boolean inCurrentFeed);
 
 	List<TorrentState> findAllByFeedProviderAndStatusIn(FeedProvider feedProvider, List<Status> statuses);
 

@@ -9,6 +9,7 @@ import java.util.TreeSet;
 import javax.annotation.Resource;
 import javax.persistence.EntityNotFoundException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.support.PagedListHolder;
@@ -23,12 +24,14 @@ import swordfishsync.controllers.TorrentController;
 import swordfishsync.domain.Feed;
 import swordfishsync.domain.FeedProvider;
 import swordfishsync.domain.FilterAttribute;
+import swordfishsync.domain.Torrent;
 import swordfishsync.domain.TorrentState;
 import swordfishsync.exceptions.NotFoundException;
 import swordfishsync.exceptions.TorrentClientException;
 import swordfishsync.repository.FeedProviderRepository;
 import swordfishsync.repository.FeedRepository;
 import swordfishsync.repository.FilterAttributeRepository;
+import swordfishsync.repository.TorrentRepository;
 import swordfishsync.repository.TorrentStateRepository;
 import swordfishsync.service.FeedProviderService;
 import swordfishsync.service.TorrentClientService;
@@ -50,6 +53,9 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 	
 	@Resource
 	TorrentStateRepository torrentStateRepository;
+
+	@Resource
+	TorrentRepository torrentRepository;
 	
 	@Resource
 	FilterAttributeRepository filterAttributeRepository;
@@ -87,10 +93,6 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 		feedProvider.setFeed(feed);
 		
 		setFeedProviderFields(feedProvider, feedProviderDto);
-
-		System.out.println("");
-		System.out.println("saving feedProvider: " + feedProvider);
-		System.out.println("");
 		
 		feedProvider = feedProviderRepository.save(feedProvider);
 
@@ -224,27 +226,53 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 	}
 
 	@Override
-	public boolean downloadTorrent(Long id, Long torrentStateId) {
+	public boolean downloadTorrent(Long id, Long torrentStateId) throws TorrentClientException {
 		boolean downloading = false;
 
-		System.out.println("");
-		System.out.println("### id: " + id);
-		System.out.println("### torrentId: " + torrentStateId);
-		
 		TorrentState torrentState = torrentStateRepository.findByIdAndFeedProviderId(torrentStateId, id);
-		System.out.println("### torrentState: " + torrentState);
 		if (torrentState != null && !torrentState.getStatus().equals(TorrentState.Status.IN_PROGRESS)
 				&& !torrentState.getStatus().equals(TorrentState.Status.COMPLETED)
 				 && !torrentState.getStatus().equals(TorrentState.Status.NOTIFY_COMPLETED)) {
-			try {
 				downloading = torrentClientService.addTorrent(torrentState);
-			} catch (TorrentClientException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 		}
 		
 		return downloading;
+	}
+
+	@Override
+	public List<TorrentDto> addTorrent(Long id, List<String> torrentUrls) throws TorrentClientException {
+		List<TorrentDto> addedTorrents = new ArrayList<TorrentDto>();
+		
+		for (String torrentUrl : torrentUrls) {
+			if (StringUtils.isNotBlank(torrentUrl)) {
+				TorrentState newTorrentState = torrentStateRepository.findByFeedProviderIdAndTorrentUrl(id, torrentUrl);
+				
+				if (newTorrentState == null) {
+					FeedProvider feedProvider = feedProviderRepository.findOne(id);
+		
+					Torrent newTorrent = new Torrent();
+					newTorrent.setFeed(feedProvider.getFeed());
+					newTorrent.setInCurrentFeed(false);
+					newTorrent.setAddedToTorrentClient(false);
+					newTorrent.setUrl(torrentUrl);
+					newTorrent.setDateAdded(new Date());
+					newTorrent = torrentRepository.saveAndFlush(newTorrent);
+					
+					newTorrentState = new TorrentState();
+					newTorrentState.setTorrent(newTorrent);
+					newTorrentState.setFeedProvider(feedProvider);
+					newTorrentState.setStatus(TorrentState.Status.NOT_ADDED);
+					newTorrentState = torrentStateRepository.saveAndFlush(newTorrentState);
+				}
+				
+				if (!newTorrentState.getTorrent().getAddedToTorrentClient()) {
+					torrentClientService.addTorrent(newTorrentState);
+					addedTorrents.add(TorrentDto.convertToTorrentDto(newTorrentState));
+				}
+			}
+		}
+		
+		return addedTorrents;
 	}
 
 }

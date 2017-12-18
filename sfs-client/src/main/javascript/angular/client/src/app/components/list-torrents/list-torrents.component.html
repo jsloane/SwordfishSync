@@ -20,20 +20,21 @@
   
     <mat-table #table [dataSource]="dataSource" class="example-table" matSort matSortActive="torrentDatePublished" matSortDisableClear matSortDirection="desc">
   
-      <!--- Note that these columns can be defined in any order.
-            The actual rendered columns are set as a property on the row definition" -->
+        <!--- Note that these columns can be defined in any order.
+                The actual rendered columns are set as a property on the row definition" -->
             
             
-      <!-- Actions Column -->
-      <ng-container matColumnDef="actions">
-          <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
-          <mat-cell *matCellDef="let row">
-              <a *ngIf="row.detailsUrl"[href]="row.detailsUrl">Details</a>
-              <button mat-button *ngIf="row.status !== 'IN_PROGRESS' && row.status !== 'COMPLETED' && row.status !== 'NOTIFY_COMPLETED'" (click)="downloadTorrent(row)">
-                  Download
-              </button>
-          </mat-cell>
-      </ng-container>
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+            <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+            <mat-cell *matCellDef="let row">
+                <a *ngIf="row.detailsUrl"[href]="row.detailsUrl">Details</a>
+                <button mat-button *ngIf="row.status !== 'IN_PROGRESS' && row.status !== 'COMPLETED' && row.status !== 'NOTIFY_COMPLETED'" 
+                    #downloadButton (click)="downloadTorrent(row, downloadButton)">
+                    Download
+                </button>
+            </mat-cell>
+        </ng-container>
   
       <!-- Name Column -->
       <ng-container matColumnDef="torrentName">

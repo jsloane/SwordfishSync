@@ -12,6 +12,7 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/startWith';
 import 'rxjs/add/operator/switchMap';
 
+import { FeedProviderService } from '../../core/services/feed-provider.service';
 import { TorrentService } from '../../core/services/torrent.service';
 import { Api } from '../../core/model/api';
 import { Torrent } from '../../core/model/torrent';
@@ -31,12 +32,12 @@ export class TorrentDao {
   styleUrls: ['./list-torrents-by-status.component.css']
 })
 export class ListTorrentsByStatusComponent implements OnInit, AfterViewInit {
-  displayedColumns = ['actions', 'feedName', 'torrentName', 'torrentDateAdded', 'clientActivityDate', 'clientPercentDone'];
+  displayedColumns = ['actions', 'feedProviderName', 'torrentName', 'torrentDateAdded', 'clientActivityDate', 'clientPercentDone'];
   torrentDatabase: TorrentDao | null;
   dataSource = new MatTableDataSource();
 
   resultsLength = 0;
-  isLoadingData = false;
+  isLoadingData = true;
   apiError = false;
 
   @Input() type: string;
@@ -45,11 +46,11 @@ export class ListTorrentsByStatusComponent implements OnInit, AfterViewInit {
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
 
-  constructor(public torrentService: TorrentService) { }
+  constructor(public feedProviderService: FeedProviderService, public torrentService: TorrentService) { }
 
   ngOnInit() {
       if (this.type === 'notified' || this.type === 'completed') {
-          this.displayedColumns = ['actions', 'feedName', 'torrentName', 'torrentDateAdded'];
+          this.displayedColumns = ['actions', 'feedProviderName', 'torrentName', 'torrentDateAdded'];
       }
   }
 
@@ -88,6 +89,18 @@ export class ListTorrentsByStatusComponent implements OnInit, AfterViewInit {
     filterValue = filterValue.trim(); // Remove whitespace
     filterValue = filterValue.toLowerCase(); // Datasource defaults to lowercase matches
     this.dataSource.filter = filterValue;
+  }
+
+  downloadTorrent(torrent: Torrent) {
+    // TODO disable button/loading indicator
+    this.feedProviderService.downloadTorrent(torrent.feedProviderId, torrent.id).subscribe(result => {
+        console.log(result);
+        torrent.status = 'IN_PROGRESS'; // TODO use constant in Torrent file
+      },
+      error => {
+          console.error(error);
+      }
+    );
   }
 
 }

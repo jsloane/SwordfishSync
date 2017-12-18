@@ -6,7 +6,7 @@ export class Torrent {
     status: string;
 
     detailsUrl: string;
-    feedProviderId: string;
+    feedProviderId: number;
     feedProviderName: string;
 
     torrentName: string;

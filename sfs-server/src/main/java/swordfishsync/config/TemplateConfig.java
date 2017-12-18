@@ -1,4 +1,4 @@
-package swordfishsync;
+package swordfishsync.config;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -11,7 +11,7 @@ import org.thymeleaf.templateresolver.ServletContextTemplateResolver;
 import org.thymeleaf.templateresolver.TemplateResolver;
 
 @Configuration
-public class TemplateConfiguration {
+public class TemplateConfig {
 
 	@Bean
 	public TemplateResolver templateResolver() {

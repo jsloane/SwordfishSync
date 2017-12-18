@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.springframework.util.CollectionUtils;
 
 import ca.benow.transmission.AddTorrentParameters;
 import ca.benow.transmission.SetTorrentParameters;
@@ -35,30 +36,27 @@ public class TransmissionTorrentClient implements TorrentClient {
 	TransmissionClient transmissionClient;
 	Cache<String, List> torrentClientCache;
 
-	// todo - recover from transmission unavailability - test if this happens
-	
 	public TransmissionTorrentClient(TransmissionClient transmissionClient) {
 		this.transmissionClient = transmissionClient;
-	
+
 		// store torrent data in short term cache
-		//String cacheKey = "transmissionClientData-" + Setting.valueFor("torrent.host") + ":" + Setting.valueFor("torrent.port").toString();
-		String cacheName = "swordfishsync-transmissionClientData";
+		String cacheName = "sfs-server-transmissionClientData";
 
 		// store torrent details in cache
-		//Cache cache = MyMediaLifecycle.cacheManager.getCache("torrentClientData");
 		CachingProvider provider = Caching.getCachingProvider();
 	    CacheManager cacheManager = provider.getCacheManager();
-	    MutableConfiguration<String, List> configuration =
-	            new MutableConfiguration<String, List>()
-	                .setTypes(String.class, List.class)
-	                .setStoreByValue(false)
-	                .setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration.ONE_MINUTE));
-		torrentClientCache = cacheManager.createCache(cacheName, configuration);
+	    
+	    torrentClientCache = cacheManager.getCache(cacheName, String.class, List.class);
+	    
+	    if (torrentClientCache == null) {
+		    MutableConfiguration<String, List> configuration = // TODO List<TorrentStatus>
+		            new MutableConfiguration<String, List>()
+		                .setTypes(String.class, List.class)
+		                .setStoreByValue(false)
+		                .setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration.ONE_MINUTE));
+			torrentClientCache = cacheManager.createCache(cacheName, configuration);
+	    }
 	}
-	/*@PostConstruct
-	public void init() {
-	// only works in spring service/component
-    }*/
 	
 	@Override
 	public void addTorrent(TorrentState torrentState) throws TorrentClientException {
@@ -110,52 +108,14 @@ public class TransmissionTorrentClient implements TorrentClient {
 		
 		String cacheKey = "allTorrents";
 	    
-	    /*Element torrentStatusesElement = null;
-	    if (cache != null) {
-	    	torrentStatusesElement = cache.get("torrentStatuses");
-	    }*/
-	    
-		//Cache torrentClientCache = grailsCacheManager.getCache('torrentClient')
-		
-		System.out.println("torrentClientCache: " + torrentClientCache);
-		
-		//Date currentDate = new Date();
 		if (torrentClientCache != null) {
 			// get cached data if available
-			/*Cache.ValueWrapper cachedDateOfCache = torrentClientCache.get(cacheKey + "-time")
-			if (cachedDateOfCache) {
-				Date cachedDate = (Date) cachedDateOfCache.get()
-				if (cachedDate) {
-					def ttl = 55
-					def difference = currentDate.time - cachedDate.time
-					if (difference > java.util.concurrent.TimeUnit.SECONDS.toMillis(ttl)) {
-						torrentClientCache.evict(cacheKey)
-					}
-				}
-			}
-			
-			
-			Cache.ValueWrapper cachedTorrentClientData = torrentClientCache.get(cacheKey)
-			if (cachedTorrentClientData) {
-				torrentStatuses = (List<TorrentStatus>) cachedTorrentClientData.get()
-			}*/
 			torrentStatuses = torrentClientCache.get(cacheKey);
 		}
-		//torrentStatuses = null
 		
-		if (torrentStatuses == null) {
-			//println '### getting torrentStatuses from transmission ####################################################################'
+		if (CollectionUtils.isEmpty(torrentStatuses)) {
 			try {
 				torrentStatuses = transmissionClient.getAllTorrents(
-					/*(TorrentStatus.TorrentField[]) [
-						TorrentStatus.TorrentField.id,
-						TorrentStatus.TorrentField.activityDate,
-						TorrentStatus.TorrentField.status,
-						TorrentStatus.TorrentField.hashString,
-						TorrentStatus.TorrentField.files,
-						TorrentStatus.TorrentField.percentDone,
-						TorrentStatus.TorrentField.downloadDir
-					]*/
 					new TorrentStatus.TorrentField[] {
 						TorrentStatus.TorrentField.id,
 						TorrentStatus.TorrentField.activityDate,

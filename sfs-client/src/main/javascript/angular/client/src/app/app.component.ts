@@ -7,6 +7,8 @@ import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/mergeMap';
 
+// import { NgProgress } from '@ngx-progressbar/core';
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -15,9 +17,10 @@ import 'rxjs/add/operator/mergeMap';
   // preserveWhitespaces: false
 })
 export class AppComponent implements OnInit {
-    constructor(private router: Router, private activatedRoute: ActivatedRoute, private titleService: Title) { }
+    constructor(private router: Router, private activatedRoute: ActivatedRoute, private titleService: Title/*, public progress: NgProgress*/) { }
 
     ngOnInit() {
+        // this.progress.start();
         this.router.events
             // .filter((event) => event instanceof NavigationEnd)
             .map(() => this.activatedRoute)

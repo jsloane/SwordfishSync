@@ -1,12 +1,19 @@
 <h1 mat-dialog-title>An Error Occurred</h1>
 <div mat-dialog-content>
-	<p>
-		Error: {{data.userMessage}}
+	<!-- TODO flex grid to align labels -->
+	<p *ngIf="data.httpError.message">
+		Error: {{data.httpError.message}}
 	</p>
-	<p *ngIf="data.errorReference">
-		Reference: {{data.errorReference}}
+	<!--<p *ngIf="data.httpError.status || data.httpError.statusText">
+		HTTP status: {{data.httpError.status}} <span *ngIf="data.httpError.statusText">({{data.httpError.statusText}})</span>
+	</p>-->
+	<p *ngIf="data.httpError.error">
+		<!-- TODO update this for HttpErrorResponse -->
+		Details:
+		<br/>
+		<span [innerHTML]="data.httpError.error | safeHtml"></span>
 	</p>
 </div>
-<div mat-dialog-actions>
+<div mat-dialog-actions align="end">
 	<button mat-raised-button mat-dialog-close>Close</button>
 </div>

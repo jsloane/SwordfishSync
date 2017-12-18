@@ -6,7 +6,7 @@
         <button mat-button [routerLink]="['/feedProviders/torrents/', id]">Torrents</button>
     </span>
     <span *ngIf="id">
-        <button mat-button>Add Torrents (dialog?)</button>
+        <button mat-button (click)="addTorrentsDialog()">Add Torrent(s)</button>
     </span>
 </mat-toolbar>
 
@@ -18,12 +18,13 @@
     <button *ngIf="mode === 'edit'" type="button" mat-raised-button (click)="updateMode('view')">Cancel</button>
     <button *ngIf="mode === 'view'" type="button" mat-raised-button (click)="updateMode('edit')">Edit Feed</button>
     <button *ngIf="mode === 'create' || mode === 'edit'" type="submit" mat-raised-button color="primary">
+        <!-- [disabled]="!formGroup.valid" -->
     	<span *ngIf="mode === 'create'">Create Feed</span>
     	<span *ngIf="mode === 'edit'">Update Feed</span>
     </button>
     <button *ngIf="mode === 'view'" type="button" mat-raised-button (click)="deleteFeedProvider()" color="warn">
         <mat-icon>delete_forever</mat-icon>
-        Delete Feed (todo confirmation)
+        Delete Feed
     </button>
 
 </form>

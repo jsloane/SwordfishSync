@@ -1,19 +1,31 @@
-package swordfishsync;
+package swordfishsync.config;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.PropertySources;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.ClassPathResource;
+//import org.springframework.core.io.Resource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -34,6 +46,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.validation.Validator;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
+import swordfishsync.security.SecurityDelegatingFilterProxy;
+import swordfishsync.service.FeedProviderService;
+
 /**
  * Use Spring to configure the application. This configures the DataSource, JPA entities, beans,
  * etc.
@@ -44,9 +59,14 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @EnableSpringDataWebSupport
 @EnableTransactionManagement
 @ComponentScan("swordfishsync")
-@PropertySource("classpath:application.properties") // TODO default-application.properties
+//@PropertySources({
+@PropertySource("classpath:application.properties")
+@PropertySource(value = "file:${user.home}/.swordfishsync/application.properties", ignoreResourceNotFound = true)
+//})
 @EnableJpaRepositories("swordfishsync.repository")
-public class ApplicationConfiguration implements SchedulingConfigurer {
+public class AppConfig implements SchedulingConfigurer {
+	
+    private final Logger log = LoggerFactory.getLogger(AppConfig.class);
 
 	private static final String PROPERTY_NAME_DATABASE_DRIVER = "database.driver";
 	private static final String PROPERTY_NAME_DATABASE_URL = "database.url";
@@ -61,6 +81,24 @@ public class ApplicationConfiguration implements SchedulingConfigurer {
 	@Resource
 	private Environment env;
 
+	/**
+	 * init method.
+	 */
+	@PostConstruct
+	public void init() {
+		// create properties file in user home directory if changes are made
+		Path path = Paths.get(System.getProperty("user.home") + File.separator + ".swordfishsync" + File.separator + "application.properties");
+		if (Files.notExists(path)) {
+			// copy default properties file to users home directory
+			org.springframework.core.io.Resource resource = new ClassPathResource("application.properties");
+			try {
+				Files.copy(resource.getInputStream(), path);
+			} catch (IOException e) {
+				log.error("Failed copying application.properties to user home directory", e);
+			}
+		}
+	}
+	
 	@Bean
 	public DataSource dataSource() {
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();

@@ -1,0 +1,36 @@
+
+<div *ngIf="!config.setting">
+    <div *ngIf="level === 1">
+        <h3>{{config.title}}</h3>
+    </div>
+    <div *ngIf="level === 2">
+        <h4>{{config.title}}</h4>
+    </div>
+    <div *ngIf="level === 3">
+        <h5>{{config.title}}</h5>
+    </div>
+    <div *ngIf="level > 3">
+        <h6>{{config.title}}</h6>
+    </div>
+</div>
+
+<div *ngIf="config.setting">
+    <mat-form-field *ngIf="config.setting.type !== 'java.lang.Boolean'">
+        <input matInput
+            [readonly]="mode !== 'edit'"
+            [placeholder]="config.title"
+            [name]="config.setting.code"
+            [(ngModel)]="config.setting.value">
+    </mat-form-field>
+    <mat-checkbox *ngIf="config.setting.type === 'java.lang.Boolean'"
+        [disabled]="mode !== 'edit'"
+        [name]="config.setting.code"
+        [ngModel]="getBooleanValue(config.setting.value)">
+        {{config.title}}
+    </mat-checkbox>
+    <!-- TODO hint text -->
+</div>
+
+<div *ngFor="let childConfig of config.childConfiguration">
+    <app-child-configuration [config]="childConfig" [level]="getNextLevel()" [mode]="mode"></app-child-configuration>
+</div>

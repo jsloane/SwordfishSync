@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import {HttpClient} from '@angular/common/http';
 import { HttpClientModule } from '@angular/common/http';
-import {MatPaginator, MatSort, MatTableDataSource} from '@angular/material';
+import {MatPaginator, MatSort, MatTableDataSource, MatButton} from '@angular/material';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/merge';
 import 'rxjs/add/observable/of';
@@ -38,7 +38,7 @@ export class ListTorrentsComponent implements OnInit, AfterViewInit, OnDestroy  
   dataSource = new MatTableDataSource();
 
   resultsLength = 0;
-  isLoadingData = false;
+  isLoadingData = true;
   apiError = false;
 
   feedProviderId: number;
@@ -104,16 +104,15 @@ export class ListTorrentsComponent implements OnInit, AfterViewInit, OnDestroy  
     this.dataSource.filter = filterValue;
   }
 
-  downloadTorrent(torrent: Torrent) {
-      // TODO disable button/loading indicator
+  downloadTorrent(torrent: Torrent, downloadButton: MatButton) {
+      downloadButton.disabled = true;
+
       this.feedProviderService.downloadTorrent(this.feedProviderId, torrent.id).subscribe(result => {
           console.log(result);
+          downloadButton.disabled = false;
           torrent.status = 'IN_PROGRESS'; // TODO use constant in Torrent file
-      },
-      error => {
-          // this.getErrorMessage = <any>error;
-          console.error(error);
-          // console.error('getErrorMessage=' + this.getErrorMessage);
+      }, error => {
+          downloadButton.disabled = false;
       }
     );
   }

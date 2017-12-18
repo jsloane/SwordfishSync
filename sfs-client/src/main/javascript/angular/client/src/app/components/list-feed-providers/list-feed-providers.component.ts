@@ -55,7 +55,6 @@ export class ListFeedProvidersComponent implements OnInit, AfterViewInit  {
     Observable.merge(this.sort.sortChange, this.paginator.page)
         .startWith(null)
         .switchMap(() => {
-          this.isLoadingData = true;
           return this.feedProviderDatabase.getFeedProviders(
               this.sort.active, this.sort.direction, this.paginator.pageIndex, this.paginator.pageSize);
         })

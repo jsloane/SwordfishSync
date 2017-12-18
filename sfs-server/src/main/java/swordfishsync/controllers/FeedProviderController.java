@@ -20,8 +20,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import swordfishsync.domain.FeedProvider;
+import swordfishsync.exceptions.TorrentClientException;
 import swordfishsync.repository.FeedProviderRepository;
 import swordfishsync.service.FeedProviderService;
+import swordfishsync.service.TorrentClientService;
 import swordfishsync.service.dto.FeedProviderDto;
 import swordfishsync.service.dto.FilterAttributeDto;
 import swordfishsync.service.dto.TorrentDto;
@@ -34,9 +36,11 @@ public class FeedProviderController {
     
 	@Resource
 	FeedProviderService feedProviderService;
+	
+	@Resource
+	TorrentClientService torrentClientService;
 
-    //@GetMapping("/feedProviders")
-    @RequestMapping(value = "/feedProviders", method = RequestMethod.GET)
+    @GetMapping("/feedProviders")
     @ResponseBody
     //@Timed //?
     public ResponseEntity<Page<FeedProviderDto>> getAllFeedProviders(Pageable pageable) {
@@ -44,7 +48,6 @@ public class FeedProviderController {
         return new ResponseEntity<Page<FeedProviderDto>>(page, HttpStatus.OK);
     }
 
-    //@GetMapping("/feedProviders") //??
     @RequestMapping(value = "/feedProviders", method = RequestMethod.POST)
     @ResponseBody
     //@Timed //?
@@ -58,7 +61,7 @@ public class FeedProviderController {
         return new ResponseEntity<FeedProviderDto>(createdFeedProviderDto, HttpStatus.CREATED);
     }
 
-    @RequestMapping(value = "/feedProviders/{id}", method = RequestMethod.GET)
+    @GetMapping("/feedProviders/{id}")
     @ResponseBody
     public ResponseEntity<FeedProviderDto> getFeedProvider(@PathVariable Long id) {
     	FeedProviderDto feedProviderDto = feedProviderService.getFeedProvider(id);
@@ -80,20 +83,34 @@ public class FeedProviderController {
     	feedProviderService.deleteFeedProvider(id);
     }
 
-    //@GetMapping("/feedProviders")
-    @RequestMapping(value = "/feedProviders/{id}/torrents", method = RequestMethod.GET)
+    @GetMapping("/feedProviders/{id}/torrents")
     @ResponseBody
     //@Timed //?
     public ResponseEntity<Page<TorrentDto>> getFeedProviderTorrents(@PathVariable Long id, Pageable pageable) {
     	Page<TorrentDto> page = feedProviderService.findAllFeedProviderTorrents(id, pageable);
         return new ResponseEntity<Page<TorrentDto>>(page, HttpStatus.OK);
     }
+
+    @RequestMapping(value = "/feedProviders/{id}/torrents", method = RequestMethod.PUT)
+    @ResponseBody
+    public ResponseEntity<List<TorrentDto>> addFeedProviderTorrents(
+    		@PathVariable Long id, @RequestBody List<String> torrentUrls) throws TorrentClientException {
+
+    	List<TorrentDto> addedTorrents = feedProviderService.addTorrent(id, torrentUrls);
+
+        return new ResponseEntity<List<TorrentDto>>(addedTorrents, HttpStatus.OK);
+    }
     
     @RequestMapping(value = "/feedProviders/{id}/torrents/{torrentStateId}/download", method = RequestMethod.PUT)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    //@Timed //?
     public ResponseEntity<?> downloadFeedProviderTorrent(@PathVariable Long id, @PathVariable Long torrentStateId) {
-    	boolean downloading = feedProviderService.downloadTorrent(id, torrentStateId);
+    	boolean downloading = false;
+    	
+		try {
+			downloading = feedProviderService.downloadTorrent(id, torrentStateId);
+		} catch (TorrentClientException e) {
+        	return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
     	
     	if (!downloading) {
     		// torrent could not be added because it's already downloaded or completed downloading
@@ -112,7 +129,7 @@ public class FeedProviderController {
         return new ResponseEntity<List<FilterAttributeDto>>(replacedFilterAttributes, HttpStatus.CREATED);
     }
 
-    @RequestMapping(value = "/feedProviders/{id}/filterAttributes", method = RequestMethod.GET)
+    @GetMapping("/feedProviders/{id}/filterAttributes")
     @ResponseBody
     public ResponseEntity<List<FilterAttributeDto>> getFeedProviderFilterAttributes(@PathVariable Long id) {
     	List<FilterAttributeDto> filterAttributes = feedProviderService.getFeedProviderFilterAttributes(id);
