@@ -48,6 +48,7 @@ public class TorrentClientService {
 	}
 	
 	public void setTorrentClient() {
+		log.info("### TorrentClientService setTorrentClient ###");
 		if ("transmission".equals(settingService.getValue(SettingService.CODE_TORRENT_TYPE, String.class))) {
 			// transmission client
 			

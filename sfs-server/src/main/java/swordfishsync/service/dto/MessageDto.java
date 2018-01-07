@@ -26,8 +26,12 @@ public class MessageDto {
 		messageDto.setDateUpdated(message.getDateUpdated());
 		messageDto.setType(message.getType());
 		messageDto.setCategory(message.getCategory());
-		messageDto.setFeedProvider(FeedProviderDto.convertToFeedProviderDto(message.getFeedProvider()));
-		messageDto.setTorrent(TorrentDto.convertToTorrentDto(message.getTorrent()));
+		if (message.getFeedProvider() != null) {
+			messageDto.setFeedProvider(FeedProviderDto.convertToFeedProviderDto(message.getFeedProvider()));
+		}
+		if (message.getTorrent() != null) {
+			messageDto.setTorrent(TorrentDto.convertToTorrentDto(message.getTorrent()));
+		}
 		messageDto.setMessage(message.getMessage());
 		messageDto.setReported(message.getReported());
 		

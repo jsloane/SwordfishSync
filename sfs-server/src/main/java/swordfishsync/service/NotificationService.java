@@ -71,7 +71,6 @@ public class NotificationService {
 				
 				log.info("Sending notification email to: " + feedProvider.getNotifyEmail());
 				
-				
 				MimeMessage mimeMessage = mailSender.createMimeMessage();
 				MimeMessageHelper message = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 				message.setFrom(settingService.getValue(SettingService.CODE_EMAIL_FROM, String.class));
@@ -89,13 +88,13 @@ public class NotificationService {
 		String reportEmail = settingService.getValue(SettingService.CODE_APP_ERROR_EMAIL, String.class);
 
 		if (StringUtils.isNotBlank(reportEmail)) {
-			String emailSubject = "SwordfishSync Error Report";
+			String emailSubject = "SwordfishSync Error Report"; // TODO get from settings
 
 			try {
 				Context ctx = new Context(Locale.ENGLISH);
 				ctx.setVariable("message", message);
 
-				String htmlContent = this.templateEngine.process("error-report", ctx); // TODO
+				String htmlContent = this.templateEngine.process("error-report", ctx);
 				
 				log.info("Sending error report email to: " + reportEmail);
 				

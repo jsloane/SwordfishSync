@@ -17,7 +17,7 @@ public interface TorrentRepository extends JpaRepository<Torrent, Long> {
 	
 	@Modifying
 	@Query("update Torrent t set t.inCurrentFeed = ?1 where t.inCurrentFeed = ?2 and t.feed = ?3")
-	int setInCurrentFeedByInCurrentFeedAndFeed(boolean inCurrentFeed, boolean whereInCurrentFeed, Feed feed); // TODO use param names
+	int setInCurrentFeedByInCurrentFeedAndFeed(boolean inCurrentFeed, boolean whereInCurrentFeed, Feed feed); // TODO use @param names
 
 	Torrent findByFeedAndUrl(Feed feed, String url);
 /*

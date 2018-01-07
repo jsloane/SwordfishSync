@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, Inject, EventEmitter } from '@angular/cor
 import { FormGroup, FormControl, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MatDialog, MatDialogRef, MatDialogConfig, MAT_DIALOG_DATA } from '@angular/material';
+import { MatDialog, MatDialogRef, MatDialogConfig, MAT_DIALOG_DATA, MatButton } from '@angular/material';
 
 
 import { DynamicFormControlModel, DynamicFormService } from '@ng-dynamic-forms/core';
@@ -27,7 +27,7 @@ import { ConfirmationDialogComponent } from '../../core/components/confirmation-
     </mat-dialog-content>
     <mat-dialog-actions align="end">
         <button mat-raised-button mat-dialog-close>Cancel</button>
-        <button mat-raised-button color="primary" (click)="this.addTorrents()">Add Torrent(s)</button>
+        <button mat-raised-button color="primary" #addButton (click)="this.addTorrents(addButton)">Add Torrent(s)</button>
     </mat-dialog-actions>`})
 export class AddTorrentsDialogComponent {
 
@@ -39,7 +39,8 @@ export class AddTorrentsDialogComponent {
         public dialogRef: MatDialogRef<AddTorrentsDialogComponent>,
         @Inject(MAT_DIALOG_DATA) public data: any) { }
 
-    addTorrents() {
+    addTorrents(addButton: MatButton) {
+        // TODO disable button and update text
         this.onAddTorrentsEvent.emit(this.torrentUrls);
     }
 }

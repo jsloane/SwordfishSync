@@ -192,7 +192,7 @@ public class SyncService {
 	private void checkAndAdd(TorrentState torrentState) {
 		if (shouldAddTorrent(torrentState) && !FeedProvider.Action.SKIP.equals(torrentState.getFeedProvider().getAction())) {
 			TorrentContent torrentContent = contentLookupService.getTorrentContentInfo(torrentState.getFeedProvider(), torrentState.getTorrent());
-			if (!foundDuplicateTorrent(torrentState.getFeedProvider(), torrentState.getTorrent(), torrentContent)) {
+			if (!findDuplicateTorrent(torrentState.getFeedProvider(), torrentState.getTorrent(), torrentContent)) {
 				if (FeedProvider.Action.DOWNLOAD.equals(torrentState.getFeedProvider().getAction())) {
 					// download
 					addTorrent(torrentState);
@@ -229,7 +229,7 @@ public class SyncService {
 		}
 	}
 
-	private boolean foundDuplicateTorrent(FeedProvider feedProvider, Torrent torrent, TorrentContent torrentContent) {
+	private boolean findDuplicateTorrent(FeedProvider feedProvider, Torrent torrent, TorrentContent torrentContent) {
 		if (!feedProvider.getSkipDuplicates()) {
 			// we want to download duplicate torrents
 			return false;
@@ -269,11 +269,13 @@ public class SyncService {
 				File dir = new File(torrentContent.getDownloadDirectory()); // todo - use nio package
 				File[] files = dir.listFiles();
 				
-				for (File file : files) {
-					if (file.isFile()) {
-						TorrentContent fileContent = contentLookupService.getTorrentContentInfo(feedProvider, null, file.getName(), false);
-						if (isSameContent(torrentContent, fileContent)) {
-							return true;
+				if (files != null) {
+					for (File file : files) {
+						if (file.isFile()) {
+							TorrentContent fileContent = contentLookupService.getTorrentContentInfo(feedProvider, null, file.getName(), false);
+							if (isSameContent(torrentContent, fileContent)) {
+								return true;
+							}
 						}
 					}
 				}
@@ -767,36 +769,42 @@ public class SyncService {
 						}
 					}
 					
-					// check torrent doesn't already exist, by checking the url
-					//Torrent existingTorrent = Torrent.findByFeedAndUrl(feedProvider.feed, url)
-					Torrent existingTorrent = torrentRepository.findByFeedAndUrl(feed, url);
-					
-					if (existingTorrent == null) {
-						// new torrent, add it
-						Torrent newTorrent = new Torrent();
-						newTorrent.setFeed(feed);
-						newTorrent.setInCurrentFeed(true);
-						newTorrent.setAddedToTorrentClient(false);
-						newTorrent.setUrl(url);
-						newTorrent.setName(entry.getTitle());
-						newTorrent.setDetailsUrl(detailsUrl);
-						newTorrent.setDatePublished(datePublished);
-						newTorrent.setDateAdded(new Date());
-						newTorrent.setExpandedData(expandedData);
-						newTorrent = torrentRepository.saveAndFlush(newTorrent);
+					if (url != null && !url.isEmpty()) {
+						// check torrent doesn't already exist, by checking the url
+						//Torrent existingTorrent = Torrent.findByFeedAndUrl(feedProvider.feed, url)
+						Torrent existingTorrent = torrentRepository.findByFeedAndUrl(feed, url);
 						
-						List<FeedProvider> feedFeedProviders = feedProviderRepository.findAllByFeed(feed);
-						for (FeedProvider feedFeedProvider : feedFeedProviders) {
-							setTorrentStatus(feedFeedProvider, newTorrent, newTorrentStatus);
+						if (existingTorrent == null) {
+							// new torrent, add it
+							Torrent newTorrent = new Torrent();
+							newTorrent.setFeed(feed);
+							newTorrent.setInCurrentFeed(true);
+							newTorrent.setAddedToTorrentClient(false);
+							newTorrent.setUrl(url);
+							newTorrent.setName(entry.getTitle());
+							newTorrent.setDetailsUrl(detailsUrl);
+							newTorrent.setDatePublished(datePublished);
+							newTorrent.setDateAdded(new Date());
+							newTorrent.setExpandedData(expandedData);
+							newTorrent = torrentRepository.saveAndFlush(newTorrent);
+							
+							List<FeedProvider> feedFeedProviders = feedProviderRepository.findAllByFeed(feed);
+							for (FeedProvider feedFeedProvider : feedFeedProviders) {
+								setTorrentStatus(feedFeedProvider, newTorrent, newTorrentStatus);
+							}
+							
+						} else if (existingTorrent != null && !existingTorrent.getInCurrentFeed()) {
+							// torrent already exists, mark as still in current feed
+							existingTorrent.setInCurrentFeed(true);
+							existingTorrent = torrentRepository.saveAndFlush(existingTorrent);
 						}
 						
-					} else if (existingTorrent != null && !existingTorrent.getInCurrentFeed()) {
-						// torrent already exists, mark as still in current feed
-						existingTorrent.setInCurrentFeed(true);
-						existingTorrent = torrentRepository.saveAndFlush(existingTorrent);
+						feedIsCurrent = true;
+					} else {
+						String message = String.format("Encountered RSS entry without URL: %s", syndFeed.getDescription());
+						log.warn(message);
+						messageService.logMessage(true, Message.Type.WARNING, Message.Category.RSS, feedProvider, null, message);
 					}
-					
-					feedIsCurrent = true;
 				}
 			}
 			

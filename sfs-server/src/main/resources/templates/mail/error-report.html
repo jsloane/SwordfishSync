@@ -4,11 +4,74 @@
 		<title>Error Report</title>
 	</head>
 	<body>
-	
-	
-	
-		Error Report - TODO
-		
-
+		<p>
+			An error occurred, details below.
+		</p>
+		<table>
+			<thead>
+				<tr>
+					<th>
+						Field
+					</th>
+					<th>
+						Value
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>
+						Date
+					</td>
+					<td>
+						<span th:text="${message.dateCreated}"></span>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Type
+					</td>
+					<td>
+						<span th:text="${message.type}"></span>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Category
+					</td>
+					<td>
+						<span th:text="${message.category}"></span>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Message
+					</td>
+					<td>
+						<span th:text="${message.message}"></span>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Feed name
+					</td>
+					<td>
+						<span th:if="${message.feedProvider} != null">
+							<span th:text="${message.feedProvider.name}"></span>
+						</span>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Torrent name
+					</td>
+					<td>
+						<span th:if="${message.torrent} != null">
+							<span th:text="${message.torrent.name}"></span>
+						</span>
+					</td>
+				</tr>
+			</tbody>
+		</table>
 	</body>
 </html>

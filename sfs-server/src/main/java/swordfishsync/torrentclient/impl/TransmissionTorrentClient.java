@@ -42,6 +42,120 @@ public class TransmissionTorrentClient implements TorrentClient {
 		// store torrent data in short term cache
 		String cacheName = "sfs-server-transmissionClientData";
 
+		
+		/*
+		 * 
+		 * 
+		 * 
+		 * exception
+
+org.springframework.web.util.NestedServletException: Request processing failed; nested exception is javax.cache.CacheException: A Cache named [sfs-server-transmissionClientData] already exists
+	org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:982)
+	org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:861)
+	javax.servlet.http.HttpServlet.service(HttpServlet.java:624)
+	org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:846)
+	javax.servlet.http.HttpServlet.service(HttpServlet.java:731)
+	org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52)
+	swordfishsync.security.SecurityDelegatingFilterProxy.doFilter(SecurityDelegatingFilterProxy.java:22)
+root cause
+
+javax.cache.CacheException: A Cache named [sfs-server-transmissionClientData] already exists
+	org.ehcache.jsr107.Eh107CacheManager.createCache(Eh107CacheManager.java:202)
+	swordfishsync.torrentclient.impl.TransmissionTorrentClient.<init>(TransmissionTorrentClient.java:57)
+	swordfishsync.service.TorrentClientService.setTorrentClient(TorrentClientService.java:64)
+	swordfishsync.service.TorrentClientService.getTorrentClient(TorrentClientService.java:42)
+	swordfishsync.service.TorrentClientService.getTorrentDetails(TorrentClientService.java:121)
+	swordfishsync.service.impl.TorrentStateServiceImpl$1.convert(TorrentStateServiceImpl.java:46)
+	swordfishsync.service.impl.TorrentStateServiceImpl$1.convert(TorrentStateServiceImpl.java:41)
+	org.springframework.data.domain.Chunk.getConvertedContent(Chunk.java:168)
+	org.springframework.data.domain.PageImpl.map(PageImpl.java:104)
+	swordfishsync.service.impl.TorrentStateServiceImpl.getTorrentStatesByStatuses(TorrentStateServiceImpl.java:41)
+	sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	java.lang.reflect.Method.invoke(Method.java:498)
+	org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:333)
+	org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:190)
+	org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:157)
+	org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:99)
+	org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:282)
+	org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:96)
+	org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+	org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:213)
+	com.sun.proxy.$Proxy85.getTorrentStatesByStatuses(Unknown Source)
+	swordfishsync.controllers.TorrentController.getTorrentsByStatuses(TorrentController.java:66)
+	sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	java.lang.reflect.Method.invoke(Method.java:498)
+	org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:205)
+	org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:133)
+	org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:97)
+	org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:827)
+	org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:738)
+	org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:85)
+	org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:967)
+	org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:901)
+	org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:970)
+	org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:861)
+	javax.servlet.http.HttpServlet.service(HttpServlet.java:624)
+	org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:846)
+	javax.servlet.http.HttpServlet.service(HttpServlet.java:731)
+	org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52)
+	swordfishsync.security.SecurityDelegatingFilterProxy.doFilter(SecurityDelegatingFilterProxy.java:22)
+root cause
+
+org.ehcache.jsr107.MultiCacheException: [Exception 0] Cache 'sfs-server-transmissionClientData' already exists
+	org.ehcache.jsr107.Eh107CacheManager.createCache(Eh107CacheManager.java:200)
+	swordfishsync.torrentclient.impl.TransmissionTorrentClient.<init>(TransmissionTorrentClient.java:57)
+	swordfishsync.service.TorrentClientService.setTorrentClient(TorrentClientService.java:64)
+	swordfishsync.service.TorrentClientService.getTorrentClient(TorrentClientService.java:42)
+	swordfishsync.service.TorrentClientService.getTorrentDetails(TorrentClientService.java:121)
+	swordfishsync.service.impl.TorrentStateServiceImpl$1.convert(TorrentStateServiceImpl.java:46)
+	swordfishsync.service.impl.TorrentStateServiceImpl$1.convert(TorrentStateServiceImpl.java:41)
+	org.springframework.data.domain.Chunk.getConvertedContent(Chunk.java:168)
+	org.springframework.data.domain.PageImpl.map(PageImpl.java:104)
+	swordfishsync.service.impl.TorrentStateServiceImpl.getTorrentStatesByStatuses(TorrentStateServiceImpl.java:41)
+	sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	java.lang.reflect.Method.invoke(Method.java:498)
+	org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:333)
+	org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:190)
+	org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:157)
+	org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:99)
+	org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:282)
+	org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:96)
+	org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+	org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:213)
+	com.sun.proxy.$Proxy85.getTorrentStatesByStatuses(Unknown Source)
+	swordfishsync.controllers.TorrentController.getTorrentsByStatuses(TorrentController.java:66)
+	sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	java.lang.reflect.Method.invoke(Method.java:498)
+	org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:205)
+	org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:133)
+	org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:97)
+	org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:827)
+	org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:738)
+	org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:85)
+	org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:967)
+	org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:901)
+	org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:970)
+	org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:861)
+	javax.servlet.http.HttpServlet.service(HttpServlet.java:624)
+	org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:846)
+	javax.servlet.http.HttpServlet.service(HttpServlet.java:731)
+	org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52)
+	swordfishsync.security.SecurityDelegatingFilterProxy.doFilter(SecurityDelegatingFilterProxy.java:22)
+note The full stack trace of the root cause is available in the Apache Tomcat/7.0.68 (Ubuntu) logs.
+
+
+		 */
+		
+		
+		
 		// store torrent details in cache
 		CachingProvider provider = Caching.getCachingProvider();
 	    CacheManager cacheManager = provider.getCacheManager();

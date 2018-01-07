@@ -21,7 +21,7 @@ public class Message {
 	}
 	
 	public enum Category {
-		HTTP, TORRENT_CLIENT, SYSTEM, FILE, SYNC
+		HTTP, TORRENT_CLIENT, SYSTEM, FILE, SYNC, RSS
 	}
 	
 	@Id
@@ -41,11 +41,9 @@ public class Message {
 	Category		category;
 
 	@ManyToOne
-	@NotNull
 	FeedProvider	feedProvider;
 
 	@ManyToOne
-	@NotNull
 	Torrent			torrent;
 
 	@Size(max = 512)

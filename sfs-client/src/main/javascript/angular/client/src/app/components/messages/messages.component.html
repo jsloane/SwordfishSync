@@ -1,6 +1,9 @@
 <div>
     <div *ngFor="let message of messages">
         <div class="message" [ngClass]="[message.type | lowercase]">
+            <button mat-icon-button type="button" #clearButton (click)="deleteMessage(message.id, clearButton)">
+                <mat-icon>clear</mat-icon>
+            </button>
             <div>
                 <strong>
                     <span *ngIf="message.type === 'ERROR'">Error!</span>
@@ -16,10 +19,6 @@
                 </span>
                 <span>{{message.message}}</span>
             </div>
-            <div fxFlex></div>
-            <button mat-icon-button type="button" #clearButton (click)="deleteMessage(message.id, clearButton)">
-                <mat-icon>clear</mat-icon>
-            </button>
         </div>
     </div>
 </div>

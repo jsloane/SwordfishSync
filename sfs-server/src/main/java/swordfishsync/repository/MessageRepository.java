@@ -2,12 +2,12 @@ package swordfishsync.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import swordfishsync.domain.Feed;
 import swordfishsync.domain.FeedProvider;
 import swordfishsync.domain.Message;
 import swordfishsync.domain.Message.Category;
 import swordfishsync.domain.Message.Type;
 import swordfishsync.domain.Torrent;
-import swordfishsync.domain.TorrentState;
 
 public interface MessageRepository extends JpaRepository<Message, Long> {
 

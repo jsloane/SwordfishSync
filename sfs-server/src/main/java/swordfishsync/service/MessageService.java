@@ -2,6 +2,7 @@ package swordfishsync.service;
 
 import java.util.List;
 
+import swordfishsync.domain.Feed;
 import swordfishsync.domain.FeedProvider;
 import swordfishsync.domain.Message;
 import swordfishsync.domain.Torrent;

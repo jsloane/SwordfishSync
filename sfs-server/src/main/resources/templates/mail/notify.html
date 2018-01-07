@@ -38,7 +38,7 @@
 				<img th:if="${torrentContent.backdropUrl} != null" th:attr="src=${torrentContent.backdropUrl}" />
 				<p th:if="${torrentContent.extraInfo} != null" th:text="${torrentContent.extraInfo}"></p>
 				<img th:if="${torrentContent.posterUrl} != null" th:attr="src=${torrentContent.posterUrl}" />
-				<p th:if="${torrentContent.notice} != null" th:text="${torrentContent.notice}" style="color:#FFFFFF;"></p>
+				<p th:if="${tmdbNotice} != null" th:text="${tmdbNotice}" style="color:#FFFFFF;"></p>
 			
 			</div>
 			<div th:if="${T(swordfishsync.model.TorrentContent.Type).TV != torrentContent.type and T(swordfishsync.model.TorrentContent.Type).MOVIE != torrentContent.type}">
@@ -75,7 +75,7 @@
 				<img th:if="${torrentContent.backdropUrl} != null" th:attr="src=${torrentContent.backdropUrl}" />
 				<p th:if="${torrentContent.extraInfo} != null" th:text="${torrentContent.extraInfo}"></p>
 				<img th:if="${torrentContent.posterUrl} != null" th:attr="src=${torrentContent.posterUrl}" />
-				<p th:if="${torrentContent.notice} != null" th:text="${torrentContent.notice}" style="color:#FFFFFF;"></p>
+				<p th:if="${tmdbNotice} != null" th:text="${tmdbNotice}" style="color:#FFFFFF;"></p>
 			
 			
 			
