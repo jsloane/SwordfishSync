@@ -25,6 +25,7 @@ import swordfishsync.domain.FeedProvider;
 import swordfishsync.domain.Torrent;
 import swordfishsync.model.TorrentContent;
 import swordfishsync.util.FeedProviderUtils;
+import swordfishsync.util.FileSystemUtils;
 
 @Service("contentLookupService")
 public class ContentLookupService {
@@ -254,6 +255,9 @@ public class ContentLookupService {
 				}
 			}
 			torrentContent.setSubDirectory(torrentContent.getSubDirectory() + System.getProperty("file.separator"));
+
+			// set permissions on name directory
+			FileSystemUtils.setFilePermissions(new File(feedProvider.getDownloadDirectory() + System.getProperty("file.separator") + torrentContent.getSubDirectory()), feedProvider);
 
 			if (StringUtils.isNotBlank(torrentContent.getSeasonNumber())) {
 				String seasonNumberPrefix = " ";

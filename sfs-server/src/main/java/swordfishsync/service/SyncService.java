@@ -3,7 +3,13 @@ package swordfishsync.service;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.attribute.FileOwnerAttributeView;
+import java.nio.file.attribute.GroupPrincipal;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.UserPrincipal;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -72,6 +78,7 @@ import swordfishsync.repository.FeedRepository;
 import swordfishsync.repository.TorrentRepository;
 import swordfishsync.repository.TorrentStateRepository;
 import swordfishsync.tasks.SystemCommandTask;
+import swordfishsync.util.FileSystemUtils;
 
 @Transactional
 @Service("syncService")
@@ -433,7 +440,7 @@ public class SyncService {
 				boolean movedOrCopiedData = false;
 				String downloadDirectory = torrentContent.getDownloadDirectory();
 				if (StringUtils.isNotBlank(downloadDirectory)) {
-					createDirectory(downloadDirectory);
+					createDirectory(downloadDirectory, feedProvider);
 					
 					String torrentDownloadedToDirectory = torrentDetails.getDownloadedToDirectory();
 					if (!torrentDownloadedToDirectory.endsWith(System.getProperty("file.separator"))) {
@@ -445,7 +452,7 @@ public class SyncService {
 							if (filename.endsWith(".rar")) {
 								log.info("Found rar file [" + torrentDownloadedToDirectory + filename + "], extracting to [" + downloadDirectory + "]");
 								// extract rar file
-								extractRar(torrentDownloadedToDirectory + filename, downloadDirectory); // overwrites existing files
+								extractRar(torrentDownloadedToDirectory + filename, downloadDirectory, feedProvider); // overwrites existing files
 								movedOrCopiedData = true;
 							}
 						}
@@ -463,7 +470,9 @@ public class SyncService {
 							log.info("Copying torrent files from [" + torrentDownloadedToDirectory + "] to [" + downloadDirectory + "]...");
 							File downloadDirectoryFile = new File(downloadDirectory);
 							for (String filename : torrentDetails.getFiles()) {
-								log.info("Copying file: " + filename);
+								File fileToCopy = new File(torrentDownloadedToDirectory + filename);
+								String targetFileLocation = downloadDirectory + System.getProperty("file.separator") + fileToCopy.getName();
+								log.info("Copying file [" + filename + "] to [" + targetFileLocation + "]");
 								/*
 								 * eg
 								 * torrentDownloadDir: /data/?
@@ -472,9 +481,10 @@ public class SyncService {
 								 */
 								try {
 									// should be creating a hard link if supported by OS, but not possible across file systems (eg pooled file system; mhddfs)
-									File fileToCopy = new File(torrentDownloadedToDirectory + filename);
 									FileUtils.copyFileToDirectory(fileToCopy, downloadDirectoryFile); // note - overwrites existing files
-									setFilePermissions(fileToCopy);
+									FileSystemUtils.setFilePermissions(downloadDirectoryFile, feedProvider);
+									FileSystemUtils.setFilePermissions(
+											new File(targetFileLocation), feedProvider);
 									// http://www.journaldev.com/855/how-to-set-file-permissions-in-java-easily-using-java-7-posixfilepermission
 								} catch (IOException e) {
 									// this is an error that needs to be reported to the user
@@ -523,7 +533,7 @@ public class SyncService {
 		}
 	}
 
-	private void extractRar(String filename, String destinationDirectory) throws ApplicationException {
+	private void extractRar(String filename, String destinationDirectory, FeedProvider feedProvider) throws ApplicationException {
 		try {
 			final File rar = new File(filename);
 			final File destinationFolder = new File(destinationDirectory);
@@ -545,11 +555,11 @@ public class SyncService {
 			File extractedToDirectory = new File(destinationDirectory);
 			if (extractedToDirectory.exists() && extractedToDirectory.isDirectory()) {
 				log.info("Setting file permissions on directory: " + extractedToDirectory);
-				setFilePermissions(extractedToDirectory);
+				FileSystemUtils.setFilePermissions(extractedToDirectory, feedProvider);
 				if (extractedToDirectory.listFiles() != null) {
 					for (File extractedFile : extractedToDirectory.listFiles()) {
 						log.info("Setting file permissions on file: " + extractedFile);
-						setFilePermissions(extractedFile);
+						FileSystemUtils.setFilePermissions(extractedFile, feedProvider);
 					}
 				}
 			}
@@ -561,7 +571,7 @@ public class SyncService {
 		// todo finally... close...
 	}
 
-	private void createDirectory(String downloadDirectory) throws ApplicationException {
+	private void createDirectory(String downloadDirectory, FeedProvider feedProvider) throws ApplicationException {
 		// create downloadDirectory if it doesn't exist
 		File saveDir = new File(downloadDirectory);
 		
@@ -577,7 +587,7 @@ public class SyncService {
 			try {
 				createdDir = saveDir.mkdirs(); // TODO use nio package
 				log.info("Setting file permissions on created directory: " + downloadDirectory);
-				setFilePermissions(saveDir);
+				FileSystemUtils.setFilePermissions(saveDir, feedProvider);
 			} catch (Exception e) {
 				throw new ApplicationException("Unable to create directory: " + downloadDirectory + ". Exception: " + e.toString(), e);
 			}
@@ -585,23 +595,6 @@ public class SyncService {
 				throw new ApplicationException("Unable to create directory: " + downloadDirectory);
 			}
 		}
-	}
-
-	private void setFilePermissions(File file) throws IOException {
-		// Use PosixFilePermission to set file permissions
-		Set<PosixFilePermission> perms = new HashSet<PosixFilePermission>();
-		//add owners permission
-		perms.add(PosixFilePermission.OWNER_READ);
-		perms.add(PosixFilePermission.OWNER_WRITE);
-		perms.add(PosixFilePermission.OWNER_EXECUTE);
-		//add group permissions
-		perms.add(PosixFilePermission.GROUP_READ);
-		perms.add(PosixFilePermission.GROUP_WRITE);
-		perms.add(PosixFilePermission.GROUP_EXECUTE);
-		//add others permissions
-		perms.add(PosixFilePermission.OTHERS_READ);
-		
-		Files.setPosixFilePermissions(file.toPath(), perms);
 	}
 
 	private void notifyComplete(FeedProvider feedProvider, TorrentState torrentState, TorrentContent torrentContent) {
