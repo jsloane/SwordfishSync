@@ -29,7 +29,7 @@ flush privileges;
 
 ### Tomcat WAR deployment
 
-Copy the sfs-client.war and sfs-server.war files to the tomcat webapps directory, or upload to tomcat using the tomcat manager.
+Copy the sfs-client/target/sfs-client.war and sfs-server/target/sfs-server.war files to the tomcat webapps directory, or upload to tomcat using the tomcat manager.
 Refer to https://tomcat.apache.org/tomcat-8.0-doc/manager-howto.html
 
-Access the service at <host>:<port>/sfs-client
+Access the service at \<host\>:\<port\>/sfs-client
