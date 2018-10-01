@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -65,7 +66,7 @@ import swordfishsync.service.FeedProviderService;
 //})
 @EnableJpaRepositories("swordfishsync.repository")
 public class AppConfig implements SchedulingConfigurer {
-	
+
     private final Logger log = LoggerFactory.getLogger(AppConfig.class);
 
 	private static final String PROPERTY_NAME_DATABASE_DRIVER = "database.driver";
@@ -86,13 +87,15 @@ public class AppConfig implements SchedulingConfigurer {
 	 */
 	@PostConstruct
 	public void init() {
-		// create properties file in user home directory if changes are made
-		Path path = Paths.get(System.getProperty("user.home") + File.separator + ".swordfishsync" + File.separator + "application.properties");
-		if (Files.notExists(path)) {
+		// create properties file in user home directory to allow for modifications
+		Path filePath = Paths.get(System.getProperty("user.home") + File.separator + ".swordfishsync" + File.separator + "application.properties");
+		if (Files.notExists(filePath)) {
 			// copy default properties file to users home directory
 			org.springframework.core.io.Resource resource = new ClassPathResource("application.properties");
 			try {
-				Files.copy(resource.getInputStream(), path);
+				Files.createDirectories(filePath.getParent());
+				Files.createFile(filePath);
+				Files.copy(resource.getFile().toPath(), filePath, StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException e) {
 				log.error("Failed copying application.properties to user home directory", e);
 			}
