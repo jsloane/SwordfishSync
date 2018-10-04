@@ -50,11 +50,13 @@ Install development tools
 
 CentOS 7
 ```
+sudo yum install -y java-1.8.0-openjdk-devel
 #sudo yum install maven
 # note - need to manually install maven 3.3.3 or later, as maven 3.0.5 is too old
 ```
 Ubuntu
 ```
+sudo apt-get install openjdk-8-jdk
 sudo apt-get install maven
 ```
 
