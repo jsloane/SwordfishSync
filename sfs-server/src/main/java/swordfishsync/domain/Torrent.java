@@ -26,7 +26,7 @@ public class Torrent {
 	Date				dateAdded;
 
 	@NotNull
-	@Size(max = 768)
+	@Size(max = 1024)
 	String				url;
 
 	@Size(max = 256)

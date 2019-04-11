@@ -13,6 +13,6 @@ public interface TorrentStateService {
 	
 	Page<TorrentDto> getTorrentStatesByStatuses(List<Status> statuses, Pageable pageable);
 	
-	void purgeTorrentStates(List<TorrentState.Status> statuses);
+	List<String> purgeTorrentStates(List<TorrentState.Status> statuses);
 	
 }

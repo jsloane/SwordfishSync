@@ -2,10 +2,16 @@
 
 <h3>Purge Torrents</h3>
 
-Purging Torrents will update status of those in progress to skipped if they are not being downloaded by the torrent client.
+<p>Purging Torrents will update status of those in progress to skipped if they are not being downloaded by the torrent client.</p>
 
+<ul *ngIf="purgeMessages && purgeMessages.length > 0">
+    <li *ngFor="let message of purgeMessages">{{message}}</li>
+</ul>
 
-<button>Purge Torrents</button>
+<button (click)="onClickPurgeTorrents()" [disabled]="purgingTorrents">
+    <span *ngIf="purgingTorrents">Purging Torrents</span>
+    <span *ngIf="!purgingTorrents">Purge Torrents</span>
+</button>
 
 <!-- TODO - DB config, list properties file location -->
 

@@ -5,11 +5,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import swordfishsync.domain.Message;
 import swordfishsync.domain.Torrent;
 import swordfishsync.exceptions.ApplicationException;
 import swordfishsync.model.TorrentContent;
@@ -46,15 +48,23 @@ public class SystemCommandTask implements Runnable {
 			log.info("Executing system command: " + commandAndArguments);
 			
 			try {
-				pb.start();
-                pb.redirectOutput(); // TODO redirect to sfs-server.log
+				Process process = pb.start();
+				// TODO check if output data exists before logging
+				log.info(new String(IOUtils.toByteArray(process.getInputStream())));
+				log.error(new String(IOUtils.toByteArray(process.getErrorStream())));
 			} catch (IOException e) {
-				e.printStackTrace();
+				// log error
+				log.error("An error occurred executing system command [" + commandAndArguments + "]", e);
 				throw new ApplicationException("Error executing system command.", e);
+
+				// TODO use task with spring dependency injection
+				// display error message in UI
+				//messageService.logMessage(false?, Message.Type.ERROR, Message.Category.?, null, null,
+				//		"An error occurred executing system command. Exception: " + e.toString());
 			}
 		} catch (Exception e) {
-    		log.warn("Exception executing system command. ", e);
-			e.printStackTrace();
+			// log error
+    		log.error("Exception executing system command. ", e);
 		}
 	}
 

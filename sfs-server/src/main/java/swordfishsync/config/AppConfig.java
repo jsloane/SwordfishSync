@@ -62,7 +62,7 @@ import swordfishsync.service.FeedProviderService;
 @ComponentScan("swordfishsync")
 //@PropertySources({
 @PropertySource("classpath:application.properties")
-@PropertySource(value = "file:${user.home}/.swordfishsync/application.properties", ignoreResourceNotFound = true)
+@PropertySource(value = "file:${user.home}/.swordfishsync/application.properties", ignoreResourceNotFound = true) // TODO list this location in Config UI page (rename Admin to Config)
 //})
 @EnableJpaRepositories("swordfishsync.repository")
 public class AppConfig implements SchedulingConfigurer {

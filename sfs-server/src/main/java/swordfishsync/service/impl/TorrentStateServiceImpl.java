@@ -1,5 +1,6 @@
 package swordfishsync.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Resource;
@@ -55,32 +56,26 @@ public class TorrentStateServiceImpl implements TorrentStateService {
 	}
 
 	@Override
-	public void purgeTorrentStates(List<Status> statuses) {
-
-    	/*
-    	 * 
-    	 * TODO:
-    	 * 
-    	 * 
-		def torrentStatesInProgress = TorrentState.findAllByStatus(TorrentState.Status.IN_PROGRESS)
-		
-		torrentStatesInProgress.each { TorrentState torrentState ->
-			try {
-				TorrentDetails torrentDetails = torrentClientService.getTorrentDetails(torrentState.torrent, false)
-				
-				if (!torrentDetails || TorrentDetails.Status.UNKNOWN.equals(torrentDetails?.status)) {
-					// torrent details not returned from torrent client
-					torrentState.status = TorrentState.Status.SKIPPED
-					torrentState.save()
-					flash.successMessages.add('Purged torrent [' + torrentState.torrent.name + ']')
-				}
+	public List<String> purgeTorrentStates(List<Status> statuses) {
+    	List<String> messages = new ArrayList<String>();
+    	
+    	List<TorrentState> torrentStates = torrentStateRepository.findAllByStatusIn(statuses);
+    	
+    	for (TorrentState torrentState : torrentStates) {
+    		try {
+    			TorrentDetails torrentDetails = torrentClientService.getTorrentDetails(torrentState.getTorrent(), false);
+    			if (torrentDetails == null || TorrentDetails.Status.UNKNOWN.equals(torrentDetails.getStatus())) {
+    				torrentState.setStatus(TorrentState.Status.SKIPPED);
+    				torrentStateRepository.save(torrentState);
+    		    	messages.add("Purged torrent [" + torrentState.getTorrent().getName() + "]");
+    			}
 			} catch (TorrentClientException e) {
-				flash.errorMessages.add('Error retrieving torrent details for torrent [' + torrentState.torrent.name + ']. Error: ' + e.toString())
+		    	messages.add("Error retrieving torrent details for torrent [" + torrentState.getTorrent().getName() + "]. Error: " + e.toString());
+				log.error("Error retrieving torrent details for torrent [" + torrentState.getTorrent().getName() + "]", e);
 			}
-		}
-    	 */
-    	
-    	
+    	}
+
+    	return messages;
 	}
 
 }

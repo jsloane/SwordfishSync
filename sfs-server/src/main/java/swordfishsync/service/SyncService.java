@@ -120,15 +120,15 @@ public class SyncService {
 	public void syncFeeds() {
 		boolean processedFeeds = false;
 
-		List<FeedProvider> activeFeedProviders = feedProviderRepository.findAllByActive(true);
+		List<FeedProvider> allFeedProviders = feedProviderRepository.findAll();
 
-		for (FeedProvider activeFeedProvider : activeFeedProviders) {
+		for (FeedProvider feedProvider : allFeedProviders) {
 			try {
-				syncFeedProvider(activeFeedProvider);
+				syncFeedProvider(feedProvider);
 				processedFeeds = true;
 			} catch (Exception e) {
 				processedFeeds = false;
-				log.error("An error occurred syncing feed: " + activeFeedProvider.getName(), e);
+				log.error("An error occurred processing feed: " + feedProvider.getName(), e);
 			}
 			
 		}
@@ -147,7 +147,9 @@ public class SyncService {
 
 		Feed feed = feedProvider.getFeed();
 
-		getTorrentsFromFeedSourceAndUpdate(feedProvider, feed);
+		if (feedProvider.getActive()) {
+			getTorrentsFromFeedSourceAndUpdate(feedProvider, feed);
+		}
 
 		List<TorrentState.Status> finishedTorrentStatus = Arrays.asList( // new ArrayList<>(
 			TorrentState.Status.NOTIFIED_NOT_ADDED,
@@ -155,6 +157,7 @@ public class SyncService {
 			TorrentState.Status.COMPLETED
 		);
 
+		// get all feed torrents with not these statuses
 		List<TorrentState> torrentStatesToProcess = getFeedProviderTorrentStatesByStatuses(feedProvider, finishedTorrentStatus, false);
 
 		for (TorrentState torrentStateToProcess : torrentStatesToProcess) {
@@ -487,7 +490,7 @@ public class SyncService {
 											new File(targetFileLocation), feedProvider);
 									// http://www.journaldev.com/855/how-to-set-file-permissions-in-java-easily-using-java-7-posixfilepermission
 								} catch (IOException e) {
-									// this is an error that needs to be reported to the user
+									// TODO this is an error that needs to be reported to the user
 									throw new ApplicationException("Error copying files", e);
 								}
 							}
@@ -499,7 +502,7 @@ public class SyncService {
 				// todo: check seed ratios, activity dates, minimum seed time, etc... in new method checkRemoveRules()
 				if (feedProvider.getRemoveTorrentDataOnComplete()) {
 					boolean deleteData = false; // Don't delete torrent local data by default
-					if (feedProvider.getRemoveTorrentDataOnComplete() && movedOrCopiedData) {
+					if (movedOrCopiedData) {
 						deleteData = true; // Delete torrent local data if option selected, and data moved or copied to the download directory
 					}
 					log.info("Removing torrent from torrent client");

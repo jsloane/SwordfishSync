@@ -40,6 +40,8 @@ public interface TorrentStateRepository extends JpaRepository<TorrentState, Long
 	
 	Page<TorrentState> findAllByStatusIn(List<Status> statuses, Pageable pageable);
 	
+	List<TorrentState> findAllByStatusIn(List<Status> statuses);
+	
 	
 	//@Modifying
 	//@Query("delete from TorrentState t where t.id = ?1")

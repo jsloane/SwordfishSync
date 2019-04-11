@@ -1,5 +1,7 @@
 package swordfishsync.controllers;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -16,8 +18,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import swordfishsync.domain.TorrentState;
 import swordfishsync.service.MessageService;
 import swordfishsync.service.SettingService;
+import swordfishsync.service.TorrentStateService;
 import swordfishsync.service.dto.ConfigurationDto;
 import swordfishsync.service.dto.MessageDto;
 
@@ -30,6 +34,9 @@ public class AdminController {
 
 	@Resource
 	MessageService messageService;
+
+	@Resource
+	TorrentStateService torrentStateService;
 
     @GetMapping("/configuration")
     @ResponseBody
@@ -54,6 +61,15 @@ public class AdminController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteMessage(@PathVariable Long id) {
     	messageService.deleteMessage(id);
+    }
+
+    @RequestMapping(value = "/purgeInprogressTorrents", method = RequestMethod.PUT)
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<List<String>> purgeInprogressTorrents() {
+		return new ResponseEntity<List<String>>(
+			torrentStateService.purgeTorrentStates(Collections.singletonList(TorrentState.Status.IN_PROGRESS)),
+			HttpStatus.OK
+		);
     }
 
 }

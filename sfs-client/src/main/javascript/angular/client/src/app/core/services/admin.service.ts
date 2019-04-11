@@ -28,4 +28,8 @@ export class AdminService {
     return this.serverService.deleteRequest(this.restUrl + '/messages/' + id, null);
   }
 
+  purgeInprogressTorents(): Observable<string[]> {
+    return this.serverService.putRequest(this.restUrl + '/purgeInprogressTorrents', null, null);
+  }
+
 }

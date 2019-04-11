@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
+import { AdminService } from '../../core/services/admin.service';
+
 @Component({
   selector: 'app-admin',
   templateUrl: './admin.component.html',
@@ -7,9 +9,22 @@ import { Component, OnInit } from '@angular/core';
 })
 export class AdminComponent implements OnInit {
 
-  constructor() { }
+  purgeMessages: string[] = [];
+  purgingTorrents = false;
 
-  ngOnInit() {
+  constructor(public adminService: AdminService) { }
+
+  ngOnInit() { }
+
+  onClickPurgeTorrents() {
+    this.purgingTorrents = true;
+    this.adminService.purgeInprogressTorents().subscribe(returnedPurgeMessages => {
+      this.purgeMessages = returnedPurgeMessages;
+      this.purgingTorrents = false;
+    }, error => {
+        this.purgingTorrents = false;
+          console.error(error);
+    });
   }
 
 }
