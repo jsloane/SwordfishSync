@@ -4,7 +4,7 @@
 # Configuration 
 #################
 
-SEARCH_DIR_STRING="/media/path/"
+SEARCH_DIR_STRING="/media/share/"
 REPLACE_DIR_STRING="smb://file-server-hostname/share/"
 KODI_JSON_RPC="http://kodi:kodi@kodi-hostname:8080/jsonrpc"
 
@@ -30,7 +30,7 @@ done
 if [ -z "$DIRECTORY" ]; then
 	echo "Required directory argument missing."
 	echo
-	echo "Usage: ./updateKodiLibrary.sh directory=/directory/to/update"
+	echo "Usage: ./updateKodiLibrary.sh directory=/media/share/directory/to/update"
 	echo
 	exit 2
 fi
