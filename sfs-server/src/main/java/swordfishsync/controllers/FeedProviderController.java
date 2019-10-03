@@ -19,9 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import swordfishsync.domain.FeedProvider;
 import swordfishsync.exceptions.TorrentClientException;
-import swordfishsync.repository.FeedProviderRepository;
 import swordfishsync.service.FeedProviderService;
 import swordfishsync.service.TorrentClientService;
 import swordfishsync.service.dto.FeedProviderDto;
