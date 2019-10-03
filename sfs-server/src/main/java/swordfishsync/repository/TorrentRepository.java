@@ -1,16 +1,11 @@
 package swordfishsync.repository;
 
-import java.util.Date;
-import java.util.List;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import swordfishsync.domain.Feed;
-import swordfishsync.domain.FeedProvider;
 import swordfishsync.domain.Torrent;
-import swordfishsync.domain.TorrentState.Status;
 
 public interface TorrentRepository extends JpaRepository<Torrent, Long> {
 

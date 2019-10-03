@@ -2,7 +2,6 @@ package swordfishsync.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import swordfishsync.domain.Feed;
 import swordfishsync.domain.FeedProvider;
 import swordfishsync.domain.Message;
 import swordfishsync.domain.Message.Category;
