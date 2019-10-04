@@ -9,6 +9,7 @@ import java.util.TreeSet;
 import javax.annotation.Resource;
 import javax.persistence.EntityNotFoundException;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -144,7 +145,7 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 
 	private void setFeedProviderFields(FeedProvider feedProvider, FeedProviderDto feedProviderDto) {
 		feedProvider.setName(feedProviderDto.getName());
-		feedProvider.setActive(feedProviderDto.getActive());
+		feedProvider.setActive(BooleanUtils.isTrue(feedProviderDto.getActive()));
 		feedProvider.setDownloadDirectory(feedProviderDto.getDownloadDirectory());
 		feedProvider.setDetermineSubDirectory(feedProviderDto.getDetermineSubDirectory());
 		feedProvider.setExtractRars(feedProviderDto.getExtractRars());
@@ -156,12 +157,12 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 		feedProvider.setNotifyEmail(feedProviderDto.getNotifyEmail());
 		feedProvider.setDetailsUrlValueFromRegex(feedProviderDto.getDetailsUrlValueFromRegex());
 		feedProvider.setDetailsUrlFormat(feedProviderDto.getDetailsUrlFormat());
-		feedProvider.setSkipDuplicates(feedProviderDto.getSkipDuplicates());
-		feedProvider.setSkipPropersRepacksReals(feedProviderDto.getSkipPropersRepacksReals());
+		feedProvider.setSkipDuplicates(BooleanUtils.isTrue(feedProviderDto.getSkipDuplicates()));
+		feedProvider.setSkipPropersRepacksReals(BooleanUtils.isTrue(feedProviderDto.getSkipPropersRepacksReals()));
 		feedProvider.setRemoveTorrentOnComplete(feedProviderDto.getRemoveTorrentOnComplete());
 		feedProvider.setRemoveTorrentDataOnComplete(feedProviderDto.getRemoveTorrentDataOnComplete());
 		feedProvider.setFilterEnabled(feedProviderDto.getFilterEnabled());
-		feedProvider.setRemoveAddFilterOnMatch(feedProviderDto.getRemoveAddFilterOnMatch());
+		feedProvider.setRemoveAddFilterOnMatch(BooleanUtils.isTrue(feedProviderDto.getRemoveAddFilterOnMatch()));
 		feedProvider.setFilterAction(feedProviderDto.getFilterAction());
 		feedProvider.setFilterPrecedence(feedProviderDto.getFilterPrecedence());
 	}
