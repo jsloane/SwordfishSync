@@ -2,6 +2,7 @@ package swordfishsync.domain;
 
 import java.util.Date;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -21,7 +22,7 @@ public class Message {
 	}
 	
 	public enum Category {
-		HTTP, TORRENT_CLIENT, SYSTEM, FILE, SYNC, RSS
+		HTTP, TORRENT_CLIENT, SYSTEM, FILE_OPERATION, FILE_COPY, SYNC, RSS, SYS_CMD
 	}
 	
 	@Id
@@ -46,7 +47,8 @@ public class Message {
 	@ManyToOne
 	Torrent			torrent;
 
-	@Size(max = 512)
+	@Size(max = 1536)
+	@Column(length = 1536)
 	String			message;
 	
 	Boolean			reported;

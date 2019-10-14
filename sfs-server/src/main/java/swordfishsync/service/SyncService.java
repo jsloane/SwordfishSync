@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.RejectedExecutionException;
 
 import javax.annotation.Resource;
 import javax.net.ssl.SSLContext;
@@ -102,6 +103,9 @@ public class SyncService {
 	TorrentClientService torrentClientService;
 
 	@Resource
+	FileOperationService fileOperationService;
+
+	@Resource
 	ContentLookupService contentLookupService;
 
 	@Resource
@@ -112,11 +116,7 @@ public class SyncService {
 
 	@Resource
 	SettingService settingService;
-	
-	@Resource
-	TaskExecutor taskExecutor;
 
-    //@Transactional
 	public void syncFeeds() {
 		boolean processedFeeds = false;
 
@@ -140,8 +140,7 @@ public class SyncService {
 
 		log.info("Finished syncing feed(s)");
 	}
-	
-	////@Transactional
+
 	public void syncFeedProvider(FeedProvider feedProvider) {
 		log.info(String.format("Syncing feed [%s]", feedProvider.getName()));
 
@@ -172,7 +171,6 @@ public class SyncService {
 		feedProvider = feedProviderRepository.saveAndFlush(feedProvider);
 	}
 
-	//@Transactional
 	private void processTorrentState(FeedProvider feedProvider, TorrentState torrentState) {
 
 		try {
@@ -210,7 +208,7 @@ public class SyncService {
 					// notify only
 					try {
 						notificationService.sendNotification(torrentState.getFeedProvider(), torrentState.getTorrent(), torrentContent, NotificationService.Type.AVAILABLE);
-						setTorrentStatus(torrentState.getFeedProvider(), torrentState.getTorrent(), TorrentState.Status.NOTIFIED_NOT_ADDED);
+						setTorrentStatus(torrentState.getFeedProvider(), torrentState.getTorrent(), torrentState, TorrentState.Status.NOTIFIED_NOT_ADDED);
 					} catch (ApplicationException e) {
 						log.error("Error sending notification for torrent [" + torrentState.getTorrent().getName() + "]", e);
 						messageService.logMessage(false, Message.Type.WARNING, Message.Category.SYNC, torrentState.getFeedProvider(), torrentState.getTorrent(),
@@ -220,15 +218,14 @@ public class SyncService {
 			} else {
 				// torrent already downloaded, set to skipped
 				log.info("Duplicate torrent detected, skipping [" + torrentState.getTorrent().getName() + "].");
-				setTorrentStatus(torrentState.getFeedProvider(), torrentState.getTorrent(), TorrentState.Status.SKIPPED);
+				setTorrentStatus(torrentState.getFeedProvider(), torrentState.getTorrent(), torrentState, TorrentState.Status.SKIPPED);
 			}
 		} else {
 			// not interested in this torrent, set to skipped
-			setTorrentStatus(torrentState.getFeedProvider(), torrentState.getTorrent(), TorrentState.Status.SKIPPED);
+			setTorrentStatus(torrentState.getFeedProvider(), torrentState.getTorrent(), torrentState, TorrentState.Status.SKIPPED);
 		}
 	}
 
-	//@Transactional
 	private void addTorrent(TorrentState torrentState) {
 		try {
 			torrentClientService.addTorrent(torrentState);
@@ -323,12 +320,10 @@ public class SyncService {
 		return false;
 	}
 
-	//@Transactional
 	private boolean shouldAddTorrent(TorrentState torrentState) {
 		return (!torrentState.getFeedProvider().getFilterEnabled() || checkFilterMatch(torrentState));
 	}
 
-	//@Transactional
 	private boolean checkFilterMatch(TorrentState torrentState) {
 		String value = torrentState.getTorrent().getName();
 		boolean defaultAction = false;
@@ -376,7 +371,6 @@ public class SyncService {
 		return defaultAction;
 	}
 
-	//@Transactional
 	private boolean checkFilter(FeedProvider feedProvider, FilterAction filterType, String value) {
 		boolean match = false;
 		boolean removeMatchedRegex = false;
@@ -411,9 +405,7 @@ public class SyncService {
 		
 		return match;
 	}
-	
-	
-	
+
 	private void checkAndComplete(FeedProvider feedProvider, TorrentState torrentState) {
 		TorrentDetails torrentDetails = null;
 		
@@ -436,178 +428,31 @@ public class SyncService {
 			TorrentDetails.Status.FINISHED.equals(torrentDetails.getStatus()))
 		{
 			log.info("Torrent download completed for [" + torrentState.getTorrent().getName() + "]");
-			TorrentContent torrentContent = contentLookupService.getTorrentContentInfo(feedProvider, torrentState.getTorrent());
-			
+
+			TorrentContent torrentContent = contentLookupService.getTorrentContentInfo(torrentState.getFeedProvider(), torrentState.getTorrent());
+
+			// TODO revert status if rejectedExecutionHandler..? or check if queue not full?
 			try {
-				boolean successfullyCompleted = true;
-				boolean movedOrCopiedData = false;
-				String downloadDirectory = torrentContent.getDownloadDirectory();
-				if (StringUtils.isNotBlank(downloadDirectory)) {
-					createDirectory(downloadDirectory, feedProvider);
-					
-					String torrentDownloadedToDirectory = torrentDetails.getDownloadedToDirectory();
-					if (!torrentDownloadedToDirectory.endsWith(System.getProperty("file.separator"))) {
-						torrentDownloadedToDirectory += System.getProperty("file.separator");
-					}
-					
-					if (feedProvider.getExtractRars()) {
-						for (String filename : torrentDetails.getFiles()) {
-							if (filename.endsWith(".rar")) {
-								log.info("Found rar file [" + torrentDownloadedToDirectory + filename + "], extracting to [" + downloadDirectory + "]");
-								// extract rar file
-								extractRar(torrentDownloadedToDirectory + filename, downloadDirectory, feedProvider); // overwrites existing files
-								movedOrCopiedData = true;
-							}
-						}
-					}
-					
-					// if not a rar archive, just copy the entire torrent
-					if (!movedOrCopiedData) {
-						movedOrCopiedData = true;
-						if (false) {//feedProvider.removeTorrentOnComplete) { // todo: fix this (does not move data, data loss)
-							// just move torrent files using transmission
-							log.info("Moving torrent to: " + downloadDirectory);
-							//torrentClientService.moveTorrent(torrent, downloadDirectory)
-						} else {
-							// copy torrent files to downloadDir
-							log.info("Copying torrent files from [" + torrentDownloadedToDirectory + "] to [" + downloadDirectory + "]...");
-							File downloadDirectoryFile = new File(downloadDirectory);
-							for (String filename : torrentDetails.getFiles()) {
-								File fileToCopy = new File(torrentDownloadedToDirectory + filename);
-								String targetFileLocation = downloadDirectory + System.getProperty("file.separator") + fileToCopy.getName();
-								log.info("Copying file [" + filename + "] to [" + targetFileLocation + "]");
-								/*
-								 * eg
-								 * torrentDownloadDir: /data/?
-								 * filename: /?
-								 * downloadDir: /data/virtual/TV
-								 */
-								try {
-									// should be creating a hard link if supported by OS, but not possible across file systems (eg pooled file system; mhddfs)
-									FileUtils.copyFileToDirectory(fileToCopy, downloadDirectoryFile); // note - overwrites existing files
-									FileSystemUtils.setFilePermissions(downloadDirectoryFile, feedProvider);
-									FileSystemUtils.setFilePermissions(
-											new File(targetFileLocation), feedProvider);
-									// http://www.journaldev.com/855/how-to-set-file-permissions-in-java-easily-using-java-7-posixfilepermission
-								} catch (IOException e) {
-									// TODO this is an error that needs to be reported to the user
-									throw new ApplicationException("Error copying files", e);
-								}
-							}
-							log.info("...Finished copying torrent files");
-						}
-					}
-				}
+				// process torrent files in a new thread
+				fileOperationService.processTorrentCompletion(torrentState, torrentDetails, torrentContent);
 				
-				// todo: check seed ratios, activity dates, minimum seed time, etc... in new method checkRemoveRules()
-				if (feedProvider.getRemoveTorrentDataOnComplete()) {
-					boolean deleteData = false; // Don't delete torrent local data by default
-					if (movedOrCopiedData) {
-						deleteData = true; // Delete torrent local data if option selected, and data moved or copied to the download directory
-					}
-					log.info("Removing torrent from torrent client");
-					torrentClientService.removeTorrent(torrentState.getTorrent(), deleteData);
-				}
-				
-				//torrent.status = Torrent.Status.NOTIFY_COMPLETED
-				if (successfullyCompleted) {
-					setTorrentStatus(feedProvider, torrentState.getTorrent(), TorrentState.Status.NOTIFY_COMPLETED);
-					torrentState.getTorrent().setDateCompleted(new Date());
+				setTorrentStatus(torrentState.getFeedProvider(), torrentState.getTorrent(), torrentState, TorrentState.Status.NOTIFY_COMPLETED);
+				torrentState.getTorrent().setDateCompleted(new Date());
 
-					notifyComplete(feedProvider, torrentState, torrentContent);
-					runSystemCommand(feedProvider, torrentState.getTorrent(), torrentContent);
-				}
-				
-			} catch (ApplicationException | TorrentClientException e) {
-				log.error("An error occurred completing torrent: " + torrentState.getTorrent().getName(), e);
-
-				// display error message in UI and notify user
-				messageService.logMessage(true, Message.Type.ERROR, Message.Category.FILE, torrentState.getFeedProvider(), torrentState.getTorrent(),
-						"Error completing torrent. File cleanup may be required. Exception: " + e.toString());
-			}
-		}
-	}
-	
-	private void runSystemCommand(FeedProvider feedProvider, Torrent torrent, TorrentContent torrentContent) {
-		if (StringUtils.isNotBlank(feedProvider.getSystemCommand())) {
-			taskExecutor.execute(
-				new SystemCommandTask(feedProvider.getSystemCommand(), torrent, torrentContent)
-			);
-		}
-	}
-
-	private void extractRar(String filename, String destinationDirectory, FeedProvider feedProvider) throws ApplicationException {
-		try {
-			final File rar = new File(filename);
-			final File destinationFolder = new File(destinationDirectory);
-			
-			// check if multi part, and only extract the first file
-			Archive downloadedArchive = new Archive(rar);
-			downloadedArchive.getMainHeader().print();
-			if (downloadedArchive.getMainHeader().isMultiVolume() && !downloadedArchive.getMainHeader().isFirstVolume()) {
-				downloadedArchive.close();
-				return;
-			}
-			downloadedArchive.close();
-			
-			log.info("Extracting rar file...");
-			ExtractArchive extractArchive = new ExtractArchive();
-			extractArchive.extractArchive(rar, destinationFolder);
-			
-			// group write permission on extracted to directory and files
-			File extractedToDirectory = new File(destinationDirectory);
-			if (extractedToDirectory.exists() && extractedToDirectory.isDirectory()) {
-				log.info("Setting file permissions on directory: " + extractedToDirectory);
-				FileSystemUtils.setFilePermissions(extractedToDirectory, feedProvider);
-				if (extractedToDirectory.listFiles() != null) {
-					for (File extractedFile : extractedToDirectory.listFiles()) {
-						log.info("Setting file permissions on file: " + extractedFile);
-						FileSystemUtils.setFilePermissions(extractedFile, feedProvider);
-					}
-				}
-			}
-			
-			log.info("...Finished extracting rar file");
-		} catch (IOException | RarException e) {
-			throw new ApplicationException("Error extracting rar file", e);
-		}
-		// todo finally... close...
-	}
-
-	private void createDirectory(String downloadDirectory, FeedProvider feedProvider) throws ApplicationException {
-		// create downloadDirectory if it doesn't exist
-		File saveDir = new File(downloadDirectory);
-		
-		// no longer need these comments..?
-		//FileUtils.
-		//NameFileComparator comparator = new NameFileComparator(IOCase.SENSITIVE);
-		// http://www.javacodegeeks.com/2014/10/apache-commons-io-tutorial.html
-		// http://commons.apache.org/proper/commons-io/apidocs/org/apache/commons/io/IOCase.html
-		
-		if (!saveDir.exists()) {
-			log.info("Download directory does not exist, creating it: " + downloadDirectory);
-			boolean createdDir = false;
-			try {
-				createdDir = saveDir.mkdirs(); // TODO use nio package
-				log.info("Setting file permissions on created directory: " + downloadDirectory);
-				FileSystemUtils.setFilePermissions(saveDir, feedProvider);
-			} catch (Exception e) {
-				throw new ApplicationException("Unable to create directory: " + downloadDirectory + ". Exception: " + e.toString(), e);
-			}
-			if (!createdDir) {
-				throw new ApplicationException("Unable to create directory: " + downloadDirectory);
+				notifyComplete(torrentState.getFeedProvider(), torrentState, torrentContent);
+			} catch (RejectedExecutionException e) {
+				log.warn("An error occurred processing completion for torrent: " + torrentState.getTorrent().getName(), e);
 			}
 		}
 	}
 
-	private void notifyComplete(FeedProvider feedProvider, TorrentState torrentState, TorrentContent torrentContent) {
+	public void notifyComplete(FeedProvider feedProvider, TorrentState torrentState, TorrentContent torrentContent) {
 		if (torrentContent == null) {
 			torrentContent = contentLookupService.getTorrentContentInfo(feedProvider, torrentState.getTorrent());
 		}
 		try {
 			notificationService.sendNotification(feedProvider, torrentState.getTorrent(), torrentContent, NotificationService.Type.COMPLETED);
-			//torrent.status = Torrent.Status.COMPLETED
-			setTorrentStatus(feedProvider, torrentState.getTorrent(), TorrentState.Status.COMPLETED);
+			torrentState = setTorrentStatus(feedProvider, torrentState.getTorrent(), torrentState, TorrentState.Status.COMPLETED);
 		} catch (ApplicationException e) {
 			log.error("An error occurred sending notification", e);
 			// TODO logError(false, Message.Type.WARNING, Message.Category.SYNC, feedProvider, torrent, e.toString())
@@ -664,7 +509,6 @@ public class SyncService {
 		return removeTorrentState;
 	}*/
 
-	//@Transactional
 	private List<TorrentState> getFeedProviderTorrentStatesByStatuses(FeedProvider feedProvider, List<TorrentState.Status> statuses, boolean inStatus) {
 		if (inStatus) {
 			return torrentStateRepository.findAllByFeedProviderAndStatusIn(feedProvider, statuses);
@@ -673,25 +517,6 @@ public class SyncService {
 		}
 	}
 	
-	/*@Transactional
-	private List<Torrent> getFeedProviderTorrentsByStatusesAndDateAdded(FeedProvider feedProvider, List<TorrentState.Status> statuses, boolean inStatus, Date dateAddedBefore) {
-		if (inStatus) {
-			return torrentRepository.findAllByTorrentStatesFeedProviderAndTorrentStatesStatusInAndDateAddedBefore(feedProvider, statuses, dateAddedBefore);
-		} else {
-			return torrentRepository.findAllByTorrentStatesFeedProviderAndTorrentStatesStatusNotInAndDateAddedBefore(feedProvider, statuses, dateAddedBefore);
-		}
-	}*/
-	
-	/*@Transactional
-	private List<TorrentState> getTorrentStatesByFeedProviderAndStatusesAndDateAdded(FeedProvider feedProvider, List<TorrentState.Status> statuses, boolean inStatus, Date dateAddedBefore) {
-		if (inStatus) {
-			return torrentStateRepository.findAllByFeedProviderAndStatusInAndTorrentDateAddedBefore(feedProvider, statuses, dateAddedBefore);
-		} else {
-			return torrentStateRepository.findAllByFeedProviderAndStatusNotInAndTorrentDateAddedBefore(feedProvider, statuses, dateAddedBefore);
-		}
-	}*/
-
-	//@Transactional // TODO - force new transaction?
 	private void getTorrentsFromFeedSourceAndUpdate(FeedProvider feedProvider, Feed feed) {
 		
 		if (isItTimeToUpdateFeed(feedProvider)) {
@@ -786,7 +611,7 @@ public class SyncService {
 							
 							List<FeedProvider> feedFeedProviders = feedProviderRepository.findAllByFeed(feed);
 							for (FeedProvider feedFeedProvider : feedFeedProviders) {
-								setTorrentStatus(feedFeedProvider, newTorrent, newTorrentStatus);
+								setTorrentStatus(feedFeedProvider, newTorrent, null, newTorrentStatus);
 							}
 							
 						} else if (existingTorrent != null && !existingTorrent.getInCurrentFeed()) {
@@ -817,11 +642,9 @@ public class SyncService {
 		}
 	}
 
-	//@Transactional
-	void setTorrentStatus(FeedProvider feedProvider, Torrent torrent, Status status) { // TODO move to torrent state service setTorrentStateStatus
-		//TorrentState torrentState = TorrentState.findByFeedProviderAndTorrent(feedProvider, torrent)
-		TorrentState torrentState = torrentStateRepository.findByFeedProviderAndTorrent(feedProvider, torrent);
+	private TorrentState setTorrentStatus(FeedProvider feedProvider, Torrent torrent, TorrentState torrentState, Status status) { // TODO move to torrent state service setTorrentStateStatus
 		if (torrentState == null) {
+			torrentState = torrentStateRepository.findByFeedProviderAndTorrent(feedProvider, torrent);
 			torrentState = new TorrentState();
 			torrentState.setFeedProvider(feedProvider);
 			torrentState.setTorrent(torrent);
@@ -830,9 +653,9 @@ public class SyncService {
 			torrentState.setStatus(status);
 		}
 		torrentState = torrentStateRepository.saveAndFlush(torrentState);
+		return torrentState;
 	}
 
-	//@Transactional
 	private boolean isItTimeToUpdateFeed(FeedProvider feedProvider) {
 		Boolean refreshFeed = false;
 		if (feedProvider.getFeed().getLastFetched() != null && (feedProvider.getSyncInterval() != 0 || feedProvider.getFeed().getTtl() != 0)) {

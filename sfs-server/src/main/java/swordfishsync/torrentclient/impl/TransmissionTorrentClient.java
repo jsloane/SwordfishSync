@@ -42,6 +42,7 @@ public class TransmissionTorrentClient implements TorrentClient {
 		// store torrent data in short term cache
 		String cacheName = "sfs-server-transmissionClientData";
 
+		// note log on startup -  Cache 'sfs-server-transmissionClientData' created in EhcacheManager.
 		
 		/*
 		 * 

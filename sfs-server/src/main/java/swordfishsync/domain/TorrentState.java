@@ -1,6 +1,8 @@
 package swordfishsync.domain;
 
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
@@ -33,6 +35,7 @@ public class TorrentState {
 	Torrent			torrent;
 	
 	@NotNull
+	@Enumerated(EnumType.STRING)
 	Status			status;
 
 	public Long getId() {

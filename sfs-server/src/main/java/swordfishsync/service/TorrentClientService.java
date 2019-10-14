@@ -99,7 +99,7 @@ public class TorrentClientService {
 		if (!torrentState.getTorrent().getAddedToTorrentClient()) {
 			getTorrentClient().addTorrent(torrentState);
 			torrentState.getTorrent().setAddedToTorrentClient(true);
-			syncService.setTorrentStatus(torrentState.getFeedProvider(), torrentState.getTorrent(), TorrentState.Status.IN_PROGRESS);
+			syncService.setTorrentStatus(torrentState.getFeedProvider(), torrentState.getTorrent(), torrentState, TorrentState.Status.IN_PROGRESS);
 			torrentStateRepository.save(torrentState);
 			added = true;
 		}

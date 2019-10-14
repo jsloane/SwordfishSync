@@ -56,7 +56,6 @@ import swordfishsync.service.FeedProviderService;
  */
 @Configuration
 @EnableScheduling
-@EnableAsync
 @EnableSpringDataWebSupport
 @EnableTransactionManagement
 @ComponentScan("swordfishsync")
@@ -165,14 +164,6 @@ public class AppConfig implements SchedulingConfigurer {
     @Bean(destroyMethod = "shutdown")
     public Executor taskScheduler() {
     	return Executors.newScheduledThreadPool(1);
-    }
-    
-    @Bean
-    public TaskExecutor taskExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(1);
-        executor.setMaxPoolSize(1);
-        return executor;
     }
     
 }
