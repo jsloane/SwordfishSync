@@ -1,8 +1,8 @@
 version: "3"
 services:
     swordfishsync:
-        image: https://github.com/jsloane/swordfishsync.git
-        container_name: swordfishsync
+        image: github.com/jsloane/swordfishsync
+        container_name: SwordfishSync
         ports:
           - "8080:8080"
         restart: unless-stopped
