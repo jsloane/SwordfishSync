@@ -1,6 +1,6 @@
 FROM alpine/git as clone
 WORKDIR /app
-RUN git clone https://github.com/jsloane/SwordfishSync.git
+RUN git clone https://github.com/jsloane/swordfishsync.git
 
 FROM maven:3.5-jdk-8-alpine as build
 WORKDIR /app
