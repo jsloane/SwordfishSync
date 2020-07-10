@@ -95,6 +95,8 @@ public class FeedProvider {
 	@NotNull
 	Boolean					skipPropersRepacksReals;
 
+	Boolean					propersRepacksReplaceFile;
+
 	@NotNull
 	Boolean					removeTorrentOnComplete;
 
@@ -280,6 +282,14 @@ public class FeedProvider {
 
 	public void setSkipPropersRepacksReals(Boolean skipPropersRepacksReals) {
 		this.skipPropersRepacksReals = skipPropersRepacksReals;
+	}
+
+	public Boolean getPropersRepacksReplaceFile() {
+		return propersRepacksReplaceFile;
+	}
+
+	public void setPropersRepacksReplaceFile(Boolean propersRepacksReplaceFile) {
+		this.propersRepacksReplaceFile = propersRepacksReplaceFile;
 	}
 
 	public Boolean getRemoveTorrentOnComplete() {

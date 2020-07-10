@@ -2,7 +2,11 @@
 
 SwordfishSync is a web application that adds torrents from RSS feeds to transmission bittorrent service.
 
-## Installation
+## Docker Installation
+
+TODO
+
+## Standard Installation
 
 ### Prerequisites
 

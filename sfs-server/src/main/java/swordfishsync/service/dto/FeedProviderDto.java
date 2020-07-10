@@ -39,6 +39,7 @@ public class FeedProviderDto {
 	String detailsUrlFormat;
 	Boolean skipDuplicates = true;
 	Boolean skipPropersRepacksReals = false;
+	Boolean propersRepacksReplaceFile = false;
 	Boolean removeTorrentOnComplete = false;
 	Boolean removeTorrentDataOnComplete = false;
 	Boolean filterEnabled = true;
@@ -246,6 +247,14 @@ public class FeedProviderDto {
 
 	public void setSkipPropersRepacksReals(Boolean skipPropersRepacksReals) {
 		this.skipPropersRepacksReals = skipPropersRepacksReals;
+	}
+
+	public Boolean getPropersRepacksReplaceFile() {
+		return propersRepacksReplaceFile;
+	}
+
+	public void setPropersRepacksReplaceFile(Boolean propersRepacksReplaceFile) {
+		this.propersRepacksReplaceFile = propersRepacksReplaceFile;
 	}
 
 	public Boolean getRemoveTorrentOnComplete() {

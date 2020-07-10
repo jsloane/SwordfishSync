@@ -46,7 +46,7 @@ import { AdminComponent } from './components/admin/admin.component';
 import { ConfigurationComponent, ChildConfigurationComponent } from './components/configuration/configuration.component';
 import { MessagesComponent } from './components/messages/messages.component';
 
-
+// TODO use material design dark theme
 
 @NgModule({
   declarations: [

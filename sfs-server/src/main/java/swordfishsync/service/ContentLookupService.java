@@ -92,6 +92,17 @@ public class ContentLookupService {
 			return torrentContent;
 		}
 		
+		// TV show regex S##
+		Pattern pTvS = Pattern.compile("(.*?)[.\\s][sS](\\d{2}).*");
+		Matcher mTvS = pTvS.matcher(name);
+		if (mTvS.matches()) {
+			torrentContent.setName(mTvS.group(1).replace(".", " "));
+			torrentContent.setSeasonNumber(mTvS.group(2));
+			torrentContent.setType(TorrentContent.Type.TV);
+			processTvShow(feedProvider, torrentContent, torrent, fetchDetails);
+			return torrentContent;
+		}
+		
 		// HD movie regex
 		Pattern pMovieHd = Pattern.compile("^(.*[^-]+)[\\.|_ ](\\d{4}).*\\.(\\d{3,4}p).*\\.(.{2,4}).*");
 		Matcher mMovieHd = pMovieHd.matcher(name);
@@ -157,25 +168,34 @@ public class ContentLookupService {
 						}
 					}
 					
-					if (StringUtils.isNotBlank(showId) && StringUtils.isNotBlank(torrentContent.getSeasonNumber()) && StringUtils.isNotBlank(torrentContent.getEpisodeNumber())) {
-						Episode episode = tvDB.getEpisode(
-								showId, Integer.parseInt(torrentContent.getSeasonNumber()), Integer.parseInt(torrentContent.getEpisodeNumber()), "en"
-						);
-						if (episode != null) {
-							if (StringUtils.isNotBlank(seriesName)) {
-								//torrentContent.setName(seriesName);
-							}
-							if (StringUtils.isNotBlank(episode.getFilename())) {
-								torrentContent.setBackdropUrl(episode.getFilename());
-								if (torrentContent.getBackdropUrl().equalsIgnoreCase(torrentContent.getPosterUrl())) {
-									torrentContent.setPosterUrl("");
+					if (StringUtils.isNotBlank(showId)) {
+						if (StringUtils.isNotBlank(torrentContent.getSeasonNumber()) && StringUtils.isNotBlank(torrentContent.getEpisodeNumber())) {
+							Episode episode = tvDB.getEpisode(
+									showId, Integer.parseInt(torrentContent.getSeasonNumber()), Integer.parseInt(torrentContent.getEpisodeNumber()), "en"
+							);
+							if (episode != null) {
+								if (StringUtils.isNotBlank(seriesName)) {
+									//torrentContent.setName(seriesName);
+								}
+								if (StringUtils.isNotBlank(episode.getFilename())) {
+									torrentContent.setBackdropUrl(episode.getFilename());
+									if (torrentContent.getBackdropUrl().equalsIgnoreCase(torrentContent.getPosterUrl())) {
+										torrentContent.setPosterUrl("");
+									}
+								}
+								if (StringUtils.isNotBlank(episode.getEpisodeName())) {
+									torrentContent.setEpisodeTitle(episode.getEpisodeName());
+								}
+								if (StringUtils.isNotBlank(episode.getOverview())) {
+									torrentContent.setEpisodeDescription(episode.getOverview());
 								}
 							}
-							if (StringUtils.isNotBlank(episode.getEpisodeName())) {
-								torrentContent.setEpisodeTitle(episode.getEpisodeName());
-							}
-							if (StringUtils.isNotBlank(episode.getOverview())) {
-								torrentContent.setEpisodeDescription(episode.getOverview());
+						} else {
+							Series series = tvDB.getSeries(showId, "en");
+							if (series != null) {
+								if (StringUtils.isNotBlank(series.getOverview())) {
+									torrentContent.setEpisodeDescription(series.getOverview());
+								}
 							}
 						}
 					}

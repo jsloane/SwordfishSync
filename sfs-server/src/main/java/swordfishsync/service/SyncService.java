@@ -78,8 +78,8 @@ import swordfishsync.repository.FeedProviderRepository;
 import swordfishsync.repository.FeedRepository;
 import swordfishsync.repository.TorrentRepository;
 import swordfishsync.repository.TorrentStateRepository;
-import swordfishsync.tasks.SystemCommandTask;
-import swordfishsync.util.FileSystemUtils;
+//import swordfishsync.tasks.SystemCommandTask;
+//import swordfishsync.util.FileSystemUtils;
 
 @Transactional
 @Service("syncService")
@@ -253,6 +253,7 @@ public class SyncService {
 		
 		if (!feedProvider.getSkipPropersRepacksReals() && (torrentContent.getProper() || torrentContent.getRepack() || torrentContent.getReal())) {
 			// get proper/repack/real
+			// TODO Limit proper to within 2 weeks
 			log.info(String.format("Proper/repack/real found for torrent [%s]", torrent.getName()));
 			return false;
 		}
@@ -642,7 +643,7 @@ public class SyncService {
 		}
 	}
 
-	private TorrentState setTorrentStatus(FeedProvider feedProvider, Torrent torrent, TorrentState torrentState, Status status) { // TODO move to torrent state service setTorrentStateStatus
+	public TorrentState setTorrentStatus(FeedProvider feedProvider, Torrent torrent, TorrentState torrentState, Status status) { // TODO move to torrent state service setTorrentStateStatus
 		if (torrentState == null) {
 			torrentState = torrentStateRepository.findByFeedProviderAndTorrent(feedProvider, torrent);
 			torrentState = new TorrentState();

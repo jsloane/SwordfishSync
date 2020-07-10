@@ -131,7 +131,7 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 			feedProvider.setFeed(feed);
 
 			
-			// TODO delete old torrent status
+			// TODO delete old torrent status - this happens already?
 			// TODO find if feed has any other feed providers, and remove the feed if not
 			// TODO see how grails did it
 		}
@@ -159,6 +159,7 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 		feedProvider.setDetailsUrlFormat(feedProviderDto.getDetailsUrlFormat());
 		feedProvider.setSkipDuplicates(BooleanUtils.isTrue(feedProviderDto.getSkipDuplicates()));
 		feedProvider.setSkipPropersRepacksReals(BooleanUtils.isTrue(feedProviderDto.getSkipPropersRepacksReals()));
+		feedProvider.setPropersRepacksReplaceFile(feedProviderDto.getPropersRepacksReplaceFile()); // TODO add "Proper/Repack replaces files" option to UI, implement in service
 		feedProvider.setRemoveTorrentOnComplete(feedProviderDto.getRemoveTorrentOnComplete());
 		feedProvider.setRemoveTorrentDataOnComplete(feedProviderDto.getRemoveTorrentDataOnComplete());
 		feedProvider.setFilterEnabled(feedProviderDto.getFilterEnabled());
