@@ -1,7 +1,9 @@
 version: "3"
 services:
     swordfishsync:
-        image: github.com/jsloane/swordfishsync
+        build:
+            context: github.com/jsloane/swordfishsync
+            dockerfile: Dockerfile
         container_name: SwordfishSync
         ports:
           - "8080:8080"
