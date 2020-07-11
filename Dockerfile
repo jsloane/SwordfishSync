@@ -18,5 +18,4 @@ COPY --from=build /app/sfs-client/target/sfs-client.war /usr/local/tomcat/webapp
 COPY --from=build /app/sfs-server/target/sfs-server.war /usr/local/tomcat/webapps/
 
 EXPOSE 8080
-ENTRYPOINT ["sh", "-c"]
 CMD ["catalina.sh", "run"]
