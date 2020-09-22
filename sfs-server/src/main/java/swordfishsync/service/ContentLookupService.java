@@ -22,7 +22,9 @@ import com.omertron.thetvdbapi.model.Series;
 
 import swordfishsync.domain.ExpandedData;
 import swordfishsync.domain.FeedProvider;
+import swordfishsync.domain.Message;
 import swordfishsync.domain.Torrent;
+import swordfishsync.exceptions.ApplicationException;
 import swordfishsync.model.TorrentContent;
 import swordfishsync.util.FeedProviderUtils;
 import swordfishsync.util.FileSystemUtils;
@@ -34,6 +36,9 @@ public class ContentLookupService {
 
 	@Resource
 	SettingService settingService;
+
+	@Resource
+	FileOperationService fileOperationService;
     
 	private static final String NAME_KEY = "showname";
 	private static final String EPISODE_ID_KEY = "episode";
@@ -205,7 +210,7 @@ public class ContentLookupService {
 			}
 		}
 		
-		determineTvSubDirectory(feedProvider, torrentContent);
+		determineTvSubDirectory(feedProvider, torrentContent, torrent);
 	}
 
 	private void processMovie(FeedProvider feedProvider, TorrentContent torrentContent, boolean fetchDetails) {
@@ -257,7 +262,7 @@ public class ContentLookupService {
 		constructDownloadDirectory(feedProvider, torrentContent);
 	}
 
-	private void determineTvSubDirectory(FeedProvider feedProvider, TorrentContent torrentContent) {
+	private void determineTvSubDirectory(FeedProvider feedProvider, TorrentContent torrentContent, Torrent torrent) {
 		String seasonDirectoryPrefix = "Season"; // todo - could be a property - seasonDirectoryPrefix
 		if (StringUtils.isNotBlank(torrentContent.getName())) {
 			torrentContent.setSubDirectory(torrentContent.getName());
@@ -276,8 +281,15 @@ public class ContentLookupService {
 			}
 			torrentContent.setSubDirectory(torrentContent.getSubDirectory() + System.getProperty("file.separator"));
 
-			// set permissions on name directory
-			FileSystemUtils.setFilePermissions(new File(feedProvider.getDownloadDirectory() + System.getProperty("file.separator") + torrentContent.getSubDirectory()), feedProvider);
+			if (FeedProvider.Action.DOWNLOAD.equals(feedProvider.getAction())) {
+				// create and set permissions on name directory
+				String directoryToCreate = feedProvider.getDownloadDirectory() + System.getProperty("file.separator") + torrentContent.getSubDirectory();
+				try {
+					fileOperationService.createDirectory(directoryToCreate, feedProvider);
+				} catch (ApplicationException e) {
+					log.error("An error occurred creating directory: " + directoryToCreate, e);
+				}
+			}
 
 			if (StringUtils.isNotBlank(torrentContent.getSeasonNumber())) {
 				String seasonNumberPrefix = " ";

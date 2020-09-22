@@ -6,3 +6,16 @@
 @import url("assets/material-design-icons/material-icons.css");
 
 /* TODO use robotto */
+
+html, body, mat-sidenav-container {
+    height: 100%;
+}
+body {
+    margin: 0;
+}
+a {
+    color: #40c4ff;
+}
+div#page {
+    margin: 0 1em 1em 1em;
+}

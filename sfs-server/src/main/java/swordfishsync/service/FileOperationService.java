@@ -4,6 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileOwnerAttributeView;
+import java.nio.file.attribute.GroupPrincipal;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.UserPrincipal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,7 +133,7 @@ public class FileOperationService {
 		
 	}
 
-	private void createDirectory(String downloadDirectory, FeedProvider feedProvider) throws ApplicationException {
+	public void createDirectory(String downloadDirectory, FeedProvider feedProvider) throws ApplicationException {
 		// create downloadDirectory if it doesn't exist
 		File saveDir = new File(downloadDirectory);
 		
@@ -141,8 +146,8 @@ public class FileOperationService {
 		if (!saveDir.exists()) {
 			log.info("Download directory does not exist, creating it: " + downloadDirectory);
 			try {
+				// create directories with specific ownership
 				Files.createDirectories(saveDir.toPath());
-				log.info("Setting file permissions on created directory: " + downloadDirectory);
 				FileSystemUtils.setFilePermissions(saveDir, feedProvider);
 			} catch (IOException e) {
 				throw new ApplicationException("Unable to create directory: " + downloadDirectory + ". Exception: " + e.toString(), e);
