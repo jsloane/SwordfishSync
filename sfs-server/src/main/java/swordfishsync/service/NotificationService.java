@@ -1,32 +1,24 @@
 package swordfishsync.service;
 
-import java.util.Arrays;
-import java.util.Date;
 import java.util.Locale;
 
 import javax.annotation.Resource;
-import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
-import org.thymeleaf.spring4.SpringTemplateEngine;
-import org.thymeleaf.templateresolver.TemplateResolver;
+import org.thymeleaf.spring5.SpringTemplateEngine;
 
 import swordfishsync.domain.FeedProvider;
 import swordfishsync.domain.Message;
 import swordfishsync.domain.Torrent;
 import swordfishsync.exceptions.ApplicationException;
 import swordfishsync.model.TorrentContent;
-import swordfishsync.repository.SettingRepository;
-import swordfishsync.service.NotificationService.Type;
 
 @Service("notificationService")
 public class NotificationService {
@@ -36,8 +28,8 @@ public class NotificationService {
 	@Resource
 	SettingService settingService;
     
-	@Resource
-    TemplateResolver emailTemplateResolver;
+	//@Resource
+    //TemplateResolver emailTemplateResolver;
 
 	@Resource
 	SpringTemplateEngine templateEngine;

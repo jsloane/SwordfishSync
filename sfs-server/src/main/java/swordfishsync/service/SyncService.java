@@ -2,14 +2,6 @@ package swordfishsync.service;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.attribute.FileOwnerAttributeView;
-import java.nio.file.attribute.GroupPrincipal;
-import java.nio.file.attribute.PosixFileAttributeView;
-import java.nio.file.attribute.PosixFileAttributes;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.UserPrincipal;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -31,7 +23,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -43,16 +34,9 @@ import org.apache.http.impl.client.HttpClients;
 import org.jdom2.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.github.junrar.Archive;
-import com.github.junrar.exception.RarException;
-import com.github.junrar.extract.ExtractArchive;
 import com.rometools.rome.feed.rss.Channel;
 import com.rometools.rome.feed.synd.SyndEnclosure;
 import com.rometools.rome.feed.synd.SyndEntry;
@@ -78,8 +62,6 @@ import swordfishsync.repository.FeedProviderRepository;
 import swordfishsync.repository.FeedRepository;
 import swordfishsync.repository.TorrentRepository;
 import swordfishsync.repository.TorrentStateRepository;
-//import swordfishsync.tasks.SystemCommandTask;
-//import swordfishsync.util.FileSystemUtils;
 
 @Transactional
 @Service("syncService")
@@ -165,8 +147,6 @@ public class SyncService {
 
 		purgeFeedTorrents(feedProvider, feed, finishedTorrentStatus);
 
-
-		//feedProvider = feedProviderRepository.findOne(feedProvider.getId());
 		feedProvider.setLastProcessed(new Date());
 		feedProvider = feedProviderRepository.saveAndFlush(feedProvider);
 	}
@@ -491,25 +471,6 @@ public class SyncService {
 		}
 	}
 
-	/*private boolean checkTorrentStateToRemove(FeedProvider feedProvider, TorrentState torrentState, int maxDeleteInterval) {
-		if (!feedProvider.getFeed().getIsCurrent() || torrentState.getTorrent().getInCurrentFeed()) {
-			return false;
-		}
-		
-		//long addedInterval = TimeUnit.MILLISECONDS.toDays(new Date().getTime() - torrent.getDateAdded().getTime());
-		long addedInterval = ChronoUnit.DAYS.between(feedProvider.getFeed().getLastPurged().toInstant(), torrentState.getTorrent().getDateAdded().toInstant());
-		Boolean removeTorrentState = true;
-		if (!(addedInterval > maxDeleteInterval && maxDeleteInterval > 0)) {
-			removeTorrentState = false;
-		}
-		
-		if (removeTorrentState) {
-			log.info("Deleting torrent state " + torrentState.getTorrent().getName() + " from database. Date Added: " + torrentState.getTorrent().getDateAdded() + ", " + addedInterval + " days ago.");
-		}
-		
-		return removeTorrentState;
-	}*/
-
 	private List<TorrentState> getFeedProviderTorrentStatesByStatuses(FeedProvider feedProvider, List<TorrentState.Status> statuses, boolean inStatus) {
 		if (inStatus) {
 			return torrentStateRepository.findAllByFeedProviderAndStatusIn(feedProvider, statuses);
@@ -524,7 +485,6 @@ public class SyncService {
 			log.info("Fetching feed: " + feedProvider.getName());
 			
 			feed.setIsCurrent(false);
-			
 			boolean feedIsCurrent = false;
 			
 			SyndFeed syndFeed = getFeedXml(feedProvider);
@@ -536,31 +496,15 @@ public class SyncService {
 					Channel channel = (Channel) syndFeed.originalWireFeed();
 					int ttl = channel.getTtl();
 					if (feed.getTtl() != ttl) {
-						//feedProvider.feed.ttl = ttl
 						feed.setTtl(ttl);
 					}
 				}
 				
-				/*def torrentsInCurrentFeed = Torrent.findAllByFeedAndInCurrentFeed(feedProvider.feed, true)
-				torrentsInCurrentFeed.each { Torrent torrentInCurrentFeed ->
-					//println ''
-					//println '### setting torrentInCurrentFeed.inCurrentFeed = false'
-					//println '###         torrentInCurrentFeed.name: ' + torrentInCurrentFeed.name
-					//println '###         torrentInCurrentFeed.id:   ' + torrentInCurrentFeed.id
-					//torrentInCurrentFeed.refresh() // refresh to avoid org.hibernate.StaleObjectStateException
-					torrentInCurrentFeed.inCurrentFeed = false
-					torrentInCurrentFeed = torrentInCurrentFeed.saveAndFlush()
-					//torrentInCurrentFeed = torrentInCurrentFeed.merge()
-				}*/
 				// set all torrents where inCurrentFeed = true to inCurrentFeed = false
 				torrentRepository.setInCurrentFeedByInCurrentFeedAndFeed(false, true, feed);
-				
-				
-				
-				
-				
-				for (Iterator<?> i = syndFeed.getEntries().iterator(); i.hasNext();) {
-					SyndEntry entry = (SyndEntry) i.next();
+
+				for (Iterator<SyndEntry> i = syndFeed.getEntries().iterator(); i.hasNext();) {
+					SyndEntry entry = i.next();
 					
 					Set<ExpandedData> expandedData = new HashSet<ExpandedData>();
 					
@@ -593,7 +537,6 @@ public class SyncService {
 					
 					if (url != null && !url.isEmpty()) {
 						// check torrent doesn't already exist, by checking the url
-						//Torrent existingTorrent = Torrent.findByFeedAndUrl(feedProvider.feed, url)
 						Torrent existingTorrent = torrentRepository.findByFeedAndUrl(feed, url);
 						
 						if (existingTorrent == null) {

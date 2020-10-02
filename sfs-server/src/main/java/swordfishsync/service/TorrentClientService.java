@@ -1,21 +1,18 @@
 package swordfishsync.service;
 
-import java.io.IOException;
 import java.util.List;
 
 import javax.annotation.Resource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import ca.benow.transmission.TransmissionClient;
-import ca.benow.transmission.model.TorrentStatus;
 import swordfishsync.torrentclient.TorrentClient;
 import swordfishsync.torrentclient.impl.TransmissionTorrentClient;
+import swordfishsync.domain.Message;
 import swordfishsync.domain.Torrent;
-//import swordfishsync.TorrentDetails;
 import swordfishsync.domain.TorrentState;
 import swordfishsync.exceptions.TorrentClientException;
 import swordfishsync.model.TorrentDetails;
@@ -33,6 +30,9 @@ public class TorrentClientService {
 	
 	@Resource
 	SyncService syncService;
+	
+	@Resource
+	MessageService messageService;
 
 	@Resource
 	TorrentStateRepository torrentStateRepository;
@@ -49,7 +49,10 @@ public class TorrentClientService {
 	
 	public void setTorrentClient() {
 		log.info("### TorrentClientService setTorrentClient ###");
-		if ("transmission".equals(settingService.getValue(SettingService.CODE_TORRENT_TYPE, String.class))) {
+
+		String torrentClientType = settingService.getValue(SettingService.CODE_TORRENT_TYPE, String.class);
+
+		if ("transmission".equals(torrentClientType)) {
 			// transmission client
 			
 			torrentClient = null;
@@ -64,28 +67,12 @@ public class TorrentClientService {
 			if (transmissionClient.getRpcVersion() > 0) {
 				torrentClient = new TransmissionTorrentClient(transmissionClient);
 			} else {
-				System.out.println("transmissionClient.getRpcVersion(): " + transmissionClient.getRpcVersion());
-
-				// todo
-				/*String errorMessage = 'Error setting Torrent Client.'
-				log.error(errorMessage)
-				
-				Message torrentClientError = Message.findWhere(
-					type: Message.Type.DANGER,
-					category: Message.Category.TORRENT_CLIENT
-				)
-				if (!torrentClientError) {
-					torrentClientError = new Message(
-						type: Message.Type.DANGER,
-						category: Message.Category.TORRENT_CLIENT
-					)
-				}
-				torrentClientError.dateCreated = new Date()
-				torrentClientError.message = errorMessage
-				torrentClientError.save()*/
+				messageService.logMessage(false, Message.Type.ERROR, Message.Category.TORRENT_CLIENT, null, null,
+						"Error setting Transmission Torrent Client, RPC version [" + transmissionClient.getRpcVersion() + "] not supported.");
 			}
 		} else {
-			// throw exception (torrent client not supported)
+			messageService.logMessage(false, Message.Type.ERROR, Message.Category.TORRENT_CLIENT, null, null,
+					"Error; Torrent Client [" + torrentClientType + "] not supported.");
 		}
 		
 	}

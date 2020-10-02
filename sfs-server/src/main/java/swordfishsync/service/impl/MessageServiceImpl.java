@@ -42,10 +42,12 @@ public class MessageServiceImpl implements MessageService {
 		
 		Message message = null;
 		
-		if (torrent != null) {
+		if (feedProvider != null && torrent != null) {
 			message = messageRepository.findByFeedProviderAndTorrentAndTypeAndCategory(feedProvider, torrent, type, category);
-		} else {
+		} else if (feedProvider != null) {
 			message = messageRepository.findByFeedProviderAndTypeAndCategoryAndTorrentIsNull(feedProvider, type, category);
+		} else {
+			message = messageRepository.findByTypeAndCategoryAndFeedProviderIsNullAndTorrentIsNull(type, category);
 		}
 		
 		if (message == null) {
@@ -91,7 +93,7 @@ public class MessageServiceImpl implements MessageService {
 
 	@Override
 	public void deleteMessage(Long id) {
-		messageRepository.delete(id);
+		messageRepository.deleteById(id);
 	}
 
 }
