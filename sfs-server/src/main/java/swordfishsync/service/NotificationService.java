@@ -27,16 +27,13 @@ public class NotificationService {
 
 	@Resource
 	SettingService settingService;
-    
-	//@Resource
-    //TemplateResolver emailTemplateResolver;
 
 	@Resource
 	SpringTemplateEngine templateEngine;
-	
+
 	@Resource
 	JavaMailSenderImpl mailSender;
-    
+
 	public enum Type {
 		AVAILABLE, COMPLETED
 	}

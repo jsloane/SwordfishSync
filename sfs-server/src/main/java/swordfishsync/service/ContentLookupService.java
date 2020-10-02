@@ -10,7 +10,6 @@ import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.omertron.themoviedbapi.TheMovieDbApi;
@@ -22,12 +21,10 @@ import com.omertron.thetvdbapi.model.Series;
 
 import swordfishsync.domain.ExpandedData;
 import swordfishsync.domain.FeedProvider;
-import swordfishsync.domain.Message;
 import swordfishsync.domain.Torrent;
 import swordfishsync.exceptions.ApplicationException;
 import swordfishsync.model.TorrentContent;
 import swordfishsync.util.FeedProviderUtils;
-import swordfishsync.util.FileSystemUtils;
 
 @Service("contentLookupService")
 public class ContentLookupService {

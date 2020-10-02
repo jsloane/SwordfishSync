@@ -14,12 +14,9 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
-import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.DefaultServletHandlerConfigurer;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
-import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
 @Configuration
 @EnableWebMvc
@@ -30,7 +27,6 @@ public class MvcConfig extends RepositoryRestMvcConfiguration {
 
     public MvcConfig(ApplicationContext context, ObjectFactory<ConversionService> conversionService) {
 		super(context, conversionService);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
@@ -42,14 +38,6 @@ public class MvcConfig extends RepositoryRestMvcConfiguration {
     public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
         configurer.enable();
     }
-
-    /*@Bean
-    public InternalResourceViewResolver jspViewResolver() {
-        InternalResourceViewResolver bean = new InternalResourceViewResolver();
-        bean.setPrefix("/WEB-INF/views/");
-        bean.setSuffix(".jsp");
-        return bean;
-    }*/
 
     @Bean(name = "multipartResolver")
     public CommonsMultipartResolver getMultipartResolver() {
