@@ -3,25 +3,18 @@ package swordfishsync.service.impl;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
 import javax.annotation.Resource;
-import javax.persistence.EntityNotFoundException;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.support.PagedListHolder;
-import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import swordfishsync.controllers.TorrentController;
 import swordfishsync.domain.Feed;
 import swordfishsync.domain.FeedProvider;
 import swordfishsync.domain.FilterAttribute;
@@ -68,12 +61,6 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 	public Page<FeedProviderDto> findAllFeedProviders(Pageable pageable) {
     	Page<FeedProvider> feedProviderPage = feedProviderRepository.findAll(pageable);
 
-    	/*Page<FeedProviderDto> dtoPage = feedProviderPage.map(new Converter<FeedProvider, FeedProviderDto>() {
-    	    @Override
-    	    public FeedProviderDto convert(FeedProvider entity) {
-    	        return FeedProviderDto.convertToFeedProviderDto(entity);
-    	    }
-    	});*/
     	Page<FeedProviderDto> dtoPage = feedProviderPage.map(FeedProviderDto::convertToFeedProviderDto);
     	
 		return dtoPage;
