@@ -20,21 +20,21 @@
 		<findbugs.version>3.0.4</findbugs.version>
 		<jacoco.version>0.7.9</jacoco.version>
 
-		<!-- Spring IO version -->
-		<io.spring.platform-version>Brussels-SR5</io.spring.platform-version>
+		<!-- Spring Boot version -->
+		<org.springframework.boot-version>2.3.4.RELEASE</org.springframework.boot-version>
 	</properties>
 
-	<!-- Use Spring IO version management. Refer to http://docs.spring.io/platform/docs/Brussels-SR5/reference/htmlsingle/ -->
 	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>io.spring.platform</groupId>
-				<artifactId>platform-bom</artifactId>
-				<version>${io.spring.platform-version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
+	    <dependencies>
+	       <dependency>
+	           <!-- Import dependency management from Spring Boot -->
+	            <groupId>org.springframework.boot</groupId>
+	            <artifactId>spring-boot-dependencies</artifactId>
+	            <version>2.1.6.RELEASE</version>
+	            <type>pom</type>
+	            <scope>import</scope>
+	        </dependency>
+	    </dependencies>
 	</dependencyManagement>
 
 	<dependencies>
@@ -132,11 +132,11 @@
 			<artifactId>hibernate-entitymanager</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.hibernate</groupId>
+			<groupId>org.hibernate.validator</groupId>
 			<artifactId>hibernate-validator</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.hibernate</groupId>
+			<groupId>org.hibernate.validator</groupId>
 			<artifactId>hibernate-validator-annotation-processor</artifactId>
 		</dependency>
 		<!-- Spring Data JPA -->
@@ -177,6 +177,7 @@
         <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
+            <version>1.4</version>
         </dependency>
         
 <dependency>
@@ -188,6 +189,7 @@
 		<dependency>
 			<groupId>com.rometools</groupId>
 			<artifactId>rome</artifactId>
+			<version>1.15.0</version>
 		</dependency>
 		
 		
@@ -199,6 +201,7 @@
 <dependency>
     <groupId>commons-io</groupId>
     <artifactId>commons-io</artifactId>
+    <version>2.8.0</version>
 </dependency>
 
 
@@ -211,7 +214,7 @@
         </dependency> -->
         <dependency>
             <groupId>org.thymeleaf</groupId>
-            <artifactId>thymeleaf-spring4</artifactId>
+            <artifactId>thymeleaf-spring5</artifactId>
         </dependency>
         <!-- <dependency>
             <groupId>nz.net.ultraq.thymeleaf</groupId>
@@ -234,10 +237,11 @@
     <groupId>javax.mail</groupId>
     <artifactId>javax.mail-api</artifactId>
 </dependency>
-<dependency>
+<!-- <dependency>
     <groupId>javax.activation</groupId>
     <artifactId>activation</artifactId>
-</dependency>
+    <version>1.1.1</version>
+</dependency> -->
 
 
         <!-- API for TheTVDB.com website -->
@@ -253,6 +257,7 @@
 			<version>4.3</version>
         </dependency>
 
+<!-- TOOD use this library instead, if it fixes the email images -->
 		<dependency>
 		    <groupId>org.tinymediamanager.plugins</groupId>
 		    <artifactId>scraper-tvdb</artifactId>
@@ -272,7 +277,7 @@
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-			<!-- <version>20140107</version> -->
+			<version>20200518</version>
         </dependency>
         
         
@@ -284,24 +289,17 @@
             <groupId>org.ehcache</groupId>
             <artifactId>ehcache</artifactId>
         </dependency>
-        
-        
-        
-<!-- <dependency>
-    <groupId>org.projectlombok</groupId>
-    <artifactId>lombok</artifactId>
-</dependency> -->
-        
+
 		<!-- JDBC driver
 		<dependency>
 			...TODO...
 			<scope>provided</scope>
 		</dependency> -->
-		<!-- DataSource -->
+		<!-- DataSource
 		<dependency>
 			<groupId>commons-dbcp</groupId>
 			<artifactId>commons-dbcp</artifactId>
-		</dependency>
+		</dependency> -->
 <dependency>
     <groupId>mysql</groupId>
     <artifactId>mysql-connector-java</artifactId>

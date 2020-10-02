@@ -1,11 +1,14 @@
 package swordfishsync.config;
 
+import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.data.rest.webmvc.config.RepositoryRestMvcConfiguration;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -25,7 +28,12 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
 @Import({ WebSecurityConfig.class })
 public class MvcConfig extends RepositoryRestMvcConfiguration {
 
-    @Override
+    public MvcConfig(ApplicationContext context, ObjectFactory<ConversionService> conversionService) {
+		super(context, conversionService);
+		// TODO Auto-generated constructor stub
+	}
+
+	@Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/resources/**").addResourceLocations("/resources/");
     }

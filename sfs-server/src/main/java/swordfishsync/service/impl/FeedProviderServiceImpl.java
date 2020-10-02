@@ -68,12 +68,13 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 	public Page<FeedProviderDto> findAllFeedProviders(Pageable pageable) {
     	Page<FeedProvider> feedProviderPage = feedProviderRepository.findAll(pageable);
 
-    	Page<FeedProviderDto> dtoPage = feedProviderPage.map(new Converter<FeedProvider, FeedProviderDto>() {
+    	/*Page<FeedProviderDto> dtoPage = feedProviderPage.map(new Converter<FeedProvider, FeedProviderDto>() {
     	    @Override
     	    public FeedProviderDto convert(FeedProvider entity) {
     	        return FeedProviderDto.convertToFeedProviderDto(entity);
     	    }
-    	});
+    	});*/
+    	Page<FeedProviderDto> dtoPage = feedProviderPage.map(FeedProviderDto::convertToFeedProviderDto);
     	
 		return dtoPage;
 	}
@@ -103,7 +104,7 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 
 	@Override
 	public FeedProviderDto getFeedProvider(Long id) {
-		FeedProvider feedProvider = feedProviderRepository.findOne(id);
+		FeedProvider feedProvider = feedProviderRepository.findById(id).get();
 		
 		if (feedProvider == null) {
 			throw new NotFoundException(String.format("FeedProvider with id [%d] not found", id));
@@ -114,7 +115,7 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 
 	@Override
 	public FeedProviderDto updateFeedProvider(Long id, FeedProviderDto feedProviderDto) {
-		FeedProvider feedProvider = feedProviderRepository.findOne(id);
+		FeedProvider feedProvider = feedProviderRepository.findById(id).get();
 		
 		if (feedProvider == null) {
 			throw new NotFoundException(String.format("FeedProvider with id [%d] not found", id));
@@ -170,7 +171,7 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 
 	@Override
 	public void deleteFeedProvider(Long id) {
-		feedProviderRepository.delete(id);
+		feedProviderRepository.deleteById(id);
 		// TODO delete old torrent status? might already be done as part of sync service?
 		// TODO find if feed has any other feed providers, and remove the feed if not. might already be done as part of sync service?
 		// TODO see how grails did it
@@ -180,19 +181,20 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 	public Page<TorrentDto> findAllFeedProviderTorrents(Long id, Pageable pageable) {
     	Page<TorrentState> torrentStatePage = torrentStateRepository.findAllByFeedProviderId(id, pageable);
 
-    	Page<TorrentDto> torrentDtoPage = torrentStatePage.map(new Converter<TorrentState, TorrentDto>() {
+    	/*Page<TorrentDto> torrentDtoPage = torrentStatePage.map(new Converter<TorrentState, TorrentDto>() {
     	    @Override
     	    public TorrentDto convert(TorrentState entity) {
     	        return TorrentDto.convertToTorrentDto(entity);
     	    }
-    	});
+    	});*/
+    	Page<TorrentDto> torrentDtoPage = torrentStatePage.map(TorrentDto::convertToTorrentDto);
     	
 		return torrentDtoPage;
 	}
 
 	@Override
 	public List<FilterAttributeDto> replaceFeedProviderFilterAttributes(Long feedProviderId, List<FilterAttributeDto> filterAttributeDtos) {
-		FeedProvider feedProvider = feedProviderRepository.findOne(feedProviderId);
+		FeedProvider feedProvider = feedProviderRepository.findById(feedProviderId).get();
 		
 		filterAttributeRepository.deleteInBulkByFeedProviderId(feedProviderId);
 		
@@ -205,7 +207,7 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 			filterAttributes.add(filterAttribute);
 		}
 		
-		List<FilterAttribute> savedFilterAttributes = filterAttributeRepository.save(filterAttributes);
+		List<FilterAttribute> savedFilterAttributes = filterAttributeRepository.saveAll(filterAttributes);
 
 		List<FilterAttributeDto> savedFilterAttributeDtos = new ArrayList<FilterAttributeDto>();
 		for (FilterAttribute savedFilterAttribute : savedFilterAttributes) {
@@ -250,7 +252,7 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 				TorrentState newTorrentState = torrentStateRepository.findByFeedProviderIdAndTorrentUrl(id, torrentUrl);
 				
 				if (newTorrentState == null) {
-					FeedProvider feedProvider = feedProviderRepository.findOne(id);
+					FeedProvider feedProvider = feedProviderRepository.findById(id).get();
 		
 					Torrent newTorrent = new Torrent();
 					newTorrent.setFeed(feedProvider.getFeed());

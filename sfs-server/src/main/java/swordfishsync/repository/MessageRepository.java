@@ -15,4 +15,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
 	Message findByFeedProviderAndTypeAndCategoryAndTorrentIsNull(FeedProvider feedProvider, Type type, Category category);
 
+	Message findByTypeAndCategoryAndFeedProviderIsNullAndTorrentIsNull(Type type, Category category);
+
 }

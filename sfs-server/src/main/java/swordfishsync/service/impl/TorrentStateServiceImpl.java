@@ -21,6 +21,7 @@ import swordfishsync.repository.TorrentStateRepository;
 import swordfishsync.service.FeedProviderService;
 import swordfishsync.service.TorrentClientService;
 import swordfishsync.service.TorrentStateService;
+import swordfishsync.service.dto.FeedProviderDto;
 import swordfishsync.service.dto.TorrentDto;
 
 @Transactional
@@ -39,7 +40,7 @@ public class TorrentStateServiceImpl implements TorrentStateService {
 	public Page<TorrentDto> getTorrentStatesByStatuses(List<Status> statuses, Pageable pageable) {
 		Page<TorrentState> torrentStates = torrentStateRepository.findAllByStatusIn(statuses, pageable);
 
-    	Page<TorrentDto> torrentDtoPage = torrentStates.map(new Converter<TorrentState, TorrentDto>() {
+    	/*Page<TorrentDto> torrentDtoPage = torrentStates.map(new Converter<TorrentState, TorrentDto>() {
     	    @Override
     	    public TorrentDto convert(TorrentState torrentState) {
     	    	TorrentDetails torrentDetails = null;
@@ -50,8 +51,17 @@ public class TorrentStateServiceImpl implements TorrentStateService {
 				}
     	        return TorrentDto.convertToTorrentDto(torrentState, torrentDetails);
     	    }
+    	});*/
+    	Page<TorrentDto> torrentDtoPage = torrentStates.map(torrentState -> {
+	    	TorrentDetails torrentDetails = null;
+	    	try {
+				torrentDetails = torrentClientService.getTorrentDetails(torrentState.getTorrent(), false);
+			} catch (TorrentClientException e) {
+				log.error("Error loading torrent details for torrent [" + torrentState.getTorrent().getName() + "]", e);
+			}
+	        return TorrentDto.convertToTorrentDto(torrentState, torrentDetails);
     	});
-		
+
 		return torrentDtoPage;
 	}
 
