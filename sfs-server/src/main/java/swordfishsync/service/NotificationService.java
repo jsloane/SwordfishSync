@@ -71,6 +71,33 @@ public class NotificationService {
 				throw new ApplicationException("Error sending notification email", e);
 			}
 		}
+
+	}
+	
+	public void sendTestEmail(String email) throws ApplicationException {
+
+		if (StringUtils.isNotBlank(email)) {
+			String emailSubject = settingService.getValue(SettingService.CODE_APP_NOTIFICATION_EMAIL_SUBJECT, String.class) + ": Test email";
+			
+			try {
+				Context ctx = new Context(Locale.ENGLISH);
+
+				String htmlContent = this.templateEngine.process("test", ctx);
+				
+				log.info("Sending test email to: " + email);
+				
+				MimeMessage mimeMessage = mailSender.createMimeMessage();
+				MimeMessageHelper message = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+				message.setFrom(settingService.getValue(SettingService.CODE_EMAIL_FROM, String.class));
+				message.setTo(email);
+				message.setSubject(emailSubject);
+				message.setText(htmlContent, true);
+				mailSender.send(mimeMessage);
+			} catch (Exception e) {
+				throw new ApplicationException("Error sending test email", e);
+			}
+		}
+		
 	}
 	
 	public void sendMessageReport(Message message) throws ApplicationException {
@@ -98,8 +125,6 @@ public class NotificationService {
 				throw new ApplicationException("Error sending error report email", e);
 			}
 		}
-		
-		
 	}
 	
 }

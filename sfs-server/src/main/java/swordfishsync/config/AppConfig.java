@@ -46,7 +46,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @ComponentScan("swordfishsync")
 //@PropertySources({
 @PropertySource("classpath:application.properties")
-@PropertySource(value = "file:${user.home}/.swordfishsync/application.properties", ignoreResourceNotFound = true) // TODO list this location in Config UI page (rename Admin to Config)
+@PropertySource(value = "file:${user.home}/.swordfishsync/application.properties", ignoreResourceNotFound = true) // TODO list this location in Admin UI page
 //})
 @EnableJpaRepositories("swordfishsync.repository")
 public class AppConfig implements SchedulingConfigurer {
@@ -81,7 +81,7 @@ public class AppConfig implements SchedulingConfigurer {
 				Files.createFile(filePath);
 				Files.copy(resource.getFile().toPath(), filePath, StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException e) {
-				log.error("Failed copying application.properties to user home directory", e);
+				log.error("Failed copying application.properties to user home directory ", e);
 			}
 		}
 	}

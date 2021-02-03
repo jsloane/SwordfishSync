@@ -76,7 +76,6 @@ export class ChildConfigurationComponent {
     }
 
     getBooleanValue(value: any) {
-        console.log('getBooleanValue value: ', value);
         if (value === 'true') {
             return true;
         } else if (value === 'false') {

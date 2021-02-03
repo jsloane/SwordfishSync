@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 
+import { HttpParams } from '@angular/common/http';
+
 import { ServerService } from '../server/server.service';
 import { Configuration, Setting } from '../model/configuration';
 import { Message } from '../model/message';
@@ -30,6 +32,9 @@ export class AdminService {
 
   purgeInprogressTorents(): Observable<string[]> {
     return this.serverService.putRequest(this.restUrl + '/purgeInprogressTorrents', null, null);
+  }
+
+    let httpParams = new HttpParams();
   }
 
 }

@@ -1,7 +1,9 @@
 package swordfishsync.service;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -19,8 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.github.junrar.Archive;
+import com.github.junrar.Junrar;
 import com.github.junrar.exception.RarException;
-import com.github.junrar.extract.ExtractArchive;
 
 import swordfishsync.domain.FeedProvider;
 import swordfishsync.domain.Message;
@@ -149,25 +151,25 @@ public class FileOperationService {
 			}
 		}
 	}
-	
+
 	private void extractRar(String filename, String destinationDirectory, FeedProvider feedProvider) throws ApplicationException {
+		Archive downloadedArchive = null;
+		InputStream inputStream = null;
 		try {
 			final File rar = new File(filename);
 			final File destinationFolder = new File(destinationDirectory);
-			
+
 			// check if multi part, and only extract the first file
-			Archive downloadedArchive = new Archive(rar);
+			inputStream = new FileInputStream(rar);
+			downloadedArchive = new Archive(inputStream);
 			downloadedArchive.getMainHeader().print();
 			if (downloadedArchive.getMainHeader().isMultiVolume() && !downloadedArchive.getMainHeader().isFirstVolume()) {
-				downloadedArchive.close();
 				return;
 			}
-			downloadedArchive.close();
-			
+
 			log.info("Extracting rar file...");
-			ExtractArchive extractArchive = new ExtractArchive();
-			extractArchive.extractArchive(rar, destinationFolder);
-			
+			Junrar.extract(rar, destinationFolder);
+
 			// group write permission on extracted to directory and files
 			File extractedToDirectory = new File(destinationDirectory);
 			if (extractedToDirectory.exists() && extractedToDirectory.isDirectory()) {
@@ -184,9 +186,24 @@ public class FileOperationService {
 			log.info("...Finished extracting rar file");
 		} catch (IOException | RarException e) {
 			throw new ApplicationException("Error extracting rar file", e);
+		} finally {
+			if (downloadedArchive != null) {
+				try {
+					downloadedArchive.close();
+				} catch (IOException e) {
+					throw new ApplicationException("Error closing rar archive", e);
+				}
+			}
+			if (inputStream != null) {
+				try {
+					inputStream.close();
+				} catch (IOException e) {
+					throw new ApplicationException("Error closing input stream", e);
+				}
+			}
 		}
 	}
-	
+
 	public void runSystemCommand(FeedProvider feedProvider, Torrent torrent, TorrentContent torrentContent) {
 		if (StringUtils.isNotBlank(feedProvider.getSystemCommand())) {
 			File workingDirectory = new File(feedProvider.getSystemCommand()).getParentFile();

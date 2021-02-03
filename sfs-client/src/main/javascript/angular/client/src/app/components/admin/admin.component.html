@@ -8,10 +8,28 @@
     <li *ngFor="let message of purgeMessages">{{message}}</li>
 </ul>
 
-<button (click)="onClickPurgeTorrents()" [disabled]="purgingTorrents">
+<button mat-raised-button type="button" (click)="onClickPurgeTorrents()" [disabled]="purgingTorrents">
     <span *ngIf="purgingTorrents">Purging Torrents</span>
     <span *ngIf="!purgingTorrents">Purge Torrents</span>
 </button>
+
+<h3>Test email</h3>
+
+<div>
+    <mat-form-field>
+        <input matInput
+            placeholder="Email"
+            name="Email"
+            [(ngModel)]="testEmailAddress">
+    </mat-form-field>
+</div>
+
+<button mat-raised-button type="button" (click)="onClickSendTestEmail()" [disabled]="sendingTestEmail">
+    <span *ngIf="sendingTestEmail">Sending test email</span>
+    <span *ngIf="!sendingTestEmail">Send test email</span>
+</button>
+
+<span *ngIf="sentTestEmail">Email sent.</span>
 
 <!-- TODO - DB config, list properties file location -->
 
