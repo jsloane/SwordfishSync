@@ -34,7 +34,10 @@ export class AdminService {
     return this.serverService.putRequest(this.restUrl + '/purgeInprogressTorrents', null, null);
   }
 
+  sendTestEmail(emailAddress: string): Observable<string[]> {
     let httpParams = new HttpParams();
+    httpParams = httpParams.append('emailAddress', emailAddress);
+    return this.serverService.postRequest(this.restUrl + '/sendTestEmail', httpParams, null);
   }
 
 }
