@@ -22,37 +22,43 @@ public class FileSystemUtils {
     private static final Logger log = LoggerFactory.getLogger(FileSystemUtils.class);
 
 	public static void setFilePermissions(File file, FeedProvider feedProvider) throws IOException {
-		log.debug("Setting file permissions on file canonical path " + file.getCanonicalPath());
+		String currentUser = System.getProperty("user.name");
 
 		File parentFolder = new File(feedProvider.getDownloadDirectory());
 
-	    FileOwnerAttributeView view = Files.getFileAttributeView(parentFolder.toPath(), FileOwnerAttributeView.class);
+	    FileOwnerAttributeView view = Files.getFileAttributeView(file.toPath(), FileOwnerAttributeView.class);
 	    UserPrincipal userPrincipal = view.getOwner();
+	    
+	    String fileOwner = userPrincipal.getName();
+	    
+	    if (currentUser.equals(fileOwner)) {
+			log.debug("Setting file permissions on file canonical path " + file.getCanonicalPath());
 
-		GroupPrincipal groupPrincipal = Files.readAttributes(parentFolder.toPath(), PosixFileAttributes.class).group();
+			GroupPrincipal groupPrincipal = Files.readAttributes(parentFolder.toPath(), PosixFileAttributes.class).group();
 
-		log.debug("Using userPrincipal [" + userPrincipal + "], groupPrincipal [" + groupPrincipal + "]");
+			log.debug("Using groupPrincipal [" + groupPrincipal + "]");
 
-		// set user ownership
-		Files.setOwner(file.toPath(), userPrincipal);
+			// set group ownership
+			Files.getFileAttributeView(file.toPath(), PosixFileAttributeView.class).setGroup(groupPrincipal);
 
-		// set group ownership
-		Files.getFileAttributeView(file.toPath(), PosixFileAttributeView.class).setGroup(groupPrincipal);
+			// Use PosixFilePermission to set file permissions
+			Set<PosixFilePermission> perms = new HashSet<PosixFilePermission>();
+			//add owners permission
+			perms.add(PosixFilePermission.OWNER_READ);
+			perms.add(PosixFilePermission.OWNER_WRITE);
+			perms.add(PosixFilePermission.OWNER_EXECUTE);
+			//add group permissions
+			perms.add(PosixFilePermission.GROUP_READ);
+			perms.add(PosixFilePermission.GROUP_WRITE);
+			perms.add(PosixFilePermission.GROUP_EXECUTE);
+			//add others permissions
+			perms.add(PosixFilePermission.OTHERS_READ);
+    		perms.add(PosixFilePermission.OTHERS_EXECUTE);
 
-		// Use PosixFilePermission to set file permissions
-		Set<PosixFilePermission> perms = new HashSet<PosixFilePermission>();
-		//add owners permission
-		perms.add(PosixFilePermission.OWNER_READ);
-		perms.add(PosixFilePermission.OWNER_WRITE);
-		perms.add(PosixFilePermission.OWNER_EXECUTE);
-		//add group permissions
-		perms.add(PosixFilePermission.GROUP_READ);
-		perms.add(PosixFilePermission.GROUP_WRITE);
-		perms.add(PosixFilePermission.GROUP_EXECUTE);
-		//add others permissions
-		perms.add(PosixFilePermission.OTHERS_READ);
-
-		Files.setPosixFilePermissions(file.toPath(), perms);
+			Files.setPosixFilePermissions(file.toPath(), perms);
+	    } else {
+			log.debug("File user [" + fileOwner + "] does not match current user [" + currentUser + "], skipping permissions change.");
+	    }
 	}
 
 }
