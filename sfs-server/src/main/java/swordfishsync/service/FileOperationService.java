@@ -97,7 +97,7 @@ public class FileOperationService {
 							} catch (IOException e) {
 								// display error message in UI and notify user
 								messageService.logMessage(true, Message.Type.ERROR, Message.Category.FILE_COPY, torrentState.getFeedProvider(), torrentState.getTorrent(),
-										"Error copying torrent file. File cleanup may be required. Exception: " + e.toString());
+										"Error copying torrent file. File cleanup may be required. Exception: " + e.toString(), e);
 								throw new ApplicationException("Error copying files", e);
 							}
 						}
@@ -125,7 +125,7 @@ public class FileOperationService {
 
 			// display error message in UI and notify user
 			messageService.logMessage(true, Message.Type.ERROR, Message.Category.FILE_OPERATION, torrentState.getFeedProvider(), torrentState.getTorrent(),
-					"Error completing torrent. File cleanup may be required. Exception: " + e.toString());
+					"Error completing torrent. File cleanup may be required. Exception: " + e.toString(), e);
 		}
 		
 	}
@@ -229,7 +229,7 @@ public class FileOperationService {
 				// log/report error and continue
 				log.error("An error occurred executing system command [" + commandAndArguments + "]", e);
 				messageService.logMessage(true, Message.Type.ERROR, Message.Category.SYS_CMD, feedProvider, torrent,
-						"Error executing system command. Exception: " + e.toString());
+						"Error executing system command. Exception: " + e.toString(), e);
 			}
 		}
 	}

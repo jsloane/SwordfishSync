@@ -37,7 +37,7 @@ public class MessageServiceImpl implements MessageService {
 	MessageRepository messageRepository;
 	
 	@Override
-	public Message logMessage(Boolean report, Type type, Category category, FeedProvider feedProvider, Torrent torrent, String messageString) {
+	public Message logMessage(Boolean report, Type type, Category category, FeedProvider feedProvider, Torrent torrent, String messageString, Throwable throwable) {
 		Date currentDate = new Date();
 		
 		Message message = null;
@@ -67,7 +67,7 @@ public class MessageServiceImpl implements MessageService {
 		
 		if (!message.getReported() && report) {
 			try {
-				notificationService.sendMessageReport(message);
+				notificationService.sendMessageReport(message, throwable);
 				message.setReported(true);
 				message = messageRepository.save(message);
 			} catch (ApplicationException e) {

@@ -179,7 +179,7 @@ public class SyncService {
 
 			// display error message in UI
 			messageService.logMessage(false, Message.Type.ERROR, Message.Category.SYNC, torrentState.getFeedProvider(), torrentState.getTorrent(),
-					String.format("Error processing torrent. Exception: [%s]", e.toString()));
+					String.format("Error processing torrent. Exception: [%s]", e.toString()), e);
 		}
 
 	}
@@ -199,7 +199,7 @@ public class SyncService {
 					} catch (ApplicationException e) {
 						log.error("Error sending notification for torrent [" + torrentState.getTorrent().getName() + "]", e);
 						messageService.logMessage(false, Message.Type.WARNING, Message.Category.SYNC, torrentState.getFeedProvider(), torrentState.getTorrent(),
-								String.format("Error sending notification. Exception: [%s]", e.toString()));
+								String.format("Error sending notification. Exception: [%s]", e.toString()), e);
 					}
 				}
 			} else {
@@ -219,7 +219,7 @@ public class SyncService {
 		} catch (TorrentClientException e) {
 			log.error("Error adding torrent", e);
 			messageService.logMessage(false, Message.Type.ERROR, Message.Category.TORRENT_CLIENT, torrentState.getFeedProvider(), torrentState.getTorrent(),
-					String.format("Error adding torrent. Exception: [%s]", e.toString()));
+					String.format("Error adding torrent. Exception: [%s]", e.toString()), e);
 		}
 	}
 
@@ -278,7 +278,7 @@ public class SyncService {
 		} catch (Exception e) {
 			log.error(String.format("Error determining duplicate torrent [%s]", torrent.getName()), e);
 			messageService.logMessage(true, Message.Type.ERROR, Message.Category.SYNC, feedProvider, torrent,
-					String.format("Error determining duplicate torrent [%s], Exception: [%s]", torrent.getName(), e.toString()));
+					String.format("Error determining duplicate torrent [%s], Exception: [%s]", torrent.getName(), e.toString()), e);
 		}
 		
 		if (!feedProvider.getDetermineSubDirectory()) {
@@ -404,7 +404,7 @@ public class SyncService {
 			
 			// display error message in UI and notify user
 			messageService.logMessage(false, Message.Type.ERROR, Message.Category.TORRENT_CLIENT, torrentState.getFeedProvider(), torrentState.getTorrent(),
-					"Error retrieving torrent details. Exception: " + e.toString());
+					"Error retrieving torrent details. Exception: " + e.toString(), e);
 		}
 		
 		if (torrentDetails == null) {
@@ -575,7 +575,7 @@ public class SyncService {
 					} else {
 						String message = String.format("Encountered RSS entry without URL: %s", syndFeed.getDescription());
 						log.warn(message);
-						messageService.logMessage(true, Message.Type.WARNING, Message.Category.RSS, feedProvider, null, message);
+						messageService.logMessage(true, Message.Type.WARNING, Message.Category.RSS, feedProvider, null, message, null);
 					}
 				}
 			}
@@ -676,7 +676,7 @@ public class SyncService {
 			log.warn("Error making http request.", e);
 			
 			// display error message in UI
-			messageService.logMessage(false, Message.Type.ERROR, Message.Category.HTTP, feedProvider, null, e.toString());
+			messageService.logMessage(false, Message.Type.ERROR, Message.Category.HTTP, feedProvider, null, e.toString(), e);
 		} finally {
 			if (reader != null) {
 				try {

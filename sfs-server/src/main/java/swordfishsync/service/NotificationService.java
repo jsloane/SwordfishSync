@@ -6,6 +6,7 @@ import javax.annotation.Resource;
 import javax.mail.internet.MimeMessage;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -100,7 +101,7 @@ public class NotificationService {
 		
 	}
 	
-	public void sendMessageReport(Message message) throws ApplicationException {
+	public void sendMessageReport(Message message, Throwable throwable) throws ApplicationException {
 		String reportEmail = settingService.getValue(SettingService.CODE_APP_ERROR_EMAIL, String.class);
 
 		if (StringUtils.isNotBlank(reportEmail)) {
@@ -109,6 +110,10 @@ public class NotificationService {
 			try {
 				Context ctx = new Context(Locale.ENGLISH);
 				ctx.setVariable("message", message);
+				if (throwable != null) {
+					ctx.setVariable("exceptionMessage", ExceptionUtils.getMessage(throwable));
+					ctx.setVariable("exceptionStacktrace", ExceptionUtils.getStackTrace(throwable));
+				}
 
 				String htmlContent = this.templateEngine.process("error-report", ctx);
 				

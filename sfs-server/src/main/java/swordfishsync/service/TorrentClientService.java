@@ -68,11 +68,11 @@ public class TorrentClientService {
 				torrentClient = new TransmissionTorrentClient(transmissionClient);
 			} else {
 				messageService.logMessage(false, Message.Type.ERROR, Message.Category.TORRENT_CLIENT, null, null,
-						"Error setting Transmission Torrent Client, RPC version [" + transmissionClient.getRpcVersion() + "] not supported.");
+						"Error setting Transmission Torrent Client, RPC version [" + transmissionClient.getRpcVersion() + "] not supported.", null);
 			}
 		} else {
 			messageService.logMessage(false, Message.Type.ERROR, Message.Category.TORRENT_CLIENT, null, null,
-					"Error; Torrent Client [" + torrentClientType + "] not supported.");
+					"Error; Torrent Client [" + torrentClientType + "] not supported.", null);
 		}
 		
 	}

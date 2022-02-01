@@ -71,6 +71,22 @@
 						</span>
 					</td>
 				</tr>
+				<tr>
+					<td>
+						Exception message
+					</td>
+					<td>
+						<pre th:if="${exceptionMessage} != null" th:text="${exceptionMessage}"></pre>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Exception stacktrace
+					</td>
+					<td>
+						<pre th:if="${exceptionStacktrace} != null" th:text="${exceptionStacktrace}"></pre>
+					</td>
+				</tr>
 			</tbody>
 		</table>
 	</body>
