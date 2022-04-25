@@ -33,6 +33,7 @@ export class TorrentDao {
 })
 export class ListTorrentsByStatusComponent implements OnInit, AfterViewInit {
   displayedColumns = ['actions', 'feedProviderName', 'torrentName', 'torrentDateAdded', 'clientActivityDate', 'clientPercentDone'];
+  additionalActions = {reprocess: false};
   torrentDatabase: TorrentDao | null;
   dataSource = new MatTableDataSource();
 
@@ -51,6 +52,9 @@ export class ListTorrentsByStatusComponent implements OnInit, AfterViewInit {
   ngOnInit() {
       if (this.type === 'notified' || this.type === 'completed') {
           this.displayedColumns = ['actions', 'feedProviderName', 'torrentName', 'torrentDateAdded'];
+      }
+      if (this.type === 'completed') {
+          this.additionalActions.reprocess = true;
       }
   }
 
@@ -96,6 +100,17 @@ export class ListTorrentsByStatusComponent implements OnInit, AfterViewInit {
     this.feedProviderService.downloadTorrent(torrent.feedProviderId, torrent.id).subscribe(result => {
         console.log(result);
         torrent.status = 'IN_PROGRESS'; // TODO use constant in Torrent file
+      },
+      error => {
+          console.error(error);
+      }
+    );
+  }
+
+  recompleteTorrent(torrent: Torrent) {
+    // TODO disable button/loading indicator
+    this.feedProviderService.recompleteTorrent(torrent.feedProviderId, torrent.id).subscribe(result => {
+        console.log(result);
       },
       error => {
           console.error(error);

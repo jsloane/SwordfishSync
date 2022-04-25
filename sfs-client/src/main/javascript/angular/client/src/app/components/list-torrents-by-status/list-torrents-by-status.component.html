@@ -30,6 +30,9 @@
                 <button mat-button *ngIf="row.status !== 'IN_PROGRESS' && row.status !== 'COMPLETED' && row.status !== 'NOTIFY_COMPLETED'" (click)="downloadTorrent(row)">
                     Download
                 </button>
+                <button mat-button *ngIf="additionalActions.reprocess" (click)="recompleteTorrent(row)">
+                    Re-process
+                </button>
             </mat-cell>
         </ng-container>
         

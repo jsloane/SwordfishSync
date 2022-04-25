@@ -28,6 +28,7 @@ import swordfishsync.repository.FilterAttributeRepository;
 import swordfishsync.repository.TorrentRepository;
 import swordfishsync.repository.TorrentStateRepository;
 import swordfishsync.service.FeedProviderService;
+import swordfishsync.service.SyncService;
 import swordfishsync.service.TorrentClientService;
 import swordfishsync.service.dto.FeedProviderDto;
 import swordfishsync.service.dto.FilterAttributeDto;
@@ -56,6 +57,9 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 	
 	@Resource
 	TorrentClientService torrentClientService;
+	
+	@Resource
+	SyncService syncService;
 
 	@Override
 	public Page<FeedProviderDto> findAllFeedProviders(Pageable pageable) {
@@ -182,9 +186,9 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 	@Override
 	public List<FilterAttributeDto> replaceFeedProviderFilterAttributes(Long feedProviderId, List<FilterAttributeDto> filterAttributeDtos) {
 		FeedProvider feedProvider = feedProviderRepository.findById(feedProviderId).get();
-		
+
 		filterAttributeRepository.deleteInBulkByFeedProviderId(feedProviderId);
-		
+
 		List<FilterAttribute> filterAttributes = new ArrayList<FilterAttribute>();
 		for (FilterAttributeDto filterAttributeDto : filterAttributeDtos) {
 			FilterAttribute filterAttribute = new FilterAttribute();
@@ -193,14 +197,14 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 			filterAttribute.setFeedProvider(feedProvider);
 			filterAttributes.add(filterAttribute);
 		}
-		
+
 		List<FilterAttribute> savedFilterAttributes = filterAttributeRepository.saveAll(filterAttributes);
 
 		List<FilterAttributeDto> savedFilterAttributeDtos = new ArrayList<FilterAttributeDto>();
 		for (FilterAttribute savedFilterAttribute : savedFilterAttributes) {
 			savedFilterAttributeDtos.add(FilterAttributeDto.convertToFilterAttributeDto(savedFilterAttribute));
 		}
-		
+
 		return savedFilterAttributeDtos;
 	}
 
@@ -212,7 +216,7 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 		for (FilterAttribute filterAttribute : filterAttributes) {
 			filterAttributeDtos.add(FilterAttributeDto.convertToFilterAttributeDto(filterAttribute));
 		}
-		
+
 		return filterAttributeDtos;
 	}
 
@@ -223,17 +227,30 @@ public class FeedProviderServiceImpl implements FeedProviderService {
 		TorrentState torrentState = torrentStateRepository.findByIdAndFeedProviderId(torrentStateId, id);
 		if (torrentState != null && !torrentState.getStatus().equals(TorrentState.Status.IN_PROGRESS)
 				&& !torrentState.getStatus().equals(TorrentState.Status.COMPLETED)
-				 && !torrentState.getStatus().equals(TorrentState.Status.NOTIFY_COMPLETED)) {
-				downloading = torrentClientService.addTorrent(torrentState);
+				&& !torrentState.getStatus().equals(TorrentState.Status.NOTIFY_COMPLETED)) {
+			downloading = torrentClientService.addTorrent(torrentState);
 		}
-		
+
 		return downloading;
+	}
+
+	@Override
+	public boolean recompleteTorrent(Long id, Long torrentStateId) {
+		boolean recompleted = false;
+
+		TorrentState torrentState = torrentStateRepository.findByIdAndFeedProviderId(torrentStateId, id);
+		if (torrentState != null && torrentState.getStatus().equals(TorrentState.Status.COMPLETED)) {
+			syncService.checkAndComplete(torrentState.getFeedProvider(), torrentState, false);
+			recompleted = true;
+		}
+
+		return recompleted;
 	}
 
 	@Override
 	public List<TorrentDto> addTorrent(Long id, List<String> torrentUrls) throws TorrentClientException {
 		List<TorrentDto> addedTorrents = new ArrayList<TorrentDto>();
-		
+
 		for (String torrentUrl : torrentUrls) {
 			if (StringUtils.isNotBlank(torrentUrl)) {
 				TorrentState newTorrentState = torrentStateRepository.findByFeedProviderIdAndTorrentUrl(id, torrentUrl);

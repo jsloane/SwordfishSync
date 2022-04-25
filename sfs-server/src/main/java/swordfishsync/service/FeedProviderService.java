@@ -30,6 +30,8 @@ public interface FeedProviderService {
 	
 	boolean downloadTorrent(Long id, Long torrentStateId) throws TorrentClientException;
 
+	boolean recompleteTorrent(Long id, Long torrentStateId);
+
 	List<TorrentDto> addTorrent(Long id, List<String> torrentUrls) throws TorrentClientException;
 
 }

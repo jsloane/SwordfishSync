@@ -166,7 +166,7 @@ public class SyncService {
 					checkAndAdd(torrentState);
 					break;
 				case IN_PROGRESS: // downloading/seeding torrent, check if finished
-					checkAndComplete(feedProvider, torrentState);
+					checkAndComplete(feedProvider, torrentState, true);
 					break;
 				 case NOTIFY_COMPLETED: // retry sending notification that download has completed, should already be done but just in case
 					notifyComplete(feedProvider, torrentState, null);
@@ -394,7 +394,7 @@ public class SyncService {
 		return match;
 	}
 
-	private void checkAndComplete(FeedProvider feedProvider, TorrentState torrentState) {
+	public void checkAndComplete(FeedProvider feedProvider, TorrentState torrentState, boolean notify) {
 		TorrentDetails torrentDetails = null;
 		
 		try {
@@ -427,7 +427,9 @@ public class SyncService {
 				setTorrentStatus(torrentState.getFeedProvider(), torrentState.getTorrent(), torrentState, TorrentState.Status.NOTIFY_COMPLETED);
 				torrentState.getTorrent().setDateCompleted(new Date());
 
-				notifyComplete(torrentState.getFeedProvider(), torrentState, torrentContent);
+				if (notify) {
+					notifyComplete(torrentState.getFeedProvider(), torrentState, torrentContent);
+				}
 			} catch (RejectedExecutionException e) {
 				log.warn("An error occurred processing completion for torrent: " + torrentState.getTorrent().getName(), e);
 			}

@@ -68,6 +68,10 @@ export class FeedProviderService {
         return this.serverService.putRequest(this.restUrl + '/' + id + '/torrents/' + torrentStateId + '/download', null, null);
     }
 
+    recompleteTorrent(id: number, torrentStateId: number) {
+        return this.serverService.putRequest(this.restUrl + '/' + id + '/torrents/' + torrentStateId + '/recomplete', null, null);
+    }
+
     addTorrents(id: number, torrentUrls: Array<string>): Observable<Array<Torrent>> {
         return this.serverService.putRequest(this.restUrl + '/' + id + '/torrents', torrentUrls, null);
     }

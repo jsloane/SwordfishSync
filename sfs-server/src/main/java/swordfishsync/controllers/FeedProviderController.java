@@ -98,26 +98,38 @@ public class FeedProviderController {
 
         return new ResponseEntity<List<TorrentDto>>(addedTorrents, HttpStatus.OK);
     }
-    
+
     @RequestMapping(value = "/feedProviders/{id}/torrents/{torrentStateId}/download", method = RequestMethod.PUT)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<?> downloadFeedProviderTorrent(@PathVariable Long id, @PathVariable Long torrentStateId) {
     	boolean downloading = false;
-    	
+
 		try {
 			downloading = feedProviderService.downloadTorrent(id, torrentStateId);
 		} catch (TorrentClientException e) {
         	return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-    	
+
     	if (!downloading) {
     		// torrent could not be added because it's already downloaded or completed downloading
         	return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     	}
-    	
+
     	return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
+    @RequestMapping(value = "/feedProviders/{id}/torrents/{torrentStateId}/recomplete", method = RequestMethod.PUT)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ResponseEntity<?> recompleteFeedProviderTorrent(@PathVariable Long id, @PathVariable Long torrentStateId) {
+    	boolean recomplete = feedProviderService.recompleteTorrent(id, torrentStateId);
+
+    	if (!recomplete) {
+    		// torrent could not be re-completed because it's not at a valid state
+        	return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    	}
+
+    	return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
 
     @RequestMapping(value = "/feedProviders/{id}/filterAttributes", method = RequestMethod.PUT)
     @ResponseBody
@@ -133,6 +145,5 @@ public class FeedProviderController {
     	List<FilterAttributeDto> filterAttributes = feedProviderService.getFeedProviderFilterAttributes(id);
         return new ResponseEntity<List<FilterAttributeDto>>(filterAttributes, HttpStatus.OK);
     }
-    
-    
+
 }
